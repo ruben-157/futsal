@@ -2710,7 +2710,7 @@
       const n = Array.isArray(points) ? points.length : 0;
       if(!n){ return null; }
       const maxVal = Math.max(0, ...points);
-      const minVal = 0; // baseline at 0
+      const minVal = (opts && typeof opts.min === 'number') ? opts.min : 0; // allow custom baseline (e.g., rank starts at 1)
       const innerW = Math.max(1, width - padLeft - padRight);
       const innerH = Math.max(1, height - padTop - padBottom);
       const dx = n > 1 ? (innerW / (n-1)) : 0;
@@ -2733,16 +2733,22 @@
       svg.setAttribute('aria-label','Points by session');
 
       // Y-axis and grid ticks
-      function computeYTicks(maxV){
-        if(maxV <= 0) return [0, 1];
+      function computeYTicks(minV, maxV){
+        if(maxV <= minV) return [minV, maxV];
+        // choose a step targeting ~5 ticks
+        let span = maxV - minV;
         let step = 1;
-        if(maxV > 10) step = 5; else if(maxV > 4) step = 2; else step = 1;
+        if(span > 20) step = 5; else if(span > 10) step = 2; else step = 1;
         const out = [];
-        for(let v=0; v<=maxV; v+=step){ out.push(v); }
+        // start at minV rounded to step
+        let start = Math.ceil(minV / step) * step;
+        if(start > minV) start = minV;
+        for(let v=start; v<=maxV; v+=step){ out.push(v); }
+        if(out[0] !== minV) out.unshift(minV);
         if(out[out.length-1] !== maxV) out.push(maxV);
-        return out;
+        return Array.from(new Set(out));
       }
-      const yTicks = computeYTicks(maxVal);
+      const yTicks = computeYTicks(minVal, maxVal);
       // y-axis line
       const yAxis = document.createElementNS('http://www.w3.org/2000/svg','line');
       yAxis.setAttribute('x1', String(padLeft)); yAxis.setAttribute('x2', String(padLeft));
@@ -2768,7 +2774,7 @@
       });
 
       // X-axis baseline
-      const baseY = yAt(0);
+      const baseY = yAt(minVal);
       const xAxis = document.createElementNS('http://www.w3.org/2000/svg','line');
       xAxis.setAttribute('x1', String(padLeft)); xAxis.setAttribute('x2', String(padLeft + innerW));
       xAxis.setAttribute('y1', String(baseY)); xAxis.setAttribute('y2', String(baseY));
@@ -3188,7 +3194,7 @@
           chartWrap2.style.marginBottom = '8px';
           chartWrap2.style.width = '100%';
           // Use a different color to differentiate
-          const svg2 = buildLineChart(rankSeries.ranks, { width: 360, height: 140, stroke: '#6B7280', strokeWidth: 2, dotRadius: 2, labels: rankSeries.dates });
+          const svg2 = buildLineChart(rankSeries.ranks, { width: 360, height: 140, stroke: '#6B7280', strokeWidth: 2, dotRadius: 2, labels: rankSeries.dates, min: 1 });
           if(svg2){ chartWrap2.appendChild(svg2); body.appendChild(chartWrap2); }
         }
       }catch(_){ /* best-effort rank chart */ }
