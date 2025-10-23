@@ -117,6 +117,12 @@
     .ppm-avg{ color: var(--warn) }
     .ppm-low{ color: var(--danger) }
     .ppm-neutral{ color: var(--muted) }
+    /* Compact colored badges for values */
+    .badge{ display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-weight:800; font-size:12px }
+    .badge-good{ background: var(--accent-2); color: #fff }
+    .badge-avg{ background: var(--warn); color: #fff }
+    .badge-low{ background: var(--danger); color: #fff }
+    .badge-neutral{ background: #e5e7eb; color: var(--muted); border: 1px solid var(--border) }
     /* Teams: vertically center cells */
     #teamsSection table th,
     #teamsSection table td{ vertical-align: middle }
@@ -2583,18 +2589,22 @@
           tdM.textContent = String(r.matches);
         }
         const tdP = document.createElement('td'); tdP.textContent = String(r.points);
-        const tdA = document.createElement('td'); tdA.textContent = r.ppm.toFixed(2);
+        const tdA = document.createElement('td');
+        const ppmBadge = document.createElement('span');
+        ppmBadge.className = 'badge badge-neutral';
+        ppmBadge.textContent = r.ppm.toFixed(2);
         if(thresholds){
           if(r.matches < thresholds.minMatches){
-            tdA.classList.add('ppm-neutral');
-            tdA.title = `Insufficient matches (< ${thresholds.minMatches})`;
+            ppmBadge.className = 'badge badge-neutral';
+            ppmBadge.title = `Insufficient matches (< ${thresholds.minMatches})`;
           } else {
             const smoothed = (r.points + thresholds.alpha * thresholds.mu) / (r.matches + thresholds.alpha);
-            if(smoothed >= thresholds.high){ tdA.classList.add('ppm-good'); tdA.title = `Top quartile (≥ ${thresholds.high.toFixed(2)})`; }
-            else if(smoothed < thresholds.low){ tdA.classList.add('ppm-low'); tdA.title = `Bottom quartile (< ${thresholds.low.toFixed(2)})`; }
-            else { tdA.classList.add('ppm-avg'); tdA.title = `Middle 50% (${thresholds.low.toFixed(2)}–${thresholds.high.toFixed(2)})`; }
+            if(smoothed >= thresholds.high){ ppmBadge.className = 'badge badge-good'; ppmBadge.title = `Top quartile (≥ ${thresholds.high.toFixed(2)})`; }
+            else if(smoothed < thresholds.low){ ppmBadge.className = 'badge badge-low'; ppmBadge.title = `Bottom quartile (< ${thresholds.low.toFixed(2)})`; }
+            else { ppmBadge.className = 'badge badge-avg'; ppmBadge.title = `Middle 50% (${thresholds.low.toFixed(2)}–${thresholds.high.toFixed(2)})`; }
           }
         }
+        tdA.appendChild(ppmBadge);
         tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
       });
       table.appendChild(thead); table.appendChild(tbody); wrap.appendChild(table);
