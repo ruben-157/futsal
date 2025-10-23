@@ -2605,11 +2605,34 @@
       headerBar.style.justifyContent = 'flex-end';
       headerBar.style.alignItems = 'center';
       headerBar.style.margin = '0 0 6px 0';
+      // Subtle calendar icon
+      const icon = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      icon.setAttribute('viewBox', '0 0 24 24');
+      icon.setAttribute('width', '14');
+      icon.setAttribute('height', '14');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.style.marginRight = '6px';
+      icon.style.flexShrink = '0';
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x','3'); rect.setAttribute('y','5'); rect.setAttribute('width','18'); rect.setAttribute('height','16'); rect.setAttribute('rx','2');
+      rect.setAttribute('fill','none'); rect.setAttribute('stroke','var(--muted)'); rect.setAttribute('stroke-width','2');
+      const divider = document.createElementNS('http://www.w3.org/2000/svg','line');
+      divider.setAttribute('x1','3'); divider.setAttribute('y1','9'); divider.setAttribute('x2','21'); divider.setAttribute('y2','9');
+      divider.setAttribute('stroke','var(--muted)'); divider.setAttribute('stroke-width','2'); divider.setAttribute('stroke-linecap','round');
+      const ringL = document.createElementNS('http://www.w3.org/2000/svg','line');
+      ringL.setAttribute('x1','8'); ringL.setAttribute('y1','3'); ringL.setAttribute('x2','8'); ringL.setAttribute('y2','7');
+      ringL.setAttribute('stroke','var(--muted)'); ringL.setAttribute('stroke-width','2'); ringL.setAttribute('stroke-linecap','round');
+      const ringR = document.createElementNS('http://www.w3.org/2000/svg','line');
+      ringR.setAttribute('x1','16'); ringR.setAttribute('y1','3'); ringR.setAttribute('x2','16'); ringR.setAttribute('y2','7');
+      ringR.setAttribute('stroke','var(--muted)'); ringR.setAttribute('stroke-width','2'); ringR.setAttribute('stroke-linecap','round');
+      icon.appendChild(rect); icon.appendChild(divider); icon.appendChild(ringL); icon.appendChild(ringR);
+
       const label = document.createElement('span');
       label.title = 'Latest session date';
       label.textContent = 'Synced with latest match: ' + formatDateLong(latestDate);
       label.style.color = 'var(--muted)';
       label.style.fontSize = '12px';
+      headerBar.appendChild(icon);
       headerBar.appendChild(label);
       return headerBar;
     }
