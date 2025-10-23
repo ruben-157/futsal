@@ -2573,6 +2573,17 @@
       return byDate;
     }
 
+    function formatDateLong(iso){
+      if(!iso || typeof iso !== 'string') return iso || '';
+      const parts = iso.split('-');
+      if(parts.length !== 3) return iso;
+      const [y, m, d] = parts;
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const mi = Math.max(1, Math.min(12, parseInt(m,10))) - 1;
+      const di = parseInt(d,10);
+      return `${isNaN(di)?d:di} ${months[mi] || m} ${y}`;
+    }
+
     function avgLastN(arr, n){
       if(!arr || arr.length === 0) return 0;
       const start = Math.max(0, arr.length - n);
@@ -2735,7 +2746,7 @@
         row.style.border = '1px solid var(--border)'; row.style.borderRadius='10px'; row.style.padding='8px 10px'; row.style.margin='6px 0';
 
         const left = document.createElement('div');
-        left.innerHTML = `<div style="font-weight:700">${d} ${points===max && total>0 ? '🥇' : ''}</div>`;
+        left.innerHTML = `<div style="font-weight:700">${formatDateLong(d)}</div>`;
 
         const right = document.createElement('div');
         const badge = document.createElement('span');
