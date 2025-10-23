@@ -2663,6 +2663,39 @@
       });
       return { dates, points };
     }
+    function getAllPlayers(){
+      const rows = window.__allTimeRows || [];
+      const set = new Set();
+      for(const r of rows){ if(r && r.player) set.add(r.player); }
+      return Array.from(set.values()).sort((a,b)=> a.localeCompare(b));
+    }
+    function getPlayerRankAcrossDates(player){
+      const byDate = window.__allTimeByDate || new Map();
+      const dates = getAllDatesAsc();
+      const allPlayers = getAllPlayers();
+      const cumPts = new Map();
+      const cumMat = new Map();
+      for(const p of allPlayers){ cumPts.set(p, 0); cumMat.set(p, 0); }
+      const ranks = [];
+      for(const d of dates){
+        const arr = byDate.get(d) || [];
+        for(const e of arr){
+          const p = e.player; const pts = Number(e.points) || 0;
+          cumPts.set(p, (cumPts.get(p)||0) + pts);
+          cumMat.set(p, (cumMat.get(p)||0) + 1);
+        }
+        // snapshot ranks for this date
+        const snap = allPlayers.map(p => {
+          const pts = cumPts.get(p)||0; const m = cumMat.get(p)||0;
+          const ppm = m>0 ? (pts/m) : 0;
+          return { player:p, points:pts, matches:m, ppm };
+        });
+        snap.sort((a,b)=> (b.points - a.points) || (b.ppm - a.ppm) || (b.matches - a.matches) || a.player.localeCompare(b.player));
+        const idx = snap.findIndex(x => x.player === player);
+        ranks.push(idx >= 0 ? (idx+1) : allPlayers.length);
+      }
+      return { dates, ranks };
+    }
     function buildLineChart(points, opts){
       const width = (opts && opts.width) || 360;
       const height = (opts && opts.height) || 140;
@@ -3129,6 +3162,11 @@
       try{
         const seriesAll = getPlayerPointsAcrossDates(player);
         if(seriesAll && seriesAll.points && seriesAll.points.length){
+          const titlePts = document.createElement('div');
+          titlePts.className = 'stat-title';
+          titlePts.style.margin = '4px 0';
+          titlePts.textContent = 'Points per Session';
+          body.appendChild(titlePts);
           const chartWrap = document.createElement('div');
           chartWrap.style.marginBottom = '8px';
           chartWrap.style.width = '100%';
@@ -3136,6 +3174,24 @@
           if(svg){ chartWrap.appendChild(svg); body.appendChild(chartWrap); }
         }
       }catch(_){ /* best-effort chart */ }
+
+      // Rank chart (lower is better)
+      try{
+        const rankSeries = getPlayerRankAcrossDates(player);
+        if(rankSeries && rankSeries.ranks && rankSeries.ranks.length){
+          const titleRank = document.createElement('div');
+          titleRank.className = 'stat-title';
+          titleRank.style.margin = '4px 0';
+          titleRank.textContent = 'Rank by Total Points';
+          body.appendChild(titleRank);
+          const chartWrap2 = document.createElement('div');
+          chartWrap2.style.marginBottom = '8px';
+          chartWrap2.style.width = '100%';
+          // Use a different color to differentiate
+          const svg2 = buildLineChart(rankSeries.ranks, { width: 360, height: 140, stroke: '#6B7280', strokeWidth: 2, dotRadius: 2, labels: rankSeries.dates });
+          if(svg2){ chartWrap2.appendChild(svg2); body.appendChild(chartWrap2); }
+        }
+      }catch(_){ /* best-effort rank chart */ }
 
       const rows = (window.__allTimeRows || []).filter(r => r.player === player);
       // Quick stats
