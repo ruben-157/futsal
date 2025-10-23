@@ -2582,9 +2582,17 @@
       }
       thead.appendChild(trHead);
       const tbody = document.createElement('tbody');
+      const podiumActive = (allTimeSort && (allTimeSort.key === 'points' || allTimeSort.key === 'ppm'));
       stats.forEach((r, idx)=>{
         const tr = document.createElement('tr');
-        const tdPos = document.createElement('td'); tdPos.textContent = String(idx + 1);
+        const tdPos = document.createElement('td');
+        let posTxt = String(idx + 1);
+        if(podiumActive){
+          if(idx === 0) posTxt += ' 🥇';
+          else if(idx === 1) posTxt += ' 🥈';
+          else if(idx === 2) posTxt += ' 🥉';
+        }
+        tdPos.textContent = posTxt;
         const tdN = document.createElement('td'); tdN.textContent = r.player;
         const tdM = document.createElement('td');
         if(totalSessions && totalSessions > 0){
