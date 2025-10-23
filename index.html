@@ -2391,6 +2391,7 @@
 
     // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
     let allTimeCache = { rows: null, ts: 0 };
+    let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
       const updated = document.getElementById('allTimeUpdated');
@@ -2405,6 +2406,7 @@
       try{
         const data = await loadAllTimeCSV(force);
         const stats = aggregateAllTime(data);
+        sortAllTimeStats(stats);
         wrap.innerHTML = '';
         if(stats.length === 0){
           const empty = document.createElement('div');
@@ -2466,9 +2468,18 @@
         cur.points += points;
         map.set(player, cur);
       }
-      const stats = Array.from(map.values()).map(x => ({ ...x, ppm: x.matches ? x.points / x.matches : 0 }));
-      stats.sort((a,b)=> b.points - a.points || b.ppm - a.ppm || b.matches - a.matches || a.player.localeCompare(b.player));
-      return stats;
+      return Array.from(map.values()).map(x => ({ ...x, ppm: x.matches ? x.points / x.matches : 0 }));
+    }
+
+    function sortAllTimeStats(stats){
+      const k = allTimeSort.key; const dir = allTimeSort.dir === 'asc' ? 1 : -1;
+      stats.sort((a,b)=>{
+        if(k === 'player') return a.player.localeCompare(b.player) * dir;
+        if(k === 'matches') return (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
+        if(k === 'points') return (a.points - b.points) * dir || (a.ppm - b.ppm) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
+        if(k === 'ppm') return ((a.ppm - b.ppm) * dir) || (a.points - b.points) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
+        return 0;
+      });
     }
 
     function buildAllTimeTable(stats){
@@ -2476,7 +2487,37 @@
       wrap.style.overflow = 'auto';
       const table = document.createElement('table');
       const thead = document.createElement('thead');
-      thead.innerHTML = '<tr><th style="width:50%">Player</th><th>Total Matches Played</th><th>Total Points</th><th>Pts/Match</th></tr>';
+      const trHead = document.createElement('tr');
+      const cols = [
+        { key:'player', label:'Player', style:'width:50%' },
+        { key:'matches', label:'Total Matches Played' },
+        { key:'points', label:'Total Points' },
+        { key:'ppm', label:'Pts/Match' },
+      ];
+      for(const col of cols){
+        const th = document.createElement('th');
+        if(col.style) th.setAttribute('style', col.style);
+        th.textContent = col.label + (allTimeSort.key === col.key ? (allTimeSort.dir === 'asc' ? ' ▲' : ' ▼') : '');
+        th.className = 'sortable';
+        th.style.cursor = 'pointer';
+        th.title = 'Sort by ' + col.label;
+        th.addEventListener('click', ()=>{
+          if(allTimeSort.key === col.key){
+            allTimeSort.dir = (allTimeSort.dir === 'asc') ? 'desc' : 'asc';
+          }else{
+            allTimeSort.key = col.key;
+            allTimeSort.dir = (col.key === 'player') ? 'asc' : 'desc';
+          }
+          const container = document.getElementById('allTimeContent');
+          if(!allTimeCache.rows){ return; }
+          const stats2 = aggregateAllTime(allTimeCache.rows);
+          sortAllTimeStats(stats2);
+          container.innerHTML = '';
+          container.appendChild(buildAllTimeTable(stats2));
+        });
+        trHead.appendChild(th);
+      }
+      thead.appendChild(trHead);
       const tbody = document.createElement('tbody');
       for(const r of stats){
         const tr = document.createElement('tr');
