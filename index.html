@@ -112,6 +112,11 @@
     .gd-neg{ color: var(--danger); }
     /* Small badge used in All-Time table */
     .mini-pill{ display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; font-weight:700; color:var(--muted) }
+    /* Pts/Match coloring */
+    .ppm-good{ color: var(--accent-2) }
+    .ppm-avg{ color: var(--warn) }
+    .ppm-low{ color: var(--danger) }
+    .ppm-neutral{ color: var(--muted) }
     /* Teams: vertically center cells */
     #teamsSection table th,
     #teamsSection table td{ vertical-align: middle }
@@ -2384,6 +2389,7 @@
     // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
     let allTimeCache = { rows: null, ts: 0 };
     let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
+    const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Match thresholds
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
       const updated = document.getElementById('allTimeUpdated');
@@ -2407,7 +2413,8 @@
           wrap.appendChild(empty);
         }else{
           const totalSessions = countUniqueSessions(data);
-          wrap.appendChild(buildAllTimeTable(stats, totalSessions));
+          const thresholds = computeAllTimeThresholds(stats, totalSessions, ALLTIME_ALPHA);
+          wrap.appendChild(buildAllTimeTable(stats, totalSessions, thresholds));
         }
         updated.textContent = `Updated ${new Date().toLocaleString()}`;
       }catch(err){
@@ -2464,6 +2471,42 @@
       return Array.from(map.values()).map(x => ({ ...x, ppm: x.matches ? x.points / x.matches : 0 }));
     }
 
+    function computeAllTimeThresholds(stats, totalSessions, alpha){
+      // Global mean PPM weighted by matches
+      let totalPoints = 0, totalMatches = 0;
+      for(const s of stats){ totalPoints += s.points; totalMatches += s.matches; }
+      const mu = totalMatches > 0 ? (totalPoints / totalMatches) : 0;
+
+      // Minimum matches to color
+      const minMatches = Math.max(5, Math.ceil((totalSessions || 0) * 0.2));
+      const vals = []; const wts = [];
+      for(const s of stats){
+        if(s.matches >= minMatches){
+          const smoothed = (s.points + alpha * mu) / (s.matches + alpha);
+          vals.push(smoothed); wts.push(s.matches);
+        }
+      }
+      let low = 1.0, high = 2.0;
+      if(vals.length >= 10){
+        low = weightedPercentile(vals, wts, 0.25);
+        high = weightedPercentile(vals, wts, 0.75);
+      }
+      return { mu, alpha, minMatches, low, high };
+    }
+
+    function weightedPercentile(values, weights, p){
+      const arr = values.map((v,i)=>({v,w:weights[i]})).sort((a,b)=> a.v - b.v);
+      const totalW = arr.reduce((s,x)=> s + x.w, 0);
+      if(totalW <= 0) return arr.length ? arr[0].v : 0;
+      const target = p * totalW;
+      let cum = 0;
+      for(const x of arr){
+        cum += x.w;
+        if(cum >= target) return x.v;
+      }
+      return arr[arr.length-1]?.v ?? 0;
+    }
+
     function countUniqueSessions(rows){
       const dates = new Set();
       for(const r of rows){ if(r && r.date) dates.add(r.date); }
@@ -2481,7 +2524,7 @@
       });
     }
 
-    function buildAllTimeTable(stats, totalSessions){
+    function buildAllTimeTable(stats, totalSessions, thresholds){
       const wrap = document.createElement('div');
       wrap.style.overflow = 'auto';
       const table = document.createElement('table');
@@ -2516,8 +2559,9 @@
           const stats2 = aggregateAllTime(allTimeCache.rows);
           sortAllTimeStats(stats2);
           const totalSessions = countUniqueSessions(allTimeCache.rows);
+          const thresholds = computeAllTimeThresholds(stats2, totalSessions, ALLTIME_ALPHA);
           container.innerHTML = '';
-          container.appendChild(buildAllTimeTable(stats2, totalSessions));
+          container.appendChild(buildAllTimeTable(stats2, totalSessions, thresholds));
         });
         trHead.appendChild(th);
       }
@@ -2540,6 +2584,17 @@
         }
         const tdP = document.createElement('td'); tdP.textContent = String(r.points);
         const tdA = document.createElement('td'); tdA.textContent = r.ppm.toFixed(2);
+        if(thresholds){
+          if(r.matches < thresholds.minMatches){
+            tdA.classList.add('ppm-neutral');
+            tdA.title = `Insufficient matches (< ${thresholds.minMatches})`;
+          } else {
+            const smoothed = (r.points + thresholds.alpha * thresholds.mu) / (r.matches + thresholds.alpha);
+            if(smoothed >= thresholds.high){ tdA.classList.add('ppm-good'); tdA.title = `Top quartile (≥ ${thresholds.high.toFixed(2)})`; }
+            else if(smoothed < thresholds.low){ tdA.classList.add('ppm-low'); tdA.title = `Bottom quartile (< ${thresholds.low.toFixed(2)})`; }
+            else { tdA.classList.add('ppm-avg'); tdA.title = `Middle 50% (${thresholds.low.toFixed(2)}–${thresholds.high.toFixed(2)})`; }
+          }
+        }
         tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
       });
       table.appendChild(thead); table.appendChild(tbody); wrap.appendChild(table);
