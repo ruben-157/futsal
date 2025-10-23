@@ -323,7 +323,7 @@
     #playersSection .panel{ flex:1; display:flex; flex-direction:column; min-height:0; margin-bottom:12px; padding:8px; width:100%; box-sizing:border-box }
     #playersSection .panel .lists{ flex:1; max-height:none; min-height:0; overflow:auto; padding:0; width:100%; box-sizing:border-box }
     /* Reserve space so bottom items aren't covered by sticky actions */
-    #playersSection .lists{ padding-bottom: 96px }
+    #playersSection .lists{ padding-bottom: 140px }
     #playersSection .item{ padding:10px 10px; width:100%; box-sizing:border-box }
     #playersSection .actions{
       position: sticky;
@@ -3167,27 +3167,32 @@
     // Removed dedicated refresh button; data reloads on tab open and page refresh
 
     // ----- Scroll Lock Helpers for Modals -----
-    let __scrollLockY = 0;
+    let __prevHtmlOverflow = '';
+    let __prevBodyOverflow = '';
+    let __preventTouchMove = null;
     function lockBodyScroll(){
       try{
-        __scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
-        document.body.style.position = 'fixed';
-        document.body.style.top = '-' + __scrollLockY + 'px';
-        document.body.style.left = '0';
-        document.body.style.right = '0';
-        document.body.style.width = '100%';
+        __prevHtmlOverflow = document.documentElement.style.overflow;
+        __prevBodyOverflow = document.body.style.overflow;
+        // Prevent root scrolling
+        document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
+        // Prevent touchmove outside modal (iOS Safari)
+        __preventTouchMove = function(e){
+          const modal = document.querySelector('.modal');
+          if(!modal) return;
+          if(!modal.contains(e.target)){
+            e.preventDefault();
+          }
+        };
+        document.addEventListener('touchmove', __preventTouchMove, { passive: false });
       }catch(_){/* no-op */}
     }
     function unlockBodyScroll(){
       try{
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
-        window.scrollTo(0, __scrollLockY || 0);
+        document.documentElement.style.overflow = __prevHtmlOverflow || '';
+        document.body.style.overflow = __prevBodyOverflow || '';
+        if(__preventTouchMove){ document.removeEventListener('touchmove', __preventTouchMove); __preventTouchMove = null; }
       }catch(_){/* no-op */}
     }
 
