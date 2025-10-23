@@ -342,7 +342,6 @@
     <h1>FTG X9000</h1>
     <div style="display:flex; gap:8px; align-items:center">
       <button class="btn" id="btnAllTimeHeader" type="button" aria-label="Open All-Time leaderboard">All-Time Leaderboard</button>
-      <button class="btn" id="btnAllTimeRefreshHeader" type="button" hidden>Refresh</button>
     </div>
   </header>
   <nav class="tabs" role="tablist" aria-label="Futsal sections">
@@ -2402,11 +2401,9 @@
       if(which === 'players'){
         renderRoster(); // ensure lock state reflected immediately
       } else if(which === 'alltime'){
-        renderAllTime();
+        renderAllTime(true);
       }
-      // Toggle All-Time refresh button visibility in header
-      const hdrRefresh = document.getElementById('btnAllTimeRefreshHeader');
-      if(hdrRefresh){ hdrRefresh.hidden = (which !== 'alltime'); }
+      // Header has no explicit refresh button; All-Time reloads when opened
     }
     function updateTabsUI(){
       const hasTeams = state.teams && state.teams.length > 0;
@@ -3112,8 +3109,7 @@
       return wrap;
     }
 
-    const btnAllTimeRefreshHeader = document.getElementById('btnAllTimeRefreshHeader');
-    if(btnAllTimeRefreshHeader){ btnAllTimeRefreshHeader.addEventListener('click', ()=>{ allTimeCache.rows = null; renderAllTime(true); }); }
+    // Removed dedicated refresh button; data reloads on tab open and page refresh
 
     // ----- Player History Modal -----
     function openPlayerModal(player){
@@ -3197,7 +3193,7 @@
     renderTeams();
     renderSchedule();
     renderLeaderboard();
-    renderAllTime();
+    renderAllTime(true);
     clampPlayLimit();
     updateTabsUI();
     switchTab('players');
