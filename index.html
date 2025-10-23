@@ -2418,6 +2418,8 @@
     // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
     let allTimeCache = { rows: null, ts: 0 };
     let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
+    // Basis for header insight cards' rank comparisons (only changes when user selects Points or Pts/Match)
+    let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
     const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Match thresholds
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
@@ -2454,7 +2456,7 @@
           // Latest sync pill (top-right) then header stat cards
           const pillBar = buildLatestSyncPill(latestDate);
           if(pillBar) wrap.appendChild(pillBar);
-          const headerCards = buildAllTimeHeaderCards(preRows, data, preRanks, postRanks, byDate, latestDate);
+          const headerCards = buildAllTimeHeaderCards(preRows, data, byDate, latestDate, allTimeInsightBasis);
           if(headerCards) wrap.appendChild(headerCards);
           wrap.appendChild(buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, latestDate));
         }
@@ -2612,7 +2614,7 @@
     }
 
     // Build header stat cards for All-Time page
-    function buildAllTimeHeaderCards(preRows, rows, preRanks, postRanks, byDate, latestDate){
+    function buildAllTimeHeaderCards(preRows, rows, byDate, latestDate, basis){
       if(!rows || !rows.length) return null;
       const preAggArr = aggregateAllTime(preRows || []);
       const postAggArr = aggregateAllTime(rows);
@@ -2642,21 +2644,32 @@
       // Highest climber / decliner
       let up = null; // {player, move, preRank, postRank}
       let down = null;
-      if(preRanks && postRanks){
-        // preRanks/postRanks are Maps from makeRankMap
-        postRanks.forEach((postIdx, player)=>{
-          const preIdx = preRanks.get(player);
-          if(preIdx !== undefined){
-            const move = preIdx - postIdx; // positive means moved up
-            if(up === null || move > up.move || (move === up.move && (postIdx < up.postRank || (postIdx === up.postRank && player < up.player)))){
-              up = { player, move, preRank: preIdx, postRank: postIdx };
-            }
-            if(down === null || move < down.move || (move === down.move && (postIdx > down.postRank || (postIdx === down.postRank && player < down.player)))){
-              down = { player, move, preRank: preIdx, postRank: postIdx };
-            }
-          }
-        });
+      // Build rank maps based on chosen basis (points or ppm), independent of table sort
+      function sortByBasis(arr, key){
+        const a = arr.slice();
+        if(key === 'ppm'){
+          a.sort((x,y)=> (y.ppm - x.ppm) || (y.points - x.points) || (y.matches - x.matches) || x.player.localeCompare(y.player));
+        } else {
+          a.sort((x,y)=> (y.points - x.points) || (y.ppm - x.ppm) || (y.matches - x.matches) || x.player.localeCompare(y.player));
+        }
+        return a;
       }
+      const preOrder = sortByBasis(preAggArr, basis === 'ppm' ? 'ppm' : 'points');
+      const postOrder = sortByBasis(postAggArr, basis === 'ppm' ? 'ppm' : 'points');
+      const preRanks = new Map(preOrder.map((s,i)=> [s.player, i]));
+      const postRanks = new Map(postOrder.map((s,i)=> [s.player, i]));
+      postRanks.forEach((postIdx, player)=>{
+        const preIdx = preRanks.get(player);
+        if(preIdx !== undefined){
+          const move = preIdx - postIdx; // positive means moved up
+          if(up === null || move > up.move || (move === up.move && (postIdx < up.postRank || (postIdx === up.postRank && player < up.player)))){
+            up = { player, move, preRank: preIdx, postRank: postIdx };
+          }
+          if(down === null || move < down.move || (move === down.move && (postIdx > down.postRank || (postIdx === down.postRank && player < down.player)))){
+            down = { player, move, preRank: preIdx, postRank: postIdx };
+          }
+        }
+      });
 
       // Highest PPM increase/decrease among players who played latest session (percentage change)
       const latestEntries = (byDate && latestDate) ? (byDate.get(latestDate) || []) : [];
@@ -2807,10 +2820,14 @@
           sortAllTimeStats(preStats);
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats2);
+          // Update insight basis only when sorting by Points or Pts/Match
+          if(col.key === 'points' || col.key === 'ppm'){
+            allTimeInsightBasis = col.key;
+          }
           container.innerHTML = '';
           const pillBar = buildLatestSyncPill(latestDate);
           if(pillBar) container.appendChild(pillBar);
-          const headerCards = buildAllTimeHeaderCards(preRows, allTimeCache.rows, preRanks, postRanks, byDate, latestDate);
+          const headerCards = buildAllTimeHeaderCards(preRows, allTimeCache.rows, byDate, latestDate, allTimeInsightBasis);
           if(headerCards) container.appendChild(headerCards);
           container.appendChild(buildAllTimeTable(stats2, totalSessions, series, preRanks, postRanks, latestDate));
         });
