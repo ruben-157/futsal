@@ -2600,19 +2600,11 @@
         const tdP = document.createElement('td'); tdP.textContent = String(r.points);
         const tdA = document.createElement('td');
         const ppmBadge = document.createElement('span');
-        ppmBadge.className = 'badge badge-neutral';
-        ppmBadge.textContent = r.ppm.toFixed(2);
-        if(thresholds){
-          if(r.matches < thresholds.minMatches){
-            ppmBadge.className = 'badge badge-neutral';
-            ppmBadge.title = `Insufficient matches (< ${thresholds.minMatches})`;
-          } else {
-            const smoothed = (r.points + thresholds.alpha * thresholds.mu) / (r.matches + thresholds.alpha);
-            if(smoothed >= thresholds.high){ ppmBadge.className = 'badge badge-good'; ppmBadge.title = `Top band (≥ ${thresholds.high.toFixed(2)})`; }
-            else if(smoothed < thresholds.low){ ppmBadge.className = 'badge badge-low'; ppmBadge.title = `Lower band (< ${thresholds.low.toFixed(2)})`; }
-            else { ppmBadge.className = 'badge badge-avg'; ppmBadge.title = `Middle band (${thresholds.low.toFixed(2)}–${thresholds.high.toFixed(2)})`; }
-          }
-        }
+        const ppm = r.ppm;
+        ppmBadge.textContent = ppm.toFixed(2);
+        if(ppm > 6){ ppmBadge.className = 'badge badge-good'; ppmBadge.title = 'Good: > 6 pts/match'; }
+        else if(ppm >= 4){ ppmBadge.className = 'badge badge-avg'; ppmBadge.title = 'Average: 4–6 pts/match'; }
+        else { ppmBadge.className = 'badge badge-low'; ppmBadge.title = 'Low: < 4 pts/match'; }
         tdA.appendChild(ppmBadge);
         tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
       });
