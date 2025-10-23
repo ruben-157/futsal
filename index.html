@@ -203,6 +203,16 @@
       #leaderboardSection td:nth-child(5),
       #leaderboardSection td:nth-child(6){ text-align:right }
 
+      /* All-Time: fixed layout, numeric columns right-aligned */
+      #allTimeSection table{ table-layout:fixed }
+      #allTimeSection th:nth-child(1){ width:50% }
+      #allTimeSection th:nth-child(2),
+      #allTimeSection th:nth-child(3),
+      #allTimeSection th:nth-child(4){ width:100px; text-align:right }
+      #allTimeSection td:nth-child(2),
+      #allTimeSection td:nth-child(3),
+      #allTimeSection td:nth-child(4){ text-align:right }
+
       /* Modals: wider and two-column fields */
       .modal{ width:min(92vw, 640px) }
       .modal .modal-fields{ grid-template-columns:1fr 1fr }
@@ -305,6 +315,7 @@
     <button id="tabTeams" class="tab" role="tab" aria-selected="false" aria-controls="teamsSection" disabled>Teams</button>
     <button id="tabMatches" class="tab" role="tab" aria-selected="false" aria-controls="matchesSection">Matches</button>
     <button id="tabLeaderboard" class="tab" role="tab" aria-selected="false" aria-controls="leaderboardSection">Leaderboard</button>
+    <button id="tabAllTime" class="tab" role="tab" aria-selected="false" aria-controls="allTimeSection">All-Time</button>
   </nav>
   <main>
     <section id="playersSection" class="picker" role="tabpanel" aria-labelledby="tabPlayers">
@@ -347,6 +358,18 @@
 
     <section id="leaderboardSection" role="tabpanel" aria-labelledby="tabLeaderboard" hidden>
       <!-- Leaderboard content rendered by JS -->
+    </section>
+
+    <!-- All-Time Leaderboard -->
+    <section id="allTimeSection" role="tabpanel" aria-labelledby="tabAllTime" hidden>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 8px 0">
+        <h2 style="margin:0; font-size:14px; color:var(--muted); text-transform:uppercase">All-Time Leaderboard</h2>
+        <div style="display:flex; gap:8px; align-items:center">
+          <span id="allTimeUpdated" class="notice" aria-live="polite"></span>
+          <button id="btnAllTimeRefresh" class="btn" type="button">Refresh</button>
+        </div>
+      </div>
+      <div id="allTimeContent" aria-live="polite"></div>
     </section>
 
     
@@ -2326,12 +2349,14 @@
       teams: document.getElementById('tabTeams'),
       matches: document.getElementById('tabMatches'),
       leaderboard: document.getElementById('tabLeaderboard'),
+      alltime: document.getElementById('tabAllTime'),
     };
     const panels = {
       players: document.getElementById('playersSection'),
       teams: document.getElementById('teamsSection'),
       matches: document.getElementById('matchesSection'),
       leaderboard: document.getElementById('leaderboardSection'),
+      alltime: document.getElementById('allTimeSection'),
     };
     let currentTab = 'players';
     function switchTab(which){
@@ -2348,6 +2373,8 @@
       }
       if(which === 'players'){
         renderRoster(); // ensure lock state reflected immediately
+      } else if(which === 'alltime'){
+        renderAllTime();
       }
     }
     function updateTabsUI(){
@@ -2361,6 +2388,111 @@
     tabs.teams.addEventListener('click', ()=> switchTab('teams'));
     tabs.matches.addEventListener('click', ()=> switchTab('matches'));
     tabs.leaderboard.addEventListener('click', ()=> switchTab('leaderboard'));
+    tabs.alltime.addEventListener('click', ()=> switchTab('alltime'));
+
+    // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
+    let allTimeCache = { rows: null, ts: 0 };
+    async function renderAllTime(force=false){
+      const wrap = document.getElementById('allTimeContent');
+      const updated = document.getElementById('allTimeUpdated');
+      if(!wrap) return;
+      updated.textContent = '';
+      wrap.innerHTML = '';
+      const loading = document.createElement('div');
+      loading.className = 'notice';
+      loading.textContent = 'Loading all-time stats…';
+      wrap.appendChild(loading);
+
+      try{
+        const data = await loadAllTimeCSV(force);
+        const stats = aggregateAllTime(data);
+        wrap.innerHTML = '';
+        if(stats.length === 0){
+          const empty = document.createElement('div');
+          empty.className = 'notice';
+          empty.textContent = 'No data found.';
+          wrap.appendChild(empty);
+        }else{
+          wrap.appendChild(buildAllTimeTable(stats));
+        }
+        updated.textContent = `Updated ${new Date().toLocaleString()}`;
+      }catch(err){
+        wrap.innerHTML = '';
+        const msg = document.createElement('div');
+        msg.className = 'notice error';
+        msg.textContent = 'Failed to load all-time data. Ensure the file exists and is accessible.';
+        wrap.appendChild(msg);
+      }
+    }
+
+    async function loadAllTimeCSV(force=false){
+      // Simple cache to avoid re-fetching on tab toggles unless forced
+      if(allTimeCache.rows && !force){ return allTimeCache.rows; }
+      const url = 'ecgfutsal2025-26.txt?ts=' + Date.now();
+      const res = await fetch(url, { cache: 'no-store' });
+      if(!res.ok){ throw new Error('HTTP ' + res.status); }
+      const text = await res.text();
+      const rows = parseCSVSimple(text);
+      allTimeCache.rows = rows; allTimeCache.ts = Date.now();
+      return rows;
+    }
+
+    function parseCSVSimple(text){
+      // Handle BOM and normalize newlines
+      const t = text.replace(/^\uFEFF/, '');
+      const lines = t.split(/\r?\n/).map(l => l.trimEnd());
+      const out = [];
+      for(let i=0;i<lines.length;i++){
+        const line = lines[i];
+        if(!line) continue;
+        if(i===0 && /^date,player,points$/i.test(line.replace(/\s+/g,''))) continue; // skip header
+        const parts = line.split(',');
+        if(parts.length < 3) continue;
+        const date = parts[0].trim();
+        const player = parts[1].trim();
+        const pointsStr = parts.slice(2).join(',').trim(); // tolerate commas in names (unlikely)
+        const points = Number(pointsStr);
+        if(!player) continue;
+        if(!Number.isFinite(points)) continue;
+        out.push({ date, player, points });
+      }
+      return out;
+    }
+
+    function aggregateAllTime(rows){
+      const map = new Map();
+      for(const { player, points } of rows){
+        const cur = map.get(player) || { player, matches:0, points:0 };
+        cur.matches += 1;
+        cur.points += points;
+        map.set(player, cur);
+      }
+      const stats = Array.from(map.values()).map(x => ({ ...x, ppm: x.matches ? x.points / x.matches : 0 }));
+      stats.sort((a,b)=> b.points - a.points || b.ppm - a.ppm || b.matches - a.matches || a.player.localeCompare(b.player));
+      return stats;
+    }
+
+    function buildAllTimeTable(stats){
+      const wrap = document.createElement('div');
+      wrap.style.overflow = 'auto';
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th style="width:50%">Player</th><th>Matches</th><th>Points</th><th>Pts/Match</th></tr>';
+      const tbody = document.createElement('tbody');
+      for(const r of stats){
+        const tr = document.createElement('tr');
+        const tdN = document.createElement('td'); tdN.textContent = r.player;
+        const tdM = document.createElement('td'); tdM.textContent = String(r.matches);
+        const tdP = document.createElement('td'); tdP.textContent = String(r.points);
+        const tdA = document.createElement('td'); tdA.textContent = r.ppm.toFixed(2);
+        tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
+      }
+      table.appendChild(thead); table.appendChild(tbody); wrap.appendChild(table);
+      return wrap;
+    }
+
+    const btnAllTimeRefresh = document.getElementById('btnAllTimeRefresh');
+    if(btnAllTimeRefresh){ btnAllTimeRefresh.addEventListener('click', ()=>{ allTimeCache.rows = null; renderAllTime(true); }); }
 
     // ----- Init -----
     loadState();
@@ -2369,6 +2501,7 @@
     renderTeams();
     renderSchedule();
     renderLeaderboard();
+    renderAllTime();
     clampPlayLimit();
     updateTabsUI();
     switchTab('players');
