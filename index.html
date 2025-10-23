@@ -2613,6 +2613,75 @@
       return headerBar;
     }
 
+    // ----- Simple Inline Line Chart (for Player Modal) -----
+    function getAllDatesAsc(){
+      const byDate = window.__allTimeByDate || new Map();
+      return Array.from(byDate.keys()).sort();
+    }
+    function getPlayerPointsAcrossDates(player){
+      const byDate = window.__allTimeByDate || new Map();
+      const dates = getAllDatesAsc();
+      const points = dates.map(d => {
+        const arr = byDate.get(d) || [];
+        const hit = arr.find(e => e.player === player);
+        return hit ? (Number(hit.points) || 0) : 0;
+      });
+      return { dates, points };
+    }
+    function buildLineChart(points, opts){
+      const width = (opts && opts.width) || 360;
+      const height = (opts && opts.height) || 120;
+      const pad = (opts && opts.pad) || 10;
+      const stroke = (opts && opts.stroke) || 'var(--accent)';
+      const strokeWidth = (opts && opts.strokeWidth) || 2;
+      const dot = (opts && opts.dotRadius) || 2;
+      const n = Array.isArray(points) ? points.length : 0;
+      if(!n){ return null; }
+      const maxVal = Math.max(0, ...points);
+      const minVal = 0; // baseline at 0
+      const innerW = Math.max(1, width - 2*pad);
+      const innerH = Math.max(1, height - 2*pad);
+      const dx = n > 1 ? (innerW / (n-1)) : 0;
+      const range = Math.max(1e-6, maxVal - minVal);
+      function xAt(i){ return pad + i*dx; }
+      function yAt(v){ return height - pad - ((v - minVal) / range) * innerH; }
+      let d = '';
+      for(let i=0;i<n;i++){
+        const x = xAt(i); const y = yAt(points[i]);
+        d += (i===0 ? 'M' : 'L') + x + ' ' + y + ' ';
+      }
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', String(height));
+      svg.setAttribute('role','img');
+      svg.setAttribute('aria-label','Points by session');
+      // baseline
+      const base = document.createElementNS('http://www.w3.org/2000/svg','line');
+      base.setAttribute('x1', String(pad)); base.setAttribute('x2', String(width - pad));
+      base.setAttribute('y1', String(yAt(0))); base.setAttribute('y2', String(yAt(0)));
+      base.setAttribute('stroke', 'var(--border)'); base.setAttribute('stroke-width', '1');
+      svg.appendChild(base);
+      // path
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d.trim());
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', stroke);
+      path.setAttribute('stroke-width', String(strokeWidth));
+      path.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(path);
+      // dots
+      for(let i=0;i<n;i++){
+        const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        c.setAttribute('cx', String(xAt(i))); c.setAttribute('cy', String(yAt(points[i])));
+        c.setAttribute('r', String(dot));
+        c.setAttribute('fill', stroke);
+        c.setAttribute('opacity', '0.9');
+        svg.appendChild(c);
+      }
+      return svg;
+    }
+
     // Build header stat cards for All-Time page
     function buildAllTimeHeaderCards(preRows, rows, byDate, latestDate, basis){
       if(!rows || !rows.length) return null;
@@ -2900,6 +2969,17 @@
       const body = document.getElementById('playerModalBody');
       title.textContent = player;
       body.innerHTML = '';
+
+      // Chart: points across all sessions (zeros when absent)
+      try{
+        const seriesAll = getPlayerPointsAcrossDates(player);
+        if(seriesAll && seriesAll.points && seriesAll.points.length){
+          const chartWrap = document.createElement('div');
+          chartWrap.style.marginBottom = '8px';
+          const svg = buildLineChart(seriesAll.points, { width: 360, height: 120, pad: 10, stroke: 'var(--accent)', strokeWidth: 2, dotRadius: 2 });
+          if(svg){ chartWrap.appendChild(svg); body.appendChild(chartWrap); }
+        }
+      }catch(_){ /* best-effort chart */ }
 
       const rows = (window.__allTimeRows || []).filter(r => r.player === player);
       // Quick stats
