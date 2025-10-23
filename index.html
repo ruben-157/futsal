@@ -2630,7 +2630,7 @@
         const pill = document.createElement('span');
         pill.className = 'mini-pill';
         pill.title = 'Latest session date';
-        pill.textContent = formatDateLong(latestDate);
+        pill.textContent = 'Synced with latest match: ' + formatDateLong(latestDate);
         headerBar.appendChild(pill);
         wrap.appendChild(headerBar);
       }
