@@ -342,6 +342,7 @@
     <h1>FTG X9000</h1>
     <div style="display:flex; gap:8px; align-items:center">
       <button class="btn danger" id="btnReset" aria-label="Reset all match data">Reset</button>
+      <button class="btn" id="btnAllTimeHeader" type="button" aria-label="Open All-Time leaderboard">All-Time</button>
       <button class="btn" id="btnAllTimeRefreshHeader" type="button" hidden>Refresh</button>
     </div>
   </header>
@@ -349,8 +350,7 @@
     <button id="tabPlayers" class="tab active" role="tab" aria-selected="true" aria-controls="playersSection">Players</button>
     <button id="tabTeams" class="tab" role="tab" aria-selected="false" aria-controls="teamsSection" disabled>Teams</button>
     <button id="tabMatches" class="tab" role="tab" aria-selected="false" aria-controls="matchesSection">Matches</button>
-    <button id="tabLeaderboard" class="tab" role="tab" aria-selected="false" aria-controls="leaderboardSection">Board</button>
-    <button id="tabAllTime" class="tab" role="tab" aria-selected="false" aria-controls="allTimeSection">All-Time</button>
+    <button id="tabLeaderboard" class="tab" role="tab" aria-selected="false" aria-controls="leaderboardSection">Leaderboard</button>
   </nav>
   <main>
     <section id="playersSection" class="picker" role="tabpanel" aria-labelledby="tabPlayers">
@@ -394,7 +394,7 @@
     </section>
 
     <!-- All-Time Leaderboard -->
-    <section id="allTimeSection" role="tabpanel" aria-labelledby="tabAllTime" hidden>
+    <section id="allTimeSection" role="tabpanel" aria-labelledby="btnAllTimeHeader" hidden>
       <div id="allTimeContent" aria-live="polite"></div>
     </section>
 
@@ -2376,7 +2376,6 @@
       teams: document.getElementById('tabTeams'),
       matches: document.getElementById('tabMatches'),
       leaderboard: document.getElementById('tabLeaderboard'),
-      alltime: document.getElementById('tabAllTime'),
     };
     const panels = {
       players: document.getElementById('playersSection'),
@@ -2418,7 +2417,8 @@
     tabs.teams.addEventListener('click', ()=> switchTab('teams'));
     tabs.matches.addEventListener('click', ()=> switchTab('matches'));
     tabs.leaderboard.addEventListener('click', ()=> switchTab('leaderboard'));
-    tabs.alltime.addEventListener('click', ()=> switchTab('alltime'));
+    const btnAllTimeHeader = document.getElementById('btnAllTimeHeader');
+    if(btnAllTimeHeader){ btnAllTimeHeader.addEventListener('click', ()=> switchTab('alltime')); }
 
     // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
     let allTimeCache = { rows: null, ts: 0 };
