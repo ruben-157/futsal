@@ -2630,21 +2630,27 @@
     }
     function buildLineChart(points, opts){
       const width = (opts && opts.width) || 360;
-      const height = (opts && opts.height) || 120;
-      const pad = (opts && opts.pad) || 10;
+      const height = (opts && opts.height) || 140;
+      const padTop = 8;
+      const padRight = 10;
+      const padBottom = 22; // room for x labels
+      const padLeft = 34;   // room for y labels
       const stroke = (opts && opts.stroke) || 'var(--accent)';
       const strokeWidth = (opts && opts.strokeWidth) || 2;
       const dot = (opts && opts.dotRadius) || 2;
+      const labels = (opts && opts.labels) || null; // optional x labels (dates)
       const n = Array.isArray(points) ? points.length : 0;
       if(!n){ return null; }
       const maxVal = Math.max(0, ...points);
       const minVal = 0; // baseline at 0
-      const innerW = Math.max(1, width - 2*pad);
-      const innerH = Math.max(1, height - 2*pad);
+      const innerW = Math.max(1, width - padLeft - padRight);
+      const innerH = Math.max(1, height - padTop - padBottom);
       const dx = n > 1 ? (innerW / (n-1)) : 0;
       const range = Math.max(1e-6, maxVal - minVal);
-      function xAt(i){ return pad + i*dx; }
-      function yAt(v){ return height - pad - ((v - minVal) / range) * innerH; }
+      function xAt(i){ return padLeft + i*dx; }
+      function yAt(v){ return padTop + (1 - (v - minVal) / range) * innerH; }
+
+      // Build path
       let d = '';
       for(let i=0;i<n;i++){
         const x = xAt(i); const y = yAt(points[i]);
@@ -2656,13 +2662,90 @@
       svg.setAttribute('height', String(height));
       svg.setAttribute('role','img');
       svg.setAttribute('aria-label','Points by session');
-      // baseline
-      const base = document.createElementNS('http://www.w3.org/2000/svg','line');
-      base.setAttribute('x1', String(pad)); base.setAttribute('x2', String(width - pad));
-      base.setAttribute('y1', String(yAt(0))); base.setAttribute('y2', String(yAt(0)));
-      base.setAttribute('stroke', 'var(--border)'); base.setAttribute('stroke-width', '1');
-      svg.appendChild(base);
-      // path
+
+      // Y-axis and grid ticks
+      function computeYTicks(maxV){
+        if(maxV <= 0) return [0, 1];
+        let step = 1;
+        if(maxV > 10) step = 5; else if(maxV > 4) step = 2; else step = 1;
+        const out = [];
+        for(let v=0; v<=maxV; v+=step){ out.push(v); }
+        if(out[out.length-1] !== maxV) out.push(maxV);
+        return out;
+      }
+      const yTicks = computeYTicks(maxVal);
+      // y-axis line
+      const yAxis = document.createElementNS('http://www.w3.org/2000/svg','line');
+      yAxis.setAttribute('x1', String(padLeft)); yAxis.setAttribute('x2', String(padLeft));
+      yAxis.setAttribute('y1', String(padTop)); yAxis.setAttribute('y2', String(padTop + innerH));
+      yAxis.setAttribute('stroke', 'var(--border)'); yAxis.setAttribute('stroke-width', '1');
+      svg.appendChild(yAxis);
+      // grid + labels
+      yTicks.forEach(v => {
+        const y = yAt(v);
+        const grid = document.createElementNS('http://www.w3.org/2000/svg','line');
+        grid.setAttribute('x1', String(padLeft)); grid.setAttribute('x2', String(padLeft + innerW));
+        grid.setAttribute('y1', String(y)); grid.setAttribute('y2', String(y));
+        grid.setAttribute('stroke', 'var(--border)'); grid.setAttribute('stroke-width', '1'); grid.setAttribute('opacity', '0.7');
+        svg.appendChild(grid);
+        const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+        txt.setAttribute('x', String(padLeft - 6));
+        txt.setAttribute('y', String(y + 3));
+        txt.setAttribute('text-anchor', 'end');
+        txt.setAttribute('font-size', '10');
+        txt.setAttribute('fill', 'var(--muted)');
+        txt.textContent = String(v);
+        svg.appendChild(txt);
+      });
+
+      // X-axis baseline
+      const baseY = yAt(0);
+      const xAxis = document.createElementNS('http://www.w3.org/2000/svg','line');
+      xAxis.setAttribute('x1', String(padLeft)); xAxis.setAttribute('x2', String(padLeft + innerW));
+      xAxis.setAttribute('y1', String(baseY)); xAxis.setAttribute('y2', String(baseY));
+      xAxis.setAttribute('stroke', 'var(--border)'); xAxis.setAttribute('stroke-width', '1');
+      svg.appendChild(xAxis);
+
+      // X ticks and labels (sparse)
+      if(n >= 1){
+        const maxTicks = Math.min(6, n);
+        const step = Math.max(1, Math.ceil((n-1) / (maxTicks-1)));
+        for(let i=0;i<n;i+=step){
+          const x = xAt(i);
+          const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
+          tick.setAttribute('x1', String(x)); tick.setAttribute('x2', String(x));
+          tick.setAttribute('y1', String(baseY)); tick.setAttribute('y2', String(baseY + 4));
+          tick.setAttribute('stroke', 'var(--border)'); tick.setAttribute('stroke-width', '1');
+          svg.appendChild(tick);
+          const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+          label.setAttribute('x', String(x));
+          label.setAttribute('y', String(baseY + 14));
+          label.setAttribute('text-anchor', 'middle');
+          label.setAttribute('font-size', '10');
+          label.setAttribute('fill', 'var(--muted)');
+          let text = String(i+1);
+          if(labels && labels[i]){
+            text = formatDateShort ? formatDateShort(labels[i]) : labels[i];
+          }
+          label.textContent = text;
+          svg.appendChild(label);
+        }
+        // Ensure last label shows
+        if((n-1) % step !== 0){
+          const i = n-1; const x = xAt(i);
+          const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+          label.setAttribute('x', String(x));
+          label.setAttribute('y', String(baseY + 14));
+          label.setAttribute('text-anchor', 'end');
+          label.setAttribute('font-size', '10');
+          label.setAttribute('fill', 'var(--muted)');
+          const text = labels && labels[i] ? (formatDateShort ? formatDateShort(labels[i]) : labels[i]) : String(i+1);
+          label.textContent = text;
+          svg.appendChild(label);
+        }
+      }
+
+      // Line path
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       path.setAttribute('d', d.trim());
       path.setAttribute('fill', 'none');
@@ -2670,7 +2753,8 @@
       path.setAttribute('stroke-width', String(strokeWidth));
       path.setAttribute('vector-effect', 'non-scaling-stroke');
       svg.appendChild(path);
-      // dots
+
+      // Dots
       for(let i=0;i<n;i++){
         const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
         c.setAttribute('cx', String(xAt(i))); c.setAttribute('cy', String(yAt(points[i])));
@@ -2816,6 +2900,16 @@
       const mi = Math.max(1, Math.min(12, parseInt(m,10))) - 1;
       const di = parseInt(d,10);
       return `${isNaN(di)?d:di} ${months[mi] || m} ${y}`;
+    }
+    function formatDateShort(iso){
+      if(!iso || typeof iso !== 'string') return iso || '';
+      const parts = iso.split('-');
+      if(parts.length !== 3) return iso;
+      const [y, m, d] = parts;
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const mi = Math.max(1, Math.min(12, parseInt(m,10))) - 1;
+      const di = parseInt(d,10);
+      return `${isNaN(di)?d:di} ${months[mi] || m}`;
     }
 
     function avgLastN(arr, n){
@@ -2976,7 +3070,7 @@
         if(seriesAll && seriesAll.points && seriesAll.points.length){
           const chartWrap = document.createElement('div');
           chartWrap.style.marginBottom = '8px';
-          const svg = buildLineChart(seriesAll.points, { width: 360, height: 120, pad: 10, stroke: 'var(--accent)', strokeWidth: 2, dotRadius: 2 });
+          const svg = buildLineChart(seriesAll.points, { width: 360, height: 140, stroke: 'var(--accent)', strokeWidth: 2, dotRadius: 2, labels: seriesAll.dates });
           if(svg){ chartWrap.appendChild(svg); body.appendChild(chartWrap); }
         }
       }catch(_){ /* best-effort chart */ }
