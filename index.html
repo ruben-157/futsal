@@ -116,10 +116,9 @@
     #allTimeSection .stat-cards{ display:grid; grid-template-columns:1fr; gap:8px; margin:8px 0 }
     @media(min-width: 700px){ #allTimeSection .stat-cards{ grid-template-columns:repeat(2,minmax(0,1fr)) } }
     @media(min-width: 1000px){ #allTimeSection .stat-cards{ grid-template-columns:repeat(4,minmax(0,1fr)) } }
-    .stat-card{ display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--border); background:#fff; border-radius:12px; padding:10px 12px; cursor:pointer; user-select:none; box-shadow: 0 1px 1px rgba(0,0,0,.04) }
+    .stat-card{ display:flex; align-items:center; justify-content:flex-start; gap:10px; border:1px solid var(--border); background:#fff; border-radius:12px; padding:10px 12px; cursor:pointer; user-select:none; box-shadow: 0 1px 1px rgba(0,0,0,.04) }
     .stat-card:hover{ border-color:#d1d5db }
     .stat-card:focus-visible{ outline:2px solid var(--focus); outline-offset:2px }
-    .stat-emoji{ font-size:20px; line-height:1 }
     .stat-meta{ display:flex; flex-direction:column; min-width:0 }
     .stat-title{ font-size:12px; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); font-weight:800 }
     .stat-value{ font-weight:800; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
@@ -2602,18 +2601,17 @@
       const cards = document.createElement('div');
       cards.className = 'stat-cards';
 
-      function makeCard(emoji, title, main, sub, onClick){
+      function makeCard(title, main, sub, onClick){
         const card = document.createElement('div');
         card.className = 'stat-card';
         card.setAttribute('role', 'button');
         card.tabIndex = 0;
-        const em = document.createElement('div'); em.className = 'stat-emoji'; em.textContent = emoji;
         const meta = document.createElement('div'); meta.className = 'stat-meta';
         const t = document.createElement('div'); t.className = 'stat-title'; t.textContent = title;
         const v = document.createElement('div'); v.className = 'stat-value'; v.textContent = main || '—';
         const s = document.createElement('div'); s.className = 'stat-sub'; s.textContent = sub || '';
         meta.appendChild(t); meta.appendChild(v); meta.appendChild(s);
-        card.appendChild(em); card.appendChild(meta);
+        card.appendChild(meta);
         if(typeof onClick === 'function'){
           card.addEventListener('click', onClick);
           card.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); onClick(); } });
@@ -2676,30 +2674,38 @@
       }
 
       // Build cards
-      const climberCard = makeCard('🚀', 'Highest Climber',
-        up ? `${up.player} +${up.move}` : '—',
-        up ? `${up.preRank+1} → ${up.postRank+1}` : 'No change',
-        up ? (()=> openPlayerModal(up.player)) : null);
+      if(up){
+        const climberCard = makeCard('Highest Climber',
+          `${up.player} +${up.move}`,
+          `${up.preRank+1} → ${up.postRank+1}`,
+          ()=> openPlayerModal(up.player));
+        cards.appendChild(climberCard);
+      }
+      if(down){
+        const declinerCard = makeCard('Highest Decline',
+          `${down.player} ${down.move}`,
+          `${down.preRank+1} → ${down.postRank+1}`,
+          ()=> openPlayerModal(down.player));
+        cards.appendChild(declinerCard);
+      }
 
-      const declinerCard = makeCard('📉', 'Highest Decline',
-        down ? `${down.player} ${down.move}` : '—',
-        down ? `${down.preRank+1} → ${down.postRank+1}` : 'No change',
-        down ? (()=> openPlayerModal(down.player)) : null);
+      // Build PPM cards only when delta candidates exist; avoid confusing "No eligible" text
+      if(upPPM){
+        const incCard = makeCard('PPM Increase',
+          `${upPPM.player} +${upPPM.delta.toFixed(2)}`,
+          `${(upPPM.prePPM ?? 0).toFixed(2)} → ${(upPPM.postPPM ?? 0).toFixed(2)}`,
+          ()=> openPlayerModal(upPPM.player));
+        cards.appendChild(incCard);
+      }
+      if(downPPM){
+        const decCard = makeCard('PPM Decrease',
+          `${downPPM.player} ${downPPM.delta.toFixed(2)}`,
+          `${(downPPM.prePPM ?? 0).toFixed(2)} → ${(downPPM.postPPM ?? 0).toFixed(2)}`,
+          ()=> openPlayerModal(downPPM.player));
+        cards.appendChild(decCard);
+      }
 
-      const incCard = makeCard('🔺', 'PPM Increase',
-        upPPM ? `${upPPM.player} +${upPPM.delta.toFixed(2)}` : '—',
-        upPPM ? `${upPPM.prePPM?.toFixed(2) ?? '0.00'} → ${upPPM.postPPM?.toFixed(2) ?? '0.00'}` : 'No eligible players',
-        upPPM ? (()=> openPlayerModal(upPPM.player)) : null);
-
-      const decCard = makeCard('🔻', 'PPM Decrease',
-        downPPM ? `${downPPM.player} ${downPPM.delta.toFixed(2)}` : '—',
-        downPPM ? `${downPPM.prePPM?.toFixed(2) ?? '0.00'} → ${downPPM.postPPM?.toFixed(2) ?? '0.00'}` : 'No eligible players',
-        downPPM ? (()=> openPlayerModal(downPPM.player)) : null);
-
-      cards.appendChild(climberCard);
-      cards.appendChild(declinerCard);
-      cards.appendChild(incCard);
-      cards.appendChild(decCard);
+      // If fewer than 4 cards (e.g., early season), still return container; grid will compress.
       return cards;
     }
 
