@@ -2596,8 +2596,10 @@
     // Build header stat cards for All-Time page
     function buildAllTimeHeaderCards(preRows, rows, preRanks, postRanks, byDate, latestDate){
       if(!rows || !rows.length) return null;
-      const preAgg = aggregateAllTime(preRows || []);
-      const postAgg = aggregateAllTime(rows);
+      const preAggArr = aggregateAllTime(preRows || []);
+      const postAggArr = aggregateAllTime(rows);
+      const preAgg = new Map(preAggArr.map(x => [x.player, x]));
+      const postAgg = new Map(postAggArr.map(x => [x.player, x]));
       const cards = document.createElement('div');
       cards.className = 'stat-cards';
 
@@ -2645,8 +2647,8 @@
       function ppmDeltaCandidates(minPre){
         const arr = [];
         playedLatest.forEach(p => {
-          const pre = preAgg[p];
-          const post = postAgg[p];
+          const pre = preAgg.get(p);
+          const post = postAgg.get(p);
           if(!post) return;
           const preM = pre ? pre.matches : 0;
           const prePPM = pre ? pre.ppm : 0;
