@@ -123,6 +123,10 @@
     .badge-avg{ background: #facc15; color: #111827 }
     .badge-low{ background: var(--danger); color: #fff }
     .badge-neutral{ background: #e5e7eb; color: var(--muted); border: 1px solid var(--border) }
+    /* Podium row tints */
+    .row-gold{ background: #FEF9C3 }
+    .row-silver{ background: #F3F4F6 }
+    .row-bronze{ background: #FDE68A }
     /* Teams: vertically center cells */
     #teamsSection table th,
     #teamsSection table td{ vertical-align: middle }
@@ -2419,8 +2423,8 @@
           wrap.appendChild(empty);
         }else{
           const totalSessions = countUniqueSessions(data);
-          const thresholds = computeAllTimeThresholds(stats, totalSessions, ALLTIME_ALPHA);
-          wrap.appendChild(buildAllTimeTable(stats, totalSessions, thresholds));
+          const series = buildAllTimeSeries(data);
+          wrap.appendChild(buildAllTimeTable(stats, totalSessions, series));
         }
         updated.textContent = `Updated ${new Date().toLocaleString()}`;
       }catch(err){
@@ -2528,6 +2532,35 @@
       return dates.size;
     }
 
+    function buildAllTimeSeries(rows){
+      // Returns Map<Player, number[]> sorted by date ascending
+      const byPlayer = new Map();
+      const byDate = new Map();
+      for(const r of rows){
+        if(!r || !r.player || !r.date || !Number.isFinite(r.points)) continue;
+        if(!byDate.has(r.date)) byDate.set(r.date, []);
+        byDate.get(r.date).push({ player: r.player, points: r.points });
+      }
+      const dates = Array.from(byDate.keys()).sort();
+      for(const d of dates){
+        const entries = byDate.get(d) || [];
+        for(const e of entries){
+          const arr = byPlayer.get(e.player) || [];
+          arr.push(e.points);
+          byPlayer.set(e.player, arr);
+        }
+      }
+      return byPlayer;
+    }
+
+    function avgLastN(arr, n){
+      if(!arr || arr.length === 0) return 0;
+      const start = Math.max(0, arr.length - n);
+      let sum = 0; let cnt = 0;
+      for(let i=start;i<arr.length;i++){ sum += arr[i]; cnt++; }
+      return cnt ? (sum/cnt) : 0;
+    }
+
     function sortAllTimeStats(stats){
       const k = allTimeSort.key; const dir = allTimeSort.dir === 'asc' ? 1 : -1;
       stats.sort((a,b)=>{
@@ -2539,7 +2572,7 @@
       });
     }
 
-    function buildAllTimeTable(stats, totalSessions, thresholds){
+    function buildAllTimeTable(stats, totalSessions, series){
       const wrap = document.createElement('div');
       wrap.style.overflow = 'auto';
       const table = document.createElement('table');
@@ -2574,23 +2607,47 @@
           const stats2 = aggregateAllTime(allTimeCache.rows);
           sortAllTimeStats(stats2);
           const totalSessions = countUniqueSessions(allTimeCache.rows);
-          const thresholds = computeAllTimeThresholds(stats2, totalSessions, ALLTIME_ALPHA);
+          const series = buildAllTimeSeries(allTimeCache.rows);
           container.innerHTML = '';
-          container.appendChild(buildAllTimeTable(stats2, totalSessions, thresholds));
+          container.appendChild(buildAllTimeTable(stats2, totalSessions, series));
         });
         trHead.appendChild(th);
       }
       thead.appendChild(trHead);
       const tbody = document.createElement('tbody');
       const podiumActive = (allTimeSort && (allTimeSort.key === 'points' || allTimeSort.key === 'ppm'));
+      const TREND_EPS = 0.5;
       stats.forEach((r, idx)=>{
         const tr = document.createElement('tr');
+        if(podiumActive){
+          if(idx === 0) tr.classList.add('row-gold');
+          else if(idx === 1) tr.classList.add('row-silver');
+          else if(idx === 2) tr.classList.add('row-bronze');
+        }
         const tdPos = document.createElement('td');
         if(podiumActive && idx === 0){ tdPos.textContent = '🥇'; }
         else if(podiumActive && idx === 1){ tdPos.textContent = '🥈'; }
         else if(podiumActive && idx === 2){ tdPos.textContent = '🥉'; }
         else { tdPos.textContent = String(idx + 1); }
-        const tdN = document.createElement('td'); tdN.textContent = r.player;
+        const tdN = document.createElement('td');
+        tdN.textContent = r.player;
+        // Trend arrow next to player name: last 3 vs overall
+        const seriesArr = series ? series.get(r.player) : null;
+        if(seriesArr && seriesArr.length){
+          const last3 = avgLastN(seriesArr, 3);
+          const overall = r.ppm; // points per session
+          const delta = last3 - overall;
+          if(Math.abs(delta) >= TREND_EPS){
+            const arrow = document.createElement('span');
+            arrow.style.marginLeft = '6px';
+            arrow.style.fontWeight = '700';
+            arrow.style.fontSize = '14px';
+            if(delta > 0){ arrow.textContent = ' ▲'; arrow.style.color = 'var(--accent-2)'; }
+            else { arrow.textContent = ' ▼'; arrow.style.color = 'var(--danger)'; }
+            arrow.title = `Recent vs avg: ${last3.toFixed(2)} vs ${overall.toFixed(2)}`;
+            tdN.appendChild(arrow);
+          }
+        }
         const tdM = document.createElement('td');
         if(totalSessions && totalSessions > 0){
           tdM.textContent = `${r.matches}/${totalSessions}`;
