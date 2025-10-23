@@ -326,6 +326,7 @@
     <h1>FTG X9000</h1>
     <div style="display:flex; gap:8px; align-items:center">
       <button class="btn danger" id="btnReset" aria-label="Reset all match data">Reset</button>
+      <button class="btn" id="btnAllTimeRefreshHeader" type="button" hidden>Refresh</button>
     </div>
   </header>
   <nav class="tabs" role="tablist" aria-label="Futsal sections">
@@ -378,11 +379,8 @@
 
     <!-- All-Time Leaderboard -->
     <section id="allTimeSection" role="tabpanel" aria-labelledby="tabAllTime" hidden>
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 8px 0">
-        <div style="display:flex; gap:8px; align-items:center; margin-left:auto">
-          <span id="allTimeUpdated" class="notice" aria-live="polite"></span>
-          <button id="btnAllTimeRefresh" class="btn" type="button">Refresh</button>
-        </div>
+      <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin:0 0 8px 0">
+        <span id="allTimeUpdated" class="notice" aria-live="polite"></span>
       </div>
       <div id="allTimeContent" aria-live="polite"></div>
     </section>
@@ -2379,6 +2377,9 @@
       } else if(which === 'alltime'){
         renderAllTime();
       }
+      // Toggle All-Time refresh button visibility in header
+      const hdrRefresh = document.getElementById('btnAllTimeRefreshHeader');
+      if(hdrRefresh){ hdrRefresh.hidden = (which !== 'alltime'); }
     }
     function updateTabsUI(){
       const hasTeams = state.teams && state.teams.length > 0;
@@ -2661,8 +2662,8 @@
       return wrap;
     }
 
-    const btnAllTimeRefresh = document.getElementById('btnAllTimeRefresh');
-    if(btnAllTimeRefresh){ btnAllTimeRefresh.addEventListener('click', ()=>{ allTimeCache.rows = null; renderAllTime(true); }); }
+    const btnAllTimeRefreshHeader = document.getElementById('btnAllTimeRefreshHeader');
+    if(btnAllTimeRefreshHeader){ btnAllTimeRefreshHeader.addEventListener('click', ()=>{ allTimeCache.rows = null; renderAllTime(true); }); }
 
     // ----- Init -----
     loadState();
