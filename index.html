@@ -120,7 +120,8 @@
     .stat-card:hover{ border-color:#d1d5db }
     .stat-card:focus-visible{ outline:2px solid var(--focus); outline-offset:2px }
     .stat-emoji{ font-size:18px; line-height:1; opacity:.9; filter:grayscale(20%); flex:0 0 auto }
-    @media(max-width: 420px){ #allTimeSection .stat-emoji{ display:none } }
+    /* On small screens, keep emojis but shrink slightly to avoid wrapping */
+    @media(max-width: 420px){ #allTimeSection .stat-emoji{ font-size:14px; opacity:.85 } }
     .stat-meta{ display:flex; flex-direction:column; min-width:0 }
     .stat-title{ font-size:12px; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); font-weight:800 }
     .stat-value{ font-weight:800; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
@@ -2930,7 +2931,7 @@
           upPPM.player,
           { value: upPPM.pct, decimals: 1, suffix: '%' },
           `${(upPPM.prePPM ?? 0).toFixed(2)} → ${(upPPM.postPPM ?? 0).toFixed(2)}`,
-          ()=> openPlayerModal(upPPM.player), '🔺');
+          ()=> openPlayerModal(upPPM.player), '➕');
         cards.appendChild(incCard);
       }
       if(downPPM){
@@ -2938,7 +2939,7 @@
           downPPM.player,
           { value: downPPM.pct, decimals: 1, suffix: '%' },
           `${(downPPM.prePPM ?? 0).toFixed(2)} → ${(downPPM.postPPM ?? 0).toFixed(2)}`,
-          ()=> openPlayerModal(downPPM.player), '🔻');
+          ()=> openPlayerModal(downPPM.player), '➖');
         cards.appendChild(decCard);
       }
 
