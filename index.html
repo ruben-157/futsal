@@ -205,13 +205,15 @@
 
       /* All-Time: fixed layout, numeric columns right-aligned */
       #allTimeSection table{ table-layout:fixed }
-      #allTimeSection th:nth-child(1){ width:50% }
-      #allTimeSection th:nth-child(2),
+      #allTimeSection th:nth-child(1){ width:56px; text-align:right }
+      #allTimeSection th:nth-child(2){ width:50% }
       #allTimeSection th:nth-child(3),
-      #allTimeSection th:nth-child(4){ width:100px; text-align:right }
-      #allTimeSection td:nth-child(2),
+      #allTimeSection th:nth-child(4),
+      #allTimeSection th:nth-child(5){ width:100px; text-align:right }
+      #allTimeSection td:nth-child(1){ text-align:right }
       #allTimeSection td:nth-child(3),
-      #allTimeSection td:nth-child(4){ text-align:right }
+      #allTimeSection td:nth-child(4),
+      #allTimeSection td:nth-child(5){ text-align:right }
 
       /* Modals: wider and two-column fields */
       .modal{ width:min(92vw, 640px) }
@@ -342,8 +344,6 @@
               <th>Team</th>
               <th>Members</th>
               <th>Size</th>
-              <th>Avg Skill</th>
-              <th>Avg Stam</th>
             </tr>
           </thead>
           <tbody id="teamsBody"></tbody>
@@ -909,21 +909,9 @@
         const tdSize = document.createElement('td');
         tdSize.textContent = String(team.members.length);
 
-        // New columns: Avg Skill and Avg Stamina
-        const tdAvgSkill = document.createElement('td');
-        const tdAvgStamina = document.createElement('td');
-        const m = team.members || [];
-        if(m.length > 0){
-          const avgSkill = m.reduce((s,n)=> s + getSkill(n), 0) / m.length;
-          const avgStam = m.reduce((s,n)=> s + getStamina(n), 0) / m.length;
-          tdAvgSkill.textContent = avgSkill.toFixed(1);
-          tdAvgStamina.textContent = avgStam.toFixed(1);
-        } else {
-          tdAvgSkill.textContent = '—';
-          tdAvgStamina.textContent = '—';
-        }
-
-        tr.appendChild(tdTeam); tr.appendChild(tdMembers); tr.appendChild(tdSize); tr.appendChild(tdAvgSkill); tr.appendChild(tdAvgStamina);
+        tr.appendChild(tdTeam);
+        tr.appendChild(tdMembers);
+        tr.appendChild(tdSize);
         tbody.appendChild(tr);
       }
       renderSchedule();
@@ -2488,6 +2476,10 @@
       const table = document.createElement('table');
       const thead = document.createElement('thead');
       const trHead = document.createElement('tr');
+      // Rank column (not sortable)
+      const thRank = document.createElement('th');
+      thRank.textContent = '#';
+      trHead.appendChild(thRank);
       const cols = [
         { key:'player', label:'Player', style:'width:50%' },
         { key:'matches', label:'Total Matches Played' },
@@ -2519,14 +2511,15 @@
       }
       thead.appendChild(trHead);
       const tbody = document.createElement('tbody');
-      for(const r of stats){
+      stats.forEach((r, idx)=>{
         const tr = document.createElement('tr');
+        const tdPos = document.createElement('td'); tdPos.textContent = String(idx + 1);
         const tdN = document.createElement('td'); tdN.textContent = r.player;
         const tdM = document.createElement('td'); tdM.textContent = String(r.matches);
         const tdP = document.createElement('td'); tdP.textContent = String(r.points);
         const tdA = document.createElement('td'); tdA.textContent = r.ppm.toFixed(2);
-        tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
-      }
+        tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
+      });
       table.appendChild(thead); table.appendChild(tbody); wrap.appendChild(table);
       return wrap;
     }
