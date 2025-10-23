@@ -123,10 +123,7 @@
     .badge-avg{ background: #facc15; color: #111827 }
     .badge-low{ background: var(--danger); color: #fff }
     .badge-neutral{ background: #e5e7eb; color: var(--muted); border: 1px solid var(--border) }
-    /* Podium row tints */
-    .row-gold{ background: #FEF9C3 }
-    .row-silver{ background: #F3F4F6 }
-    .row-bronze{ background: #FDE68A }
+    /* Podium row tints removed */
     /* Teams: vertically center cells */
     #teamsSection table th,
     #teamsSection table td{ vertical-align: middle }
@@ -2619,11 +2616,6 @@
       const TREND_EPS = 0.5;
       stats.forEach((r, idx)=>{
         const tr = document.createElement('tr');
-        if(podiumActive){
-          if(idx === 0) tr.classList.add('row-gold');
-          else if(idx === 1) tr.classList.add('row-silver');
-          else if(idx === 2) tr.classList.add('row-bronze');
-        }
         const tdPos = document.createElement('td');
         if(podiumActive && idx === 0){ tdPos.textContent = '🥇'; }
         else if(podiumActive && idx === 1){ tdPos.textContent = '🥈'; }
