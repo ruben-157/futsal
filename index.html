@@ -2605,11 +2605,12 @@
       headerBar.style.justifyContent = 'flex-end';
       headerBar.style.alignItems = 'center';
       headerBar.style.margin = '0 0 6px 0';
-      const pill = document.createElement('span');
-      pill.className = 'mini-pill';
-      pill.title = 'Latest session date';
-      pill.textContent = 'Synced with latest match: ' + formatDateLong(latestDate);
-      headerBar.appendChild(pill);
+      const label = document.createElement('span');
+      label.title = 'Latest session date';
+      label.textContent = 'Synced with latest match: ' + formatDateLong(latestDate);
+      label.style.color = 'var(--muted)';
+      label.style.fontSize = '12px';
+      headerBar.appendChild(label);
       return headerBar;
     }
 
@@ -2658,8 +2659,9 @@
       }
       const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-      svg.setAttribute('width', '100%');
-      svg.setAttribute('height', String(height));
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      svg.style.width = '100%';
+      svg.style.height = 'auto';
       svg.setAttribute('role','img');
       svg.setAttribute('aria-label','Points by session');
 
@@ -3070,6 +3072,7 @@
         if(seriesAll && seriesAll.points && seriesAll.points.length){
           const chartWrap = document.createElement('div');
           chartWrap.style.marginBottom = '8px';
+          chartWrap.style.width = '100%';
           const svg = buildLineChart(seriesAll.points, { width: 360, height: 140, stroke: 'var(--accent)', strokeWidth: 2, dotRadius: 2, labels: seriesAll.dates });
           if(svg){ chartWrap.appendChild(svg); body.appendChild(chartWrap); }
         }
