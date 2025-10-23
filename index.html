@@ -2440,7 +2440,7 @@
           sortAllTimeStats(preStats);
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats);
-          wrap.appendChild(buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks));
+          wrap.appendChild(buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, latestDate));
         }
         // no updated timestamp shown
       }catch(err){
@@ -2617,9 +2617,23 @@
       return map;
     }
 
-    function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks){
+    function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, latestDate){
       const wrap = document.createElement('div');
       wrap.style.overflow = 'auto';
+      // Header row with latest date pill (top-right)
+      if(latestDate){
+        const headerBar = document.createElement('div');
+        headerBar.style.display = 'flex';
+        headerBar.style.justifyContent = 'flex-end';
+        headerBar.style.alignItems = 'center';
+        headerBar.style.margin = '0 0 6px 0';
+        const pill = document.createElement('span');
+        pill.className = 'mini-pill';
+        pill.title = 'Latest session date';
+        pill.textContent = formatDateLong(latestDate);
+        headerBar.appendChild(pill);
+        wrap.appendChild(headerBar);
+      }
       const table = document.createElement('table');
       const thead = document.createElement('thead');
       const trHead = document.createElement('tr');
@@ -2662,7 +2676,7 @@
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats2);
           container.innerHTML = '';
-          container.appendChild(buildAllTimeTable(stats2, totalSessions, series, preRanks, postRanks));
+          container.appendChild(buildAllTimeTable(stats2, totalSessions, series, preRanks, postRanks, latestDate));
         });
         trHead.appendChild(th);
       }
