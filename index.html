@@ -110,6 +110,8 @@
     .team-pill.winner{ color:#fff; }
     .gd-pos{ color: var(--accent-2); }
     .gd-neg{ color: var(--danger); }
+    /* Small badge used in All-Time table */
+    .mini-pill{ display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; font-weight:700; color:var(--muted) }
     /* Teams: vertically center cells */
     #teamsSection table th,
     #teamsSection table td{ vertical-align: middle }
@@ -2528,7 +2530,11 @@
         const tdM = document.createElement('td');
         if(totalSessions && totalSessions > 0){
           const pct = Math.round((r.matches / totalSessions) * 100);
-          tdM.textContent = `${r.matches}/${totalSessions} (${pct}%)`;
+          tdM.textContent = `${r.matches}/${totalSessions} `;
+          const badge = document.createElement('span');
+          badge.className = 'mini-pill';
+          badge.textContent = `${pct}%`;
+          tdM.appendChild(badge);
         } else {
           tdM.textContent = String(r.matches);
         }
