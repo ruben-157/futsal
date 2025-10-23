@@ -2638,7 +2638,7 @@
         });
       }
 
-      // Highest PPM increase/decrease among players who played latest session
+      // Highest PPM increase/decrease among players who played latest session (percentage change)
       const latestEntries = (byDate && latestDate) ? (byDate.get(latestDate) || []) : [];
       const playedLatest = new Set(latestEntries.map(e => e.player));
       const MIN_PRE = 3;
@@ -2651,25 +2651,21 @@
           const preM = pre ? pre.matches : 0;
           const prePPM = pre ? pre.ppm : 0;
           const postPPM = post.ppm;
-          if(preM >= minPre){ arr.push({ player:p, delta: postPPM - prePPM, prePPM, postPPM, preM }); }
+          if(preM >= minPre && prePPM > 0){
+            const delta = postPPM - prePPM;
+            const pct = (delta / prePPM) * 100;
+            arr.push({ player:p, delta, pct, prePPM, postPPM, preM });
+          }
         });
         return arr;
       }
       let deltas = ppmDeltaCandidates(MIN_PRE);
       if(deltas.length === 0){ deltas = ppmDeltaCandidates(1); }
-      if(deltas.length === 0){
-        // fallback: include newcomers (preM=0) using delta = postPPM
-        playedLatest.forEach(p => {
-          const post = postAgg[p]; if(!post) return;
-          const pre = preAgg[p]; const prePPM = pre ? pre.ppm : 0; const preM = pre ? pre.matches : 0;
-          deltas.push({ player:p, delta: post.ppm - prePPM, prePPM, postPPM: post.ppm, preM });
-        });
-      }
       let upPPM = null, downPPM = null;
       if(deltas.length){
         for(const d of deltas){
-          if(upPPM === null || d.delta > upPPM.delta || (d.delta === upPPM.delta && (d.preM > upPPM.preM || (d.preM === upPPM.preM && d.player < upPPM.player)))) upPPM = d;
-          if(downPPM === null || d.delta < downPPM.delta || (d.delta === downPPM.delta && (d.preM < downPPM.preM || (d.preM === downPPM.preM && d.player < downPPM.player)))) downPPM = d;
+          if((d.delta || 0) > 0 && (upPPM === null || d.pct > upPPM.pct || (d.pct === upPPM.pct && (d.preM > upPPM.preM || (d.preM === upPPM.preM && d.player < upPPM.player))))){ upPPM = d; }
+          if((d.delta || 0) < 0 && (downPPM === null || d.pct < downPPM.pct || (d.pct === downPPM.pct && (d.preM < downPPM.preM || (d.preM === downPPM.preM && d.player < downPPM.player))))){ downPPM = d; }
         }
       }
 
@@ -2692,14 +2688,14 @@
       // Build PPM cards only when delta candidates exist; avoid confusing "No eligible" text
       if(upPPM){
         const incCard = makeCard('PPM Increase',
-          `${upPPM.player} +${upPPM.delta.toFixed(2)}`,
+          `${upPPM.player} +${upPPM.pct.toFixed(1)}%`,
           `${(upPPM.prePPM ?? 0).toFixed(2)} → ${(upPPM.postPPM ?? 0).toFixed(2)}`,
           ()=> openPlayerModal(upPPM.player));
         cards.appendChild(incCard);
       }
       if(downPPM){
         const decCard = makeCard('PPM Decrease',
-          `${downPPM.player} ${downPPM.delta.toFixed(2)}`,
+          `${downPPM.player} ${downPPM.pct.toFixed(1)}%`,
           `${(downPPM.prePPM ?? 0).toFixed(2)} → ${(downPPM.postPPM ?? 0).toFixed(2)}`,
           ()=> openPlayerModal(downPPM.player));
         cards.appendChild(decCard);
