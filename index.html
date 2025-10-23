@@ -276,7 +276,7 @@
       display:flex; flex-direction:column; max-height:85vh; overflow:hidden;
     }
     .modal .modal-header{ padding:14px 16px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#fff; z-index:1 }
-    .modal .modal-body{ padding:14px 16px; flex:1 1 auto; overflow:auto; -webkit-overflow-scrolling:touch }
+    .modal .modal-body{ padding:14px 16px; flex:1 1 auto; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain }
     .modal .modal-actions{ display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid var(--border); position:sticky; bottom:0; background:#fff; z-index:1 }
     .modal .modal-fields{ display:grid; grid-template-columns:1fr; gap:12px }
     .modal .modal-fields label{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 6px }
@@ -3172,6 +3172,7 @@
       const body = document.getElementById('playerModalBody');
       title.textContent = player;
       body.innerHTML = '';
+      lockBodyScroll();
 
       // Chart: points across all sessions (zeros when absent)
       try{
@@ -3254,7 +3255,7 @@
       }
 
       const closeBtn = document.getElementById('playerModalClose');
-      const close = ()=>{ overlay.hidden = true; modal.hidden = true; closeBtn.onclick = null; overlay.onclick = null; };
+      const close = ()=>{ overlay.hidden = true; modal.hidden = true; closeBtn.onclick = null; overlay.onclick = null; unlockBodyScroll(); };
       closeBtn.onclick = close;
       overlay.onclick = close;
       document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(); } }, { once:true });
@@ -3278,3 +3279,27 @@
   </script>
 </body>
 </html>
+    // ----- Scroll Lock Helpers for Modals -----
+    let __scrollLockY = 0;
+    function lockBodyScroll(){
+      try{
+        __scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${__scrollLockY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+      }catch(_){}
+    }
+    function unlockBodyScroll(){
+      try{
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, __scrollLockY || 0);
+      }catch(_){}
+    }
