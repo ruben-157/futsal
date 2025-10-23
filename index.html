@@ -2451,7 +2451,9 @@
           sortAllTimeStats(preStats);
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats);
-          // Header stat cards
+          // Latest sync pill (top-right) then header stat cards
+          const pillBar = buildLatestSyncPill(latestDate);
+          if(pillBar) wrap.appendChild(pillBar);
           const headerCards = buildAllTimeHeaderCards(preRows, data, preRanks, postRanks, byDate, latestDate);
           if(headerCards) wrap.appendChild(headerCards);
           wrap.appendChild(buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, latestDate));
@@ -2593,6 +2595,22 @@
       return byDate;
     }
 
+    // Build the top-right latest sync pill bar
+    function buildLatestSyncPill(latestDate){
+      if(!latestDate) return null;
+      const headerBar = document.createElement('div');
+      headerBar.style.display = 'flex';
+      headerBar.style.justifyContent = 'flex-end';
+      headerBar.style.alignItems = 'center';
+      headerBar.style.margin = '0 0 6px 0';
+      const pill = document.createElement('span');
+      pill.className = 'mini-pill';
+      pill.title = 'Latest session date';
+      pill.textContent = 'Synced with latest match: ' + formatDateLong(latestDate);
+      headerBar.appendChild(pill);
+      return headerBar;
+    }
+
     // Build header stat cards for All-Time page
     function buildAllTimeHeaderCards(preRows, rows, preRanks, postRanks, byDate, latestDate){
       if(!rows || !rows.length) return null;
@@ -2673,14 +2691,14 @@
 
       // Build cards
       if(up){
-        const climberCard = makeCard('Highest Climber',
+        const climberCard = makeCard('Largest Rank Gain',
           `${up.player} +${up.move}`,
           `${up.preRank+1} → ${up.postRank+1}`,
           ()=> openPlayerModal(up.player));
         cards.appendChild(climberCard);
       }
       if(down){
-        const declinerCard = makeCard('Highest Decline',
+        const declinerCard = makeCard('Largest Rank Loss',
           `${down.player} ${down.move}`,
           `${down.preRank+1} → ${down.postRank+1}`,
           ()=> openPlayerModal(down.player));
@@ -2689,14 +2707,14 @@
 
       // Build PPM cards only when delta candidates exist; avoid confusing "No eligible" text
       if(upPPM){
-        const incCard = makeCard('PPM Increase',
+        const incCard = makeCard('Largest Pts/Match Increase',
           `${upPPM.player} +${upPPM.pct.toFixed(1)}%`,
           `${(upPPM.prePPM ?? 0).toFixed(2)} → ${(upPPM.postPPM ?? 0).toFixed(2)}`,
           ()=> openPlayerModal(upPPM.player));
         cards.appendChild(incCard);
       }
       if(downPPM){
-        const decCard = makeCard('PPM Decrease',
+        const decCard = makeCard('Largest Pts/Match Decrease',
           `${downPPM.player} ${downPPM.pct.toFixed(1)}%`,
           `${(downPPM.prePPM ?? 0).toFixed(2)} → ${(downPPM.postPPM ?? 0).toFixed(2)}`,
           ()=> openPlayerModal(downPPM.player));
@@ -2748,20 +2766,6 @@
     function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, latestDate){
       const wrap = document.createElement('div');
       wrap.style.overflow = 'auto';
-      // Header row with latest date pill (top-right)
-      if(latestDate){
-        const headerBar = document.createElement('div');
-        headerBar.style.display = 'flex';
-        headerBar.style.justifyContent = 'flex-end';
-        headerBar.style.alignItems = 'center';
-        headerBar.style.margin = '0 0 6px 0';
-        const pill = document.createElement('span');
-        pill.className = 'mini-pill';
-        pill.title = 'Latest session date';
-        pill.textContent = 'Synced with latest match: ' + formatDateLong(latestDate);
-        headerBar.appendChild(pill);
-        wrap.appendChild(headerBar);
-      }
       const table = document.createElement('table');
       const thead = document.createElement('thead');
       const trHead = document.createElement('tr');
@@ -2804,6 +2808,8 @@
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats2);
           container.innerHTML = '';
+          const pillBar = buildLatestSyncPill(latestDate);
+          if(pillBar) container.appendChild(pillBar);
           const headerCards = buildAllTimeHeaderCards(preRows, allTimeCache.rows, preRanks, postRanks, byDate, latestDate);
           if(headerCards) container.appendChild(headerCards);
           container.appendChild(buildAllTimeTable(stats2, totalSessions, series, preRanks, postRanks, latestDate));
