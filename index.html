@@ -341,8 +341,7 @@
   <header>
     <h1>FTG X9000</h1>
     <div style="display:flex; gap:8px; align-items:center">
-      <button class="btn danger" id="btnReset" aria-label="Reset all match data">Reset</button>
-      <button class="btn" id="btnAllTimeHeader" type="button" aria-label="Open All-Time leaderboard">All-Time</button>
+      <button class="btn" id="btnAllTimeHeader" type="button" aria-label="Open All-Time leaderboard">All-Time Leaderboard</button>
       <button class="btn" id="btnAllTimeRefreshHeader" type="button" hidden>Refresh</button>
     </div>
   </header>
@@ -354,6 +353,9 @@
   </nav>
   <main>
     <section id="playersSection" class="picker" role="tabpanel" aria-labelledby="tabPlayers">
+      <div id="playersTopBar" style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:8px">
+        <button class="btn danger" id="btnResetPlayersTop" type="button" aria-label="Reset all match data" hidden>Reset</button>
+      </div>
       <div class="panel" aria-labelledby="available-title">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
           <h2 id="available-title">Available Players</h2>
@@ -2363,8 +2365,8 @@
 
     // ----- Wire up -----
     document.getElementById('btnGenerateBottom').addEventListener('click', generateTeams);
-    document.getElementById('btnReset').addEventListener('click', openResetModal);
-    // Copy button removed from UI
+    const btnResetPlayersTop = document.getElementById('btnResetPlayersTop');
+    if(btnResetPlayersTop){ btnResetPlayersTop.addEventListener('click', openResetModal); }
     document.getElementById('btnAddPlayer').addEventListener('click', openAddPlayerModal);
 
     // Drop zones setup runs once; items are re-rendered each time
@@ -2411,6 +2413,8 @@
       tabs.teams.disabled = !hasTeams;
       tabs.matches.disabled = !hasTeams;
       tabs.leaderboard.disabled = !hasTeams;
+      const btnResetTop = document.getElementById('btnResetPlayersTop');
+      if(btnResetTop){ btnResetTop.hidden = !hasTeams; }
       if(!hasTeams && (currentTab === 'teams' || currentTab === 'matches' || currentTab === 'leaderboard')) switchTab('players');
     }
     tabs.players.addEventListener('click', ()=> switchTab('players'));
