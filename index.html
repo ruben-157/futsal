@@ -2434,7 +2434,13 @@
           window.__allTimeSeries = series; // cache for modal
           window.__allTimeByDate = byDate;
           window.__allTimeRows = data;
-          wrap.appendChild(buildAllTimeTable(stats, totalSessions, series));
+          const latestDate = data.map(r=>r.date).sort().slice(-1)[0];
+          const preRows = data.filter(r => r.date !== latestDate);
+          const preStats = aggregateAllTime(preRows);
+          sortAllTimeStats(preStats);
+          const preRanks = makeRankMap(preStats);
+          const postRanks = makeRankMap(stats);
+          wrap.appendChild(buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks));
         }
         // no updated timestamp shown
       }catch(err){
@@ -2603,7 +2609,15 @@
       });
     }
 
-    function buildAllTimeTable(stats, totalSessions, series){
+    function makeRankMap(sortedStats){
+      const map = new Map();
+      for(let i=0;i<sortedStats.length;i++){
+        map.set(sortedStats[i].player, i);
+      }
+      return map;
+    }
+
+    function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks){
       const wrap = document.createElement('div');
       wrap.style.overflow = 'auto';
       const table = document.createElement('table');
@@ -2641,15 +2655,20 @@
           const series = buildAllTimeSeries(allTimeCache.rows);
           const byDate = buildAllTimeByDate(allTimeCache.rows);
           window.__allTimeSeries = series; window.__allTimeByDate = byDate; window.__allTimeRows = allTimeCache.rows;
+          const latestDate = allTimeCache.rows.map(r=>r.date).sort().slice(-1)[0];
+          const preRows = allTimeCache.rows.filter(r => r.date !== latestDate);
+          const preStats = aggregateAllTime(preRows);
+          sortAllTimeStats(preStats);
+          const preRanks = makeRankMap(preStats);
+          const postRanks = makeRankMap(stats2);
           container.innerHTML = '';
-          container.appendChild(buildAllTimeTable(stats2, totalSessions, series));
+          container.appendChild(buildAllTimeTable(stats2, totalSessions, series, preRanks, postRanks));
         });
         trHead.appendChild(th);
       }
       thead.appendChild(trHead);
       const tbody = document.createElement('tbody');
       const podiumActive = (allTimeSort && (allTimeSort.key === 'points' || allTimeSort.key === 'ppm'));
-      const TREND_EPS = 0.5;
       stats.forEach((r, idx)=>{
         const tr = document.createElement('tr');
         const tdPos = document.createElement('td');
@@ -2659,21 +2678,22 @@
         else { tdPos.textContent = String(idx + 1); }
         const tdN = document.createElement('td');
         tdN.textContent = r.player;
-        // Trend arrow next to player name: last 3 vs overall
-        const seriesArr = series ? series.get(r.player) : null;
-        if(seriesArr && seriesArr.length){
-          const last3 = avgLastN(seriesArr, 3);
-          const overall = r.ppm; // points per session
-          const delta = last3 - overall;
-          if(Math.abs(delta) >= TREND_EPS){
-            const arrow = document.createElement('span');
-            arrow.style.marginLeft = '6px';
-            arrow.style.fontWeight = '700';
-            arrow.style.fontSize = '14px';
-            if(delta > 0){ arrow.textContent = ' ▲'; arrow.style.color = 'var(--accent-2)'; }
-            else { arrow.textContent = ' ▼'; arrow.style.color = 'var(--danger)'; }
-            arrow.title = `Trend — Last 3: ${last3.toFixed(2)} vs Overall: ${overall.toFixed(2)}`;
-            tdN.appendChild(arrow);
+        // Trend arrow: rank movement since last session
+        if(podiumActive && preRanks && postRanks){
+          const pre = preRanks.get(r.player);
+          const post = postRanks.get(r.player);
+          if(pre !== undefined && post !== undefined){
+            const move = pre - post; // positive means moved up
+            if(move !== 0){
+              const arrow = document.createElement('span');
+              arrow.style.marginLeft = '6px';
+              arrow.style.fontWeight = '700';
+              arrow.style.fontSize = '14px';
+              if(move > 0){ arrow.textContent = ' ▲'; arrow.style.color = 'var(--accent-2)'; }
+              else { arrow.textContent = ' ▼'; arrow.style.color = 'var(--danger)'; }
+              arrow.title = `Position: ${pre+1} → ${post+1} (${move>0?'+':''}${move} since last session)`;
+              tdN.appendChild(arrow);
+            }
           }
         }
         const tdM = document.createElement('td');
