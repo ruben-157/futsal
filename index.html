@@ -2416,7 +2416,9 @@
       tabs.matches.disabled = !hasTeams;
       tabs.leaderboard.disabled = !hasTeams;
       const btnResetTop = document.getElementById('btnResetPlayersTop');
+      const playersTopBar = document.getElementById('playersTopBar');
       if(btnResetTop){ btnResetTop.hidden = !hasTeams; }
+      if(playersTopBar){ playersTopBar.style.display = hasTeams ? 'flex' : 'none'; }
       if(!hasTeams && (currentTab === 'teams' || currentTab === 'matches' || currentTab === 'leaderboard')) switchTab('players');
     }
     tabs.players.addEventListener('click', ()=> switchTab('players'));
@@ -3262,6 +3264,8 @@
     renderLeaderboard();
     renderAllTime(true);
     clampPlayLimit();
+    // Ensure buttons/visibility synced on first load
+    updateTabsUI();
     updateTabsUI();
     switchTab('players');
   </script>
