@@ -205,12 +205,14 @@
 
       /* All-Time: fixed layout, numeric columns right-aligned */
       #allTimeSection table{ table-layout:fixed }
-      #allTimeSection th:nth-child(1){ width:56px; text-align:right }
+      #allTimeSection th:nth-child(1){ width:56px; text-align:left }
       #allTimeSection th:nth-child(2){ width:50% }
       #allTimeSection th:nth-child(3),
       #allTimeSection th:nth-child(4),
       #allTimeSection th:nth-child(5){ width:100px; text-align:right }
-      #allTimeSection td:nth-child(1){ text-align:right }
+      /* Ensure Matches header stays on one line */
+      #allTimeSection th:nth-child(3){ width:150px; white-space:nowrap }
+      #allTimeSection td:nth-child(1){ text-align:left }
       #allTimeSection td:nth-child(3),
       #allTimeSection td:nth-child(4),
       #allTimeSection td:nth-child(5){ text-align:right }
@@ -2402,7 +2404,8 @@
           empty.textContent = 'No data found.';
           wrap.appendChild(empty);
         }else{
-          wrap.appendChild(buildAllTimeTable(stats));
+          const totalSessions = countUniqueSessions(data);
+          wrap.appendChild(buildAllTimeTable(stats, totalSessions));
         }
         updated.textContent = `Updated ${new Date().toLocaleString()}`;
       }catch(err){
@@ -2459,6 +2462,12 @@
       return Array.from(map.values()).map(x => ({ ...x, ppm: x.matches ? x.points / x.matches : 0 }));
     }
 
+    function countUniqueSessions(rows){
+      const dates = new Set();
+      for(const r of rows){ if(r && r.date) dates.add(r.date); }
+      return dates.size;
+    }
+
     function sortAllTimeStats(stats){
       const k = allTimeSort.key; const dir = allTimeSort.dir === 'asc' ? 1 : -1;
       stats.sort((a,b)=>{
@@ -2470,7 +2479,7 @@
       });
     }
 
-    function buildAllTimeTable(stats){
+    function buildAllTimeTable(stats, totalSessions){
       const wrap = document.createElement('div');
       wrap.style.overflow = 'auto';
       const table = document.createElement('table');
@@ -2504,8 +2513,9 @@
           if(!allTimeCache.rows){ return; }
           const stats2 = aggregateAllTime(allTimeCache.rows);
           sortAllTimeStats(stats2);
+          const totalSessions = countUniqueSessions(allTimeCache.rows);
           container.innerHTML = '';
-          container.appendChild(buildAllTimeTable(stats2));
+          container.appendChild(buildAllTimeTable(stats2, totalSessions));
         });
         trHead.appendChild(th);
       }
@@ -2515,7 +2525,13 @@
         const tr = document.createElement('tr');
         const tdPos = document.createElement('td'); tdPos.textContent = String(idx + 1);
         const tdN = document.createElement('td'); tdN.textContent = r.player;
-        const tdM = document.createElement('td'); tdM.textContent = String(r.matches);
+        const tdM = document.createElement('td');
+        if(totalSessions && totalSessions > 0){
+          const pct = Math.round((r.matches / totalSessions) * 100);
+          tdM.textContent = `${r.matches}/${totalSessions} (${pct}%)`;
+        } else {
+          tdM.textContent = String(r.matches);
+        }
         const tdP = document.createElement('td'); tdP.textContent = String(r.points);
         const tdA = document.createElement('td'); tdA.textContent = r.ppm.toFixed(2);
         tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
