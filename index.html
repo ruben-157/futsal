@@ -363,8 +363,7 @@
     <!-- All-Time Leaderboard -->
     <section id="allTimeSection" role="tabpanel" aria-labelledby="tabAllTime" hidden>
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 8px 0">
-        <h2 style="margin:0; font-size:14px; color:var(--muted); text-transform:uppercase">All-Time Leaderboard</h2>
-        <div style="display:flex; gap:8px; align-items:center">
+        <div style="display:flex; gap:8px; align-items:center; margin-left:auto">
           <span id="allTimeUpdated" class="notice" aria-live="polite"></span>
           <button id="btnAllTimeRefresh" class="btn" type="button">Refresh</button>
         </div>
@@ -2477,7 +2476,7 @@
       wrap.style.overflow = 'auto';
       const table = document.createElement('table');
       const thead = document.createElement('thead');
-      thead.innerHTML = '<tr><th style="width:50%">Player</th><th>Matches</th><th>Points</th><th>Pts/Match</th></tr>';
+      thead.innerHTML = '<tr><th style="width:50%">Player</th><th>Total Matches Played</th><th>Total Points</th><th>Pts/Match</th></tr>';
       const tbody = document.createElement('tbody');
       for(const r of stats){
         const tr = document.createElement('tr');
