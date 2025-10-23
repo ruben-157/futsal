@@ -3164,6 +3164,31 @@
 
     // Removed dedicated refresh button; data reloads on tab open and page refresh
 
+    // ----- Scroll Lock Helpers for Modals -----
+    let __scrollLockY = 0;
+    function lockBodyScroll(){
+      try{
+        __scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top = '-' + __scrollLockY + 'px';
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+      }catch(_){/* no-op */}
+    }
+    function unlockBodyScroll(){
+      try{
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, __scrollLockY || 0);
+      }catch(_){/* no-op */}
+    }
+
     // ----- Player History Modal -----
     function openPlayerModal(player){
       const overlay = document.getElementById('overlay');
@@ -3279,27 +3304,3 @@
   </script>
 </body>
 </html>
-    // ----- Scroll Lock Helpers for Modals -----
-    let __scrollLockY = 0;
-    function lockBodyScroll(){
-      try{
-        __scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${__scrollLockY}px`;
-        document.body.style.left = '0';
-        document.body.style.right = '0';
-        document.body.style.width = '100%';
-        document.body.style.overflow = 'hidden';
-      }catch(_){}
-    }
-    function unlockBodyScroll(){
-      try{
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
-        window.scrollTo(0, __scrollLockY || 0);
-      }catch(_){}
-    }
