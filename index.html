@@ -322,6 +322,8 @@
     #playersSection{ flex:1; display:flex; flex-direction:column; min-height:0 }
     #playersSection .panel{ flex:1; display:flex; flex-direction:column; min-height:0; margin-bottom:12px; padding:8px; width:100%; box-sizing:border-box }
     #playersSection .panel .lists{ flex:1; max-height:none; min-height:0; overflow:auto; padding:0; width:100%; box-sizing:border-box }
+    /* Reserve space so bottom items aren't covered by sticky actions */
+    #playersSection .lists{ padding-bottom: 96px }
     #playersSection .item{ padding:10px 10px; width:100%; box-sizing:border-box }
     #playersSection .actions{
       position: sticky;
@@ -3165,20 +3167,27 @@
     // Removed dedicated refresh button; data reloads on tab open and page refresh
 
     // ----- Scroll Lock Helpers for Modals -----
-    let __prevHtmlOverflow = '';
-    let __prevBodyOverflow = '';
+    let __scrollLockY = 0;
     function lockBodyScroll(){
       try{
-        __prevHtmlOverflow = document.documentElement.style.overflow;
-        __prevBodyOverflow = document.body.style.overflow;
-        document.documentElement.style.overflow = 'hidden';
+        __scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top = '-' + __scrollLockY + 'px';
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
         document.body.style.overflow = 'hidden';
       }catch(_){/* no-op */}
     }
     function unlockBodyScroll(){
       try{
-        document.documentElement.style.overflow = __prevHtmlOverflow || '';
-        document.body.style.overflow = __prevBodyOverflow || '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, __scrollLockY || 0);
       }catch(_){/* no-op */}
     }
 
@@ -3191,6 +3200,8 @@
       title.textContent = player;
       body.innerHTML = '';
       lockBodyScroll();
+      // Prevent background scroll when touching the overlay (iOS Safari)
+      function preventOverlayScroll(e){ e.preventDefault(); }
 
       // Chart: points across all sessions (zeros when absent)
       try{
@@ -3273,12 +3284,13 @@
       }
 
       const closeBtn = document.getElementById('playerModalClose');
-      const close = ()=>{ overlay.hidden = true; modal.hidden = true; closeBtn.onclick = null; overlay.onclick = null; unlockBodyScroll(); };
+      const close = ()=>{ overlay.hidden = true; modal.hidden = true; closeBtn.onclick = null; overlay.onclick = null; overlay.removeEventListener('touchmove', preventOverlayScroll); unlockBodyScroll(); };
       closeBtn.onclick = close;
       overlay.onclick = close;
       document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(); } }, { once:true });
 
       overlay.hidden = false; modal.hidden = false;
+      overlay.addEventListener('touchmove', preventOverlayScroll, { passive: false });
     }
 
     // ----- Init -----
