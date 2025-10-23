@@ -2735,8 +2735,7 @@
         row.style.border = '1px solid var(--border)'; row.style.borderRadius='10px'; row.style.padding='8px 10px'; row.style.margin='6px 0';
 
         const left = document.createElement('div');
-        left.innerHTML = `<div style="font-weight:700">${d} ${points===max && total>0 ? '🥇' : ''}</div>` +
-                         `<div class="notice" style="margin-top:2px">Rank ${rank}/${total} • Perf: ${perf}%</div>`;
+        left.innerHTML = `<div style="font-weight:700">${d} ${points===max && total>0 ? '🥇' : ''}</div>`;
 
         const right = document.createElement('div');
         const badge = document.createElement('span');
