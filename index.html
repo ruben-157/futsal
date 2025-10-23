@@ -379,9 +379,6 @@
 
     <!-- All-Time Leaderboard -->
     <section id="allTimeSection" role="tabpanel" aria-labelledby="tabAllTime" hidden>
-      <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin:0 0 8px 0">
-        <span id="allTimeUpdated" class="notice" aria-live="polite"></span>
-      </div>
       <div id="allTimeContent" aria-live="polite"></div>
     </section>
 
@@ -2400,9 +2397,7 @@
     const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Match thresholds
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
-      const updated = document.getElementById('allTimeUpdated');
       if(!wrap) return;
-      updated.textContent = '';
       wrap.innerHTML = '';
       const loading = document.createElement('div');
       loading.className = 'notice';
@@ -2424,7 +2419,7 @@
           const series = buildAllTimeSeries(data);
           wrap.appendChild(buildAllTimeTable(stats, totalSessions, series));
         }
-        updated.textContent = `Updated ${new Date().toLocaleString()}`;
+        // no updated timestamp shown
       }catch(err){
         wrap.innerHTML = '';
         const msg = document.createElement('div');
