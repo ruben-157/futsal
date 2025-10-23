@@ -2636,7 +2636,7 @@
             arrow.style.fontSize = '14px';
             if(delta > 0){ arrow.textContent = ' ▲'; arrow.style.color = 'var(--accent-2)'; }
             else { arrow.textContent = ' ▼'; arrow.style.color = 'var(--danger)'; }
-            arrow.title = `Recent vs avg: ${last3.toFixed(2)} vs ${overall.toFixed(2)}`;
+            arrow.title = `Trend — Last 3: ${last3.toFixed(2)} vs Overall: ${overall.toFixed(2)}`;
             tdN.appendChild(arrow);
           }
         }
