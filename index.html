@@ -2551,8 +2551,8 @@
       trHead.appendChild(thRank);
       const cols = [
         { key:'player', label:'Player', style:'width:50%' },
-        { key:'matches', label:'Total Matches Played' },
-        { key:'points', label:'Total Points' },
+        { key:'matches', label:'Matches' },
+        { key:'points', label:'Points' },
         { key:'ppm', label:'Pts/Match' },
       ];
       for(const col of cols){
@@ -2588,12 +2588,7 @@
         const tdN = document.createElement('td'); tdN.textContent = r.player;
         const tdM = document.createElement('td');
         if(totalSessions && totalSessions > 0){
-          const pct = Math.round((r.matches / totalSessions) * 100);
-          tdM.textContent = `${r.matches}/${totalSessions} `;
-          const badge = document.createElement('span');
-          badge.className = 'mini-pill';
-          badge.textContent = `${pct}%`;
-          tdM.appendChild(badge);
+          tdM.textContent = `${r.matches}/${totalSessions}`;
         } else {
           tdM.textContent = String(r.matches);
         }
