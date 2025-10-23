@@ -2664,8 +2664,8 @@
       let upPPM = null, downPPM = null;
       if(deltas.length){
         for(const d of deltas){
-          if((d.delta || 0) > 0 && (upPPM === null || d.pct > upPPM.pct || (d.pct === upPPM.pct && (d.preM > upPPM.preM || (d.preM === upPPM.preM && d.player < upPPM.player))))){ upPPM = d; }
-          if((d.delta || 0) < 0 && (downPPM === null || d.pct < downPPM.pct || (d.pct === downPPM.pct && (d.preM < downPPM.preM || (d.preM === downPPM.preM && d.player < downPPM.player))))){ downPPM = d; }
+          if(upPPM === null || d.pct > upPPM.pct || (d.pct === upPPM.pct && (d.preM > upPPM.preM || (d.preM === upPPM.preM && d.player < upPPM.player)))) upPPM = d;
+          if(downPPM === null || d.pct < downPPM.pct || (d.pct === downPPM.pct && (d.preM < downPPM.preM || (d.preM === downPPM.preM && d.player < downPPM.player)))) downPPM = d;
         }
       }
 
