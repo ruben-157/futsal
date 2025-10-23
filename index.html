@@ -2689,9 +2689,10 @@
               arrow.style.marginLeft = '6px';
               arrow.style.fontWeight = '700';
               arrow.style.fontSize = '14px';
-              if(move > 0){ arrow.textContent = ' ▲'; arrow.style.color = 'var(--accent-2)'; }
-              else { arrow.textContent = ' ▼'; arrow.style.color = 'var(--danger)'; }
-              arrow.title = `Position: ${pre+1} → ${post+1} (${move>0?'+':''}${move} since last session)`;
+              const signed = move > 0 ? `+${move}` : `${move}`;
+              if(move > 0){ arrow.textContent = ` ▲ ${signed}`; arrow.style.color = 'var(--accent-2)'; }
+              else { arrow.textContent = ` ▼ ${signed}`; arrow.style.color = 'var(--danger)'; }
+              arrow.title = `Position: ${pre+1} → ${post+1} (${signed} since last session)`;
               tdN.appendChild(arrow);
             }
           }
