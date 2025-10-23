@@ -112,6 +112,18 @@
     .gd-neg{ color: var(--danger); }
     /* Small badge used in All-Time table */
     .mini-pill{ display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; font-weight:700; color:var(--muted) }
+    /* All-Time header stat cards */
+    #allTimeSection .stat-cards{ display:grid; grid-template-columns:1fr; gap:8px; margin:8px 0 }
+    @media(min-width: 700px){ #allTimeSection .stat-cards{ grid-template-columns:repeat(2,minmax(0,1fr)) } }
+    @media(min-width: 1000px){ #allTimeSection .stat-cards{ grid-template-columns:repeat(4,minmax(0,1fr)) } }
+    .stat-card{ display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--border); background:#fff; border-radius:12px; padding:10px 12px; cursor:pointer; user-select:none; box-shadow: 0 1px 1px rgba(0,0,0,.04) }
+    .stat-card:hover{ border-color:#d1d5db }
+    .stat-card:focus-visible{ outline:2px solid var(--focus); outline-offset:2px }
+    .stat-emoji{ font-size:20px; line-height:1 }
+    .stat-meta{ display:flex; flex-direction:column; min-width:0 }
+    .stat-title{ font-size:12px; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); font-weight:800 }
+    .stat-value{ font-weight:800; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .stat-sub{ font-size:12px; color:var(--muted) }
     /* Pts/Match coloring */
     .ppm-good{ color: var(--accent-2) }
     .ppm-avg{ color: var(--warn) }
@@ -2440,6 +2452,9 @@
           sortAllTimeStats(preStats);
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats);
+          // Header stat cards
+          const headerCards = buildAllTimeHeaderCards(preRows, data, preRanks, postRanks, byDate, latestDate);
+          if(headerCards) wrap.appendChild(headerCards);
           wrap.appendChild(buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, latestDate));
         }
         // no updated timestamp shown
@@ -2579,6 +2594,115 @@
       return byDate;
     }
 
+    // Build header stat cards for All-Time page
+    function buildAllTimeHeaderCards(preRows, rows, preRanks, postRanks, byDate, latestDate){
+      if(!rows || !rows.length) return null;
+      const preAgg = aggregateAllTime(preRows || []);
+      const postAgg = aggregateAllTime(rows);
+      const cards = document.createElement('div');
+      cards.className = 'stat-cards';
+
+      function makeCard(emoji, title, main, sub, onClick){
+        const card = document.createElement('div');
+        card.className = 'stat-card';
+        card.setAttribute('role', 'button');
+        card.tabIndex = 0;
+        const em = document.createElement('div'); em.className = 'stat-emoji'; em.textContent = emoji;
+        const meta = document.createElement('div'); meta.className = 'stat-meta';
+        const t = document.createElement('div'); t.className = 'stat-title'; t.textContent = title;
+        const v = document.createElement('div'); v.className = 'stat-value'; v.textContent = main || '—';
+        const s = document.createElement('div'); s.className = 'stat-sub'; s.textContent = sub || '';
+        meta.appendChild(t); meta.appendChild(v); meta.appendChild(s);
+        card.appendChild(em); card.appendChild(meta);
+        if(typeof onClick === 'function'){
+          card.addEventListener('click', onClick);
+          card.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); onClick(); } });
+        }
+        return card;
+      }
+
+      // Highest climber / decliner
+      let up = null; // {player, move, preRank, postRank}
+      let down = null;
+      if(preRanks && postRanks){
+        // preRanks/postRanks are Maps from makeRankMap
+        postRanks.forEach((postIdx, player)=>{
+          const preIdx = preRanks.get(player);
+          if(preIdx !== undefined){
+            const move = preIdx - postIdx; // positive means moved up
+            if(up === null || move > up.move || (move === up.move && (postIdx < up.postRank || (postIdx === up.postRank && player < up.player)))){
+              up = { player, move, preRank: preIdx, postRank: postIdx };
+            }
+            if(down === null || move < down.move || (move === down.move && (postIdx > down.postRank || (postIdx === down.postRank && player < down.player)))){
+              down = { player, move, preRank: preIdx, postRank: postIdx };
+            }
+          }
+        });
+      }
+
+      // Highest PPM increase/decrease among players who played latest session
+      const latestEntries = (byDate && latestDate) ? (byDate.get(latestDate) || []) : [];
+      const playedLatest = new Set(latestEntries.map(e => e.player));
+      const MIN_PRE = 3;
+      function ppmDeltaCandidates(minPre){
+        const arr = [];
+        playedLatest.forEach(p => {
+          const pre = preAgg[p];
+          const post = postAgg[p];
+          if(!post) return;
+          const preM = pre ? pre.matches : 0;
+          const prePPM = pre ? pre.ppm : 0;
+          const postPPM = post.ppm;
+          if(preM >= minPre){ arr.push({ player:p, delta: postPPM - prePPM, prePPM, postPPM, preM }); }
+        });
+        return arr;
+      }
+      let deltas = ppmDeltaCandidates(MIN_PRE);
+      if(deltas.length === 0){ deltas = ppmDeltaCandidates(1); }
+      if(deltas.length === 0){
+        // fallback: include newcomers (preM=0) using delta = postPPM
+        playedLatest.forEach(p => {
+          const post = postAgg[p]; if(!post) return;
+          const pre = preAgg[p]; const prePPM = pre ? pre.ppm : 0; const preM = pre ? pre.matches : 0;
+          deltas.push({ player:p, delta: post.ppm - prePPM, prePPM, postPPM: post.ppm, preM });
+        });
+      }
+      let upPPM = null, downPPM = null;
+      if(deltas.length){
+        for(const d of deltas){
+          if(upPPM === null || d.delta > upPPM.delta || (d.delta === upPPM.delta && (d.preM > upPPM.preM || (d.preM === upPPM.preM && d.player < upPPM.player)))) upPPM = d;
+          if(downPPM === null || d.delta < downPPM.delta || (d.delta === downPPM.delta && (d.preM < downPPM.preM || (d.preM === downPPM.preM && d.player < downPPM.player)))) downPPM = d;
+        }
+      }
+
+      // Build cards
+      const climberCard = makeCard('🚀', 'Highest Climber',
+        up ? `${up.player} +${up.move}` : '—',
+        up ? `${up.preRank+1} → ${up.postRank+1}` : 'No change',
+        up ? (()=> openPlayerModal(up.player)) : null);
+
+      const declinerCard = makeCard('📉', 'Highest Decline',
+        down ? `${down.player} ${down.move}` : '—',
+        down ? `${down.preRank+1} → ${down.postRank+1}` : 'No change',
+        down ? (()=> openPlayerModal(down.player)) : null);
+
+      const incCard = makeCard('🔺', 'PPM Increase',
+        upPPM ? `${upPPM.player} +${upPPM.delta.toFixed(2)}` : '—',
+        upPPM ? `${upPPM.prePPM?.toFixed(2) ?? '0.00'} → ${upPPM.postPPM?.toFixed(2) ?? '0.00'}` : 'No eligible players',
+        upPPM ? (()=> openPlayerModal(upPPM.player)) : null);
+
+      const decCard = makeCard('🔻', 'PPM Decrease',
+        downPPM ? `${downPPM.player} ${downPPM.delta.toFixed(2)}` : '—',
+        downPPM ? `${downPPM.prePPM?.toFixed(2) ?? '0.00'} → ${downPPM.postPPM?.toFixed(2) ?? '0.00'}` : 'No eligible players',
+        downPPM ? (()=> openPlayerModal(downPPM.player)) : null);
+
+      cards.appendChild(climberCard);
+      cards.appendChild(declinerCard);
+      cards.appendChild(incCard);
+      cards.appendChild(decCard);
+      return cards;
+    }
+
     function formatDateLong(iso){
       if(!iso || typeof iso !== 'string') return iso || '';
       const parts = iso.split('-');
@@ -2676,6 +2800,8 @@
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats2);
           container.innerHTML = '';
+          const headerCards = buildAllTimeHeaderCards(preRows, allTimeCache.rows, preRanks, postRanks, byDate, latestDate);
+          if(headerCards) container.appendChild(headerCards);
           container.appendChild(buildAllTimeTable(stats2, totalSessions, series, preRanks, postRanks, latestDate));
         });
         trHead.appendChild(th);
