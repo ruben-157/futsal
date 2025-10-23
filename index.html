@@ -427,6 +427,19 @@
     </div>
   </div>
 
+  <!-- Player History Modal -->
+  <div id="playerModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="playerModalTitle" hidden>
+    <div class="modal-header">
+      <h3 id="playerModalTitle" style="margin:0; font-size:18px">Player History</h3>
+    </div>
+    <div class="modal-body" id="playerModalBody">
+      <!-- Filled dynamically -->
+    </div>
+    <div class="modal-actions">
+      <button id="playerModalClose" class="btn" type="button">Close</button>
+    </div>
+  </div>
+
   <!-- Modal for adding incidental player -->
   <div id="addPlayerModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="addPlayerTitle" hidden>
     <div class="modal-header">
@@ -2417,6 +2430,10 @@
         }else{
           const totalSessions = countUniqueSessions(data);
           const series = buildAllTimeSeries(data);
+          const byDate = buildAllTimeByDate(data);
+          window.__allTimeSeries = series; // cache for modal
+          window.__allTimeByDate = byDate;
+          window.__allTimeRows = data;
           wrap.appendChild(buildAllTimeTable(stats, totalSessions, series));
         }
         // no updated timestamp shown
@@ -2546,6 +2563,16 @@
       return byPlayer;
     }
 
+    function buildAllTimeByDate(rows){
+      const byDate = new Map();
+      for(const r of rows){
+        if(!r || !r.player || !r.date || !Number.isFinite(r.points)) continue;
+        if(!byDate.has(r.date)) byDate.set(r.date, []);
+        byDate.get(r.date).push({ player: r.player, points: r.points });
+      }
+      return byDate;
+    }
+
     function avgLastN(arr, n){
       if(!arr || arr.length === 0) return 0;
       const start = Math.max(0, arr.length - n);
@@ -2601,6 +2628,8 @@
           sortAllTimeStats(stats2);
           const totalSessions = countUniqueSessions(allTimeCache.rows);
           const series = buildAllTimeSeries(allTimeCache.rows);
+          const byDate = buildAllTimeByDate(allTimeCache.rows);
+          window.__allTimeSeries = series; window.__allTimeByDate = byDate; window.__allTimeRows = allTimeCache.rows;
           container.innerHTML = '';
           container.appendChild(buildAllTimeTable(stats2, totalSessions, series));
         });
@@ -2651,7 +2680,11 @@
         else if(ppm >= 4){ ppmBadge.className = 'badge badge-avg'; ppmBadge.title = 'Average: 4–6 pts/match'; }
         else { ppmBadge.className = 'badge badge-low'; ppmBadge.title = 'Low: < 4 pts/match'; }
         tdA.appendChild(ppmBadge);
-        tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
+        tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA);
+        tr.style.cursor = 'pointer';
+        tr.title = 'View player history';
+        tr.addEventListener('click', ()=> openPlayerModal(r.player));
+        tbody.appendChild(tr);
       });
       table.appendChild(thead); table.appendChild(tbody); wrap.appendChild(table);
       return wrap;
@@ -2659,6 +2692,70 @@
 
     const btnAllTimeRefreshHeader = document.getElementById('btnAllTimeRefreshHeader');
     if(btnAllTimeRefreshHeader){ btnAllTimeRefreshHeader.addEventListener('click', ()=>{ allTimeCache.rows = null; renderAllTime(true); }); }
+
+    // ----- Player History Modal -----
+    function openPlayerModal(player){
+      const overlay = document.getElementById('overlay');
+      const modal = document.getElementById('playerModal');
+      const title = document.getElementById('playerModalTitle');
+      const body = document.getElementById('playerModalBody');
+      title.textContent = player;
+      body.innerHTML = '';
+
+      const rows = (window.__allTimeRows || []).filter(r => r.player === player);
+      // Quick stats
+      const matches = rows.length;
+      const totalPts = rows.reduce((s,r)=> s + r.points, 0);
+      const ppm = matches ? (totalPts / matches) : 0;
+      const series = (window.__allTimeSeries && window.__allTimeSeries.get(player)) || rows.map(r=> r.points);
+      const last3 = avgLastN(series, 3);
+      const headerStats = document.createElement('div');
+      headerStats.className = 'notice';
+      headerStats.style.marginBottom = '8px';
+      const delta = last3 - ppm;
+      const arrow = Math.abs(delta) >= 0.5 ? (delta>0 ? ' ▲' : ' ▼') : '';
+      headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Match: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''}`;
+      body.appendChild(headerStats);
+
+      // Build list per session (latest first)
+      const byDate = window.__allTimeByDate || new Map();
+      const dates = rows.map(r=> r.date).sort().reverse();
+      for(const d of dates){
+        const entries = byDate.get(d) || [];
+        const sorted = entries.slice().sort((a,b)=> b.points - a.points || a.player.localeCompare(b.player));
+        const idx = sorted.findIndex(e => e.player === player);
+        const rank = idx>=0 ? (idx+1) : '?';
+        const total = sorted.length;
+        const points = rows.find(r=> r.date===d)?.points || 0;
+        const max = sorted.length ? sorted[0].points : points;
+        const perf = max>0 ? Math.round((points/max)*100) : 0;
+
+        const row = document.createElement('div');
+        row.style.display = 'flex'; row.style.justifyContent='space-between'; row.style.alignItems='center';
+        row.style.border = '1px solid var(--border)'; row.style.borderRadius='10px'; row.style.padding='8px 10px'; row.style.margin='6px 0';
+
+        const left = document.createElement('div');
+        left.innerHTML = `<div style="font-weight:700">${d} ${points===max && total>0 ? '🥇' : ''}</div>` +
+                         `<div class="notice" style="margin-top:2px">Rank ${rank}/${total} • Perf: ${perf}%</div>`;
+
+        const right = document.createElement('div');
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + (points>6 ? 'badge-good' : (points>=4 ? 'badge-avg' : 'badge-low'));
+        badge.textContent = String(points);
+        right.appendChild(badge);
+
+        row.appendChild(left); row.appendChild(right);
+        body.appendChild(row);
+      }
+
+      const closeBtn = document.getElementById('playerModalClose');
+      const close = ()=>{ overlay.hidden = true; modal.hidden = true; closeBtn.onclick = null; overlay.onclick = null; };
+      closeBtn.onclick = close;
+      overlay.onclick = close;
+      document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(); } }, { once:true });
+
+      overlay.hidden = false; modal.hidden = false;
+    }
 
     // ----- Init -----
     loadState();
