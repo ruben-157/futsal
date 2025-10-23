@@ -2830,7 +2830,7 @@
           const val = deltaConf.value;
           const decimals = (typeof deltaConf.decimals === 'number') ? deltaConf.decimals : 0;
           const suffix = deltaConf.suffix || '';
-          const sign = val >= 0 ? '+' : '';
+          const sign = val >= 0 ? '+' : '-';
           const span = document.createElement('span');
           span.className = (val >= 0 ? 'delta-pos' : 'delta-neg');
           span.textContent = sign + Math.abs(val).toFixed(decimals) + suffix;
