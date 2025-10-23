@@ -123,8 +123,10 @@
     .badge-avg{ background: #facc15; color: #111827 }
     .badge-low{ background: var(--danger); color: #fff }
     .badge-neutral{ background: #e5e7eb; color: var(--muted); border: 1px solid var(--border) }
-    /* All-Time: spacer row separating podium from rest */
-    #allTimeSection .row-sep td{ border:0 !important; padding:8px 0 !important; background: transparent }
+    /* Podium row tints */
+    .row-gold{ background: #FEF9C3 }
+    .row-silver{ background: #F3F4F6 }
+    .row-bronze{ background: #FDE68A }
     /* Teams: vertically center cells */
     #teamsSection table th,
     #teamsSection table td{ vertical-align: middle }
@@ -2617,6 +2619,11 @@
       const TREND_EPS = 0.5;
       stats.forEach((r, idx)=>{
         const tr = document.createElement('tr');
+        if(podiumActive){
+          if(idx === 0) tr.classList.add('row-gold');
+          else if(idx === 1) tr.classList.add('row-silver');
+          else if(idx === 2) tr.classList.add('row-bronze');
+        }
         const tdPos = document.createElement('td');
         if(podiumActive && idx === 0){ tdPos.textContent = '🥇'; }
         else if(podiumActive && idx === 1){ tdPos.textContent = '🥈'; }
@@ -2657,16 +2664,6 @@
         else { ppmBadge.className = 'badge badge-low'; ppmBadge.title = 'Low: < 4 pts/match'; }
         tdA.appendChild(ppmBadge);
         tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA); tbody.appendChild(tr);
-        // Insert a visual spacer after top 3 when podium sort is active
-        if(podiumActive && idx === 2 && stats.length > 3){
-          const sep = document.createElement('tr');
-          sep.className = 'row-sep';
-          const td = document.createElement('td');
-          td.colSpan = 5;
-          td.innerHTML = '&nbsp;';
-          sep.appendChild(td);
-          tbody.appendChild(sep);
-        }
       });
       table.appendChild(thead); table.appendChild(tbody); wrap.appendChild(table);
       return wrap;
