@@ -2649,6 +2649,21 @@
         return card;
       }
 
+      // Full-width: Highest score days rate (ties count as highest)
+      try{
+        let topDays = 0;
+        for(const d of datesAsc){
+          const arr = byDate.get(d) || [];
+          if(!arr.length) continue;
+          let maxPts = -Infinity; for(const e of arr){ const v = Number(e.points)||0; if(v > maxPts) maxPts = v; }
+          if(arr.some(e => e.player === player && (Number(e.points)||0) === maxPts)) topDays++;
+        }
+        const pctTop = totalSessions>0 ? Math.round((topDays/totalSessions)*100) : 0;
+        const full = makeCard('Highest Score Rate', `${pctTop}%`, `${topDays} / ${totalSessions}`);
+        full.style.gridColumn = '1 / -1';
+        cardWrap.appendChild(full);
+      }catch(_){}
+
       // 1) Attendance Rate
       const attPct = totalSessions > 0 ? Math.round((attendedCount/totalSessions)*100) : 0;
       cardWrap.appendChild(makeCard('Attendance Rate', `${attendedCount}/${totalSessions} • ${attPct}%`, latestDate ? `Latest: ${formatDateShort(latestDate)}` : ''));
