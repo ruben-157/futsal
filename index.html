@@ -2727,106 +2727,6 @@
       return cardWrap;
     }
 
-    // ----- Player Badges (modal header) -----
-    function computePlayerBadges(player){
-      const badges = [];
-      const rows = window.__allTimeRows || [];
-      const byDate = window.__allTimeByDate || new Map();
-      const datesAsc = getAllDatesAsc();
-      // Attendance
-      let attendedDays = 0;
-      const attendedPoints = [];
-      let topDays = 0;
-      for(const d of datesAsc){
-        const arr = byDate.get(d) || [];
-        if(!arr.length) continue;
-        const entry = arr.find(e => e.player === player);
-        if(entry){
-          attendedDays++;
-          attendedPoints.push(Number(entry.points) || 0);
-          let maxPts = -Infinity; for(const e of arr){ const v = Number(e.points)||0; if(v > maxPts) maxPts = v; }
-          if((Number(entry.points)||0) === maxPts) topDays++;
-        }
-      }
-      const totalDays = datesAsc.length || 0;
-      const attRate = totalDays>0 ? attendedDays/totalDays : 0;
-      // Streaks (attendance)
-      let longestStreak=0, currentStreak=0;
-      for(const d of datesAsc){
-        const arr = byDate.get(d) || [];
-        const here = arr.some(e => e.player === player);
-        if(here){ currentStreak++; longestStreak=Math.max(longestStreak,currentStreak); } else { currentStreak=0; }
-      }
-      // Career and form
-      const matches = attendedPoints.length;
-      const totalPts = attendedPoints.reduce((s,v)=>s+v,0);
-      const career = matches>0 ? (totalPts/matches) : 0;
-      const last3Arr = attendedPoints.slice(-3);
-      const last3 = last3Arr.length? (last3Arr.reduce((s,v)=>s+v,0)/last3Arr.length):0;
-      const deltaPct = (matches>=2 && career>0) ? ((last3-career)/career*100) : (matches>=2 && last3>0 ? Infinity : null);
-      // Std dev & zeros
-      let std=0, zeroRate=0;
-      if(matches>=2){
-        const mean = career; const varSum = attendedPoints.reduce((s,v)=> s + Math.pow(v-mean,2),0); std = Math.sqrt(varSum/(matches));
-      }
-      if(matches>0){ zeroRate = attendedPoints.filter(v=>v===0).length/matches; }
-      // High impact nights
-      const IMPACT = 8;
-      const impactCount = attendedPoints.filter(v=>v>=IMPACT).length;
-      // Last 5
-      const last5Arr = attendedPoints.slice(-5);
-      const last5Sum = last5Arr.reduce((s,v)=>s+v,0);
-      // Build candidate list with priority
-      function pushBadge(key, label, emoji, color, title){ badges.push({key,label,emoji,color,title}); }
-      // 1) Top Scorer Days
-      if(attendedDays>=4 && (topDays/Math.max(1,attendedDays))>=0.25){
-        pushBadge('top_scorer_days','Top Scorer Days','⭐','#f59e0b',`Top on ${topDays}/${attendedDays} days`);
-      }
-      // 2) Attendance Ace
-      if(attRate>=0.8){ pushBadge('attendance_ace','Attendance Ace','📅','var(--accent-2)',`${Math.round(attRate*100)}% attendance`); }
-      // 2b) Ironman Streak
-      if(longestStreak>=4 && currentStreak>=2){ pushBadge('ironman','Ironman Streak','🔗','var(--accent)',`Longest ${longestStreak}, Current ${currentStreak}`); }
-      // 3) Hot / Cold form
-      if(deltaPct !== null && Number.isFinite(deltaPct)){
-        if(deltaPct>=25){ pushBadge('hot_form','Hot Form','🔥','var(--accent-2)',`Last 3 ${last3.toFixed(2)} vs ${career.toFixed(2)}`); }
-        if(deltaPct<=-25){ pushBadge('cold_snap','Cold Snap','🧊','var(--danger)',`Last 3 ${last3.toFixed(2)} vs ${career.toFixed(2)}`); }
-      }
-      // 3b) Consistent
-      if(matches>=5 && std<=1.5 && zeroRate<=0.1){ pushBadge('consistent','Consistent','🎯','var(--accent)',`σ=${std.toFixed(2)} • 0s=${Math.round(zeroRate*100)}%`); }
-      // 3c) Boom/Bust
-      if(matches>=5 && std>=3.0){ pushBadge('boombust','Boom/Bust','🎢','var(--warn)',`σ=${std.toFixed(2)}`); }
-      // 3d) High Impact
-      if(matches>=5 && (impactCount>=3 || (impactCount/ matches)>=0.2)){ pushBadge('impact','High Impact','💥','var(--accent-2)',`${impactCount} nights ≥ ${IMPACT}`); }
-      // 4) Rising Star
-      if(matches>=5 && last5Sum>=20 && (career===0 ? last3>0 : (last3 >= career*1.15))){ pushBadge('rising','Rising Star','🚀','#f59e0b',`Last 5 total ${last5Sum}`); }
-      // Prioritize and limit to 3
-      const order = ['top_scorer_days','attendance_ace','ironman','hot_form','consistent','impact','boombust','cold_snap','rising'];
-      const sorted = badges.sort((a,b)=> order.indexOf(a.key)-order.indexOf(b.key)).slice(0,3);
-      return sorted;
-    }
-    function renderPlayerBadgesInto(headerEl, player){
-      if(!headerEl) return;
-      // ensure header flex
-      headerEl.style.display = 'flex';
-      headerEl.style.alignItems = 'center';
-      headerEl.style.justifyContent = 'space-between';
-      let row = headerEl.querySelector('.player-badges-row');
-      if(row){ row.remove(); }
-      row = document.createElement('div');
-      row.className = 'player-badges-row';
-      row.style.display = 'flex'; row.style.gap = '6px'; row.style.marginLeft = '12px';
-      const list = computePlayerBadges(player);
-      list.forEach(b => {
-        const chip = document.createElement('span');
-        chip.className = 'badge';
-        chip.style.background = b.color; chip.style.color = '#fff';
-        chip.textContent = `${b.emoji} ${b.label}`;
-        if(b.title) chip.title = b.title;
-        row.appendChild(chip);
-      });
-      headerEl.appendChild(row);
-    }
-
     // Build the top-right latest sync pill bar
     function buildLatestSyncPill(latestDate){
       if(!latestDate) return null;
@@ -3598,9 +3498,6 @@
       const title = document.getElementById('playerModalTitle');
       const body = document.getElementById('playerModalBody');
       title.textContent = '👤 ' + player;
-      // Render badges into header (top right)
-      const headerEl = modal.querySelector('.modal-header');
-      try { renderPlayerBadgesInto(headerEl, player); } catch(_) { /* best-effort */ }
       body.innerHTML = '';
       __openModalEl = modal;
       lockBodyScroll();
