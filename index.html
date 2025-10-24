@@ -3376,7 +3376,7 @@
           const chartWrap = document.createElement('div');
           chartWrap.style.marginBottom = '8px';
           chartWrap.style.width = '100%';
-          const svg = buildLineChart(seriesAll.points, { width: 360, height: 140, stroke: 'var(--accent)', strokeWidth: 2, dotRadius: 2, labels: seriesAll.dates, absences: seriesAll.absent });
+          const svg = buildBarChart(seriesAll.points, { width: 360, height: 160, fill: 'var(--accent)', labels: seriesAll.dates, absences: seriesAll.absent });
           if(svg){
             chartWrap.appendChild(svg);
             // Legend: filled = 0 points (present); hollow = absent
