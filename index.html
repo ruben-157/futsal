@@ -3109,15 +3109,15 @@
           val.setAttribute('x', String(xCenter));
           val.setAttribute('text-anchor', 'middle');
           val.setAttribute('font-size', '10');
+          let valY;
           if(h >= 16){
-            const ty = y + Math.min(h - 3, 12);
-            val.setAttribute('y', String(ty));
+            valY = y + Math.min(h - 3, 12);
             val.setAttribute('fill', '#ffffff');
           } else {
-            const ty = Math.max(padTop + 10, y - 2);
-            val.setAttribute('y', String(ty));
+            valY = Math.max(padTop + 10, y - 2);
             val.setAttribute('fill', 'var(--muted)');
           }
+          val.setAttribute('y', String(valY));
           val.textContent = String(v);
           svg.appendChild(val);
 
@@ -3127,17 +3127,14 @@
             star.setAttribute('x', String(xCenter));
             star.setAttribute('text-anchor', 'middle');
             star.setAttribute('font-size', '11');
+            // Position star above the value label, ensuring separation
+            let starY = Math.max(padTop + 8, valY - 12);
+            // Keep star inside the bar if there's enough height
             if(h >= 26){
-              // place higher inside the bar
-              const sy = y + 12; // near top of bar
-              star.setAttribute('y', String(sy));
-              star.setAttribute('fill', '#ffffff');
-            } else {
-              // place above the number label
-              const sy = (h >= 16) ? (y + 4) : Math.max(padTop + 10, (parseFloat(val.getAttribute('y')) || (y - 2)) - 10);
-              star.setAttribute('y', String(sy));
-              star.setAttribute('fill', 'var(--muted)');
+              starY = Math.max(y + 6, starY);
             }
+            star.setAttribute('y', String(starY));
+            star.setAttribute('fill', h >= 26 ? '#ffffff' : 'var(--muted)');
             star.textContent = '⭐';
             svg.appendChild(star);
           }
