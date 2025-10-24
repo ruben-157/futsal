@@ -3103,22 +3103,44 @@
         svg.appendChild(rect);
         // Label points: inside the bar when tall enough; otherwise above
         if(v > 0){
-          const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-          label.setAttribute('x', String(xCenter));
-          label.setAttribute('text-anchor', 'middle');
-          label.setAttribute('font-size', '10');
           const isTop = !!(tops && tops[i]);
-          if(h >= 14){
-            const ty = y + Math.min(h - 3, 10);
-            label.setAttribute('y', String(ty));
-            label.setAttribute('fill', '#ffffff');
+          // Value label
+          const val = document.createElementNS('http://www.w3.org/2000/svg','text');
+          val.setAttribute('x', String(xCenter));
+          val.setAttribute('text-anchor', 'middle');
+          val.setAttribute('font-size', '10');
+          if(h >= 16){
+            const ty = y + Math.min(h - 3, 12);
+            val.setAttribute('y', String(ty));
+            val.setAttribute('fill', '#ffffff');
           } else {
             const ty = Math.max(padTop + 10, y - 2);
-            label.setAttribute('y', String(ty));
-            label.setAttribute('fill', 'var(--muted)');
+            val.setAttribute('y', String(ty));
+            val.setAttribute('fill', 'var(--muted)');
           }
-          label.textContent = String(v) + (isTop ? ' ⭐' : '');
-          svg.appendChild(label);
+          val.textContent = String(v);
+          svg.appendChild(val);
+
+          // Star marker on its own line slightly above the value
+          if(isTop){
+            const star = document.createElementNS('http://www.w3.org/2000/svg','text');
+            star.setAttribute('x', String(xCenter));
+            star.setAttribute('text-anchor', 'middle');
+            star.setAttribute('font-size', '11');
+            if(h >= 26){
+              // place higher inside the bar
+              const sy = y + 12; // near top of bar
+              star.setAttribute('y', String(sy));
+              star.setAttribute('fill', '#ffffff');
+            } else {
+              // place above the number label
+              const sy = (h >= 16) ? (y + 4) : Math.max(padTop + 10, (parseFloat(val.getAttribute('y')) || (y - 2)) - 10);
+              star.setAttribute('y', String(sy));
+              star.setAttribute('fill', 'var(--muted)');
+            }
+            star.textContent = '⭐';
+            svg.appendChild(star);
+          }
         }
       }
       
