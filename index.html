@@ -134,7 +134,7 @@
     .stat-sub{ font-size:12px; color:var(--muted) }
     .delta-pos{ color: var(--accent-2) }
     .delta-neg{ color: var(--danger) }
-    /* Pts/Match coloring */
+    /* Pts/Session coloring */
     .ppm-good{ color: var(--accent-2) }
     .ppm-avg{ color: var(--warn) }
     .ppm-low{ color: var(--danger) }
@@ -2444,9 +2444,9 @@
     // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
     let allTimeCache = { rows: null, ts: 0 };
     let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
-    // Basis for header insight cards' rank comparisons (only changes when user selects Points or Pts/Match)
+    // Basis for header insight cards' rank comparisons (only changes when user selects Points or Pts/Session)
     let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
-    const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Match thresholds
+    const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
       if(!wrap) return;
@@ -3277,7 +3277,7 @@
 
       // Build PPM cards only when delta candidates exist; avoid confusing "No eligible" text
       if(upPPM){
-        const incCard = makeCard('Largest Pts/Match Increase',
+        const incCard = makeCard('Largest Pts/Session Increase',
           upPPM.player,
           { value: upPPM.pct, decimals: 1, suffix: '%' },
           `${(upPPM.prePPM ?? 0).toFixed(2)} → ${(upPPM.postPPM ?? 0).toFixed(2)}`,
@@ -3285,7 +3285,7 @@
         cards.appendChild(incCard);
       }
       if(downPPM){
-        const decCard = makeCard('Largest Pts/Match Decrease',
+        const decCard = makeCard('Largest Pts/Session Decrease',
           downPPM.player,
           { value: downPPM.pct, decimals: 1, suffix: '%' },
           `${(downPPM.prePPM ?? 0).toFixed(2)} → ${(downPPM.postPPM ?? 0).toFixed(2)}`,
@@ -3359,7 +3359,7 @@
         { key:'player', label:'Player', style:'width:50%' },
         { key:'matches', label:'Matches' },
         { key:'points', label:'Points' },
-        { key:'ppm', label:'Pts/Match' },
+        { key:'ppm', label:'Pts/Session' },
       ];
       for(const col of cols){
         const th = document.createElement('th');
@@ -3389,7 +3389,7 @@
           sortAllTimeStats(preStats);
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats2);
-          // Update insight basis only when sorting by Points or Pts/Match
+          // Update insight basis only when sorting by Points or Pts/Session
           if(col.key === 'points' || col.key === 'ppm'){
             allTimeInsightBasis = col.key;
           }
@@ -3444,9 +3444,9 @@
         const ppmBadge = document.createElement('span');
         const ppm = r.ppm;
         ppmBadge.textContent = ppm.toFixed(2);
-        if(ppm > 6){ ppmBadge.className = 'badge badge-good'; ppmBadge.title = 'Good: > 6 pts/match'; }
-        else if(ppm >= 4){ ppmBadge.className = 'badge badge-avg'; ppmBadge.title = 'Average: 4–6 pts/match'; }
-        else { ppmBadge.className = 'badge badge-low'; ppmBadge.title = 'Low: < 4 pts/match'; }
+        if(ppm > 6){ ppmBadge.className = 'badge badge-good'; ppmBadge.title = 'Good: > 6 pts/session'; }
+        else if(ppm >= 4){ ppmBadge.className = 'badge badge-avg'; ppmBadge.title = 'Average: 4–6 pts/session'; }
+        else { ppmBadge.className = 'badge badge-low'; ppmBadge.title = 'Low: < 4 pts/session'; }
         tdA.appendChild(ppmBadge);
         tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA);
         tr.style.cursor = 'pointer';
@@ -3579,7 +3579,7 @@
       headerStats.style.marginBottom = '8px';
       const delta = last3 - ppm;
       const arrow = Math.abs(delta) >= 0.5 ? (delta>0 ? ' ▲' : ' ▼') : '';
-      headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Match: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''}`;
+      headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Session: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''}`;
       body.appendChild(headerStats);
 
             // Session list removed (redundant with chart and labels)
