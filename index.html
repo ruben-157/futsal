@@ -2983,6 +2983,7 @@
       const padBottom = 22;
       const padLeft = 34;
       const fill = (opts && opts.fill) || 'var(--accent)';
+      const fillTop = (opts && opts.fillTop) || '#f59e0b';
       const labels = (opts && opts.labels) || null;
       const absences = (opts && opts.absences) || null;
       const tops = (opts && opts.tops) || null; // boolean[]: highest score of the session
@@ -3114,36 +3115,16 @@
           let valY;
           if(h >= 16){
             const basePos = y + Math.min(h - 3, 12);
-            // If highest-of-day, shift lower to leave room for star; otherwise use old top-of-bar position
-            valY = isTop ? Math.min(basePos + 15, baseY - 2) : basePos;
+            valY = basePos;
             val.setAttribute('fill', '#ffffff');
           } else {
             const basePos = Math.max(padTop + 10, y - 2);
-            valY = isTop ? (basePos + 15) : basePos;
+            valY = basePos;
             val.setAttribute('fill', 'var(--muted)');
           }
           val.setAttribute('y', String(valY));
           val.textContent = String(v);
           svg.appendChild(val);
-
-          // Star marker on its own line slightly above the value
-          if(isTop){
-            const star = document.createElementNS('http://www.w3.org/2000/svg','text');
-            star.setAttribute('x', String(xCenter));
-            star.setAttribute('text-anchor', 'middle');
-            star.setAttribute('font-size', '11');
-            // Position star above the value label, ensuring separation
-            // Place star ~12px above the number (slightly higher)
-            let starY = Math.max(padTop + 8, valY - 12);
-            // Keep star inside the bar if there's enough height
-            if(h >= 26){
-              starY = Math.max(y + 6, starY);
-            }
-            star.setAttribute('y', String(starY));
-            star.setAttribute('fill', h >= 26 ? '#ffffff' : 'var(--muted)');
-            star.textContent = '⭐';
-            svg.appendChild(star);
-          }
         }
       }
       
