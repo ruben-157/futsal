@@ -3073,7 +3073,7 @@
       // Bars
       for(let i=0;i<n;i++){
         const isAbsent = !!(absences && absences[i]);
-        const xCenter = xCenterAt(i);
+        const xCenterSlot = xCenterAt(i);
         // Ensure we don't draw over the y-axis line: leave a 1px gap
         const slotLeft = padLeft + slotW * i;
         let x = slotLeft + (slotW - barW) / 2 + 1;
@@ -3081,7 +3081,7 @@
         if(isAbsent){
           // Draw an X to mark absence
           const t = document.createElementNS('http://www.w3.org/2000/svg','text');
-          t.setAttribute('x', String(xCenter));
+          t.setAttribute('x', String(xCenterSlot));
           t.setAttribute('y', String(baseY - 1));
           t.setAttribute('text-anchor', 'middle');
           t.setAttribute('dominant-baseline', 'alphabetic');
@@ -3104,6 +3104,7 @@
         // Label points: inside the bar when tall enough; otherwise above
         if(v > 0){
           const isTop = !!(tops && tops[i]);
+          const xCenter = x + barW/2; // center labels exactly over the bar
           // Value label
           const val = document.createElementNS('http://www.w3.org/2000/svg','text');
           val.setAttribute('x', String(xCenter));
