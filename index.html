@@ -115,6 +115,10 @@
     /* Small badge used in All-Time table */
     .mini-pill{ display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; font-weight:700; color:var(--muted) }
     /* All-Time header stat cards */
+    /* Generic stat cards grid (used in All-Time and Player modal) */
+    .stat-cards{ display:grid; grid-template-columns:1fr; gap:8px; margin:8px 0 }
+    @media(min-width: 600px){ .stat-cards{ grid-template-columns:repeat(2,minmax(0,1fr)) } }
+    /* All-Time page keeps its own 4-col layout on large screens */
     #allTimeSection .stat-cards{ display:grid; grid-template-columns:1fr; gap:8px; margin:8px 0 }
     @media(min-width: 700px){ #allTimeSection .stat-cards{ grid-template-columns:repeat(2,minmax(0,1fr)) } }
     @media(min-width: 1000px){ #allTimeSection .stat-cards{ grid-template-columns:repeat(4,minmax(0,1fr)) } }
@@ -2619,6 +2623,83 @@
       return byDate;
     }
 
+    function buildPlayerInsightCards(player){
+      const rows = window.__allTimeRows || [];
+      const byDate = window.__allTimeByDate || new Map();
+      const datesAsc = getAllDatesAsc();
+      const pointsSeries = getPlayerPointsAcrossDates(player);
+      const attendedFlags = pointsSeries.absent.map(a => !a);
+      const attendedCount = attendedFlags.filter(Boolean).length;
+      const totalSessions = datesAsc.length;
+      const latestDate = datesAsc[datesAsc.length-1] || '';
+
+      // Attendance card
+      const cardWrap = document.createElement('div');
+      cardWrap.className = 'stat-cards';
+      function makeCard(title, mainEl, subText){
+        const card = document.createElement('div');
+        card.className = 'stat-card';
+        const meta = document.createElement('div'); meta.className = 'stat-meta';
+        const t = document.createElement('div'); t.className = 'stat-title'; t.textContent = title;
+        const v = document.createElement('div'); v.className = 'stat-value';
+        if(typeof mainEl === 'string'){ v.textContent = mainEl; } else if(mainEl){ v.appendChild(mainEl); }
+        const s = document.createElement('div'); s.className = 'stat-sub'; s.textContent = subText || '';
+        meta.appendChild(t); meta.appendChild(v); meta.appendChild(s);
+        card.appendChild(meta);
+        return card;
+      }
+
+      // 1) Attendance Rate
+      const attPct = totalSessions > 0 ? Math.round((attendedCount/totalSessions)*100) : 0;
+      cardWrap.appendChild(makeCard('Attendance Rate', `${attendedCount}/${totalSessions} • ${attPct}%`, latestDate ? `Latest: ${formatDateShort(latestDate)}` : ''));
+
+      // 2) Longest Streak
+      let longest = 0, current = 0;
+      for(let i=0;i<attendedFlags.length;i++){
+        if(attendedFlags[i]){ current += 1; longest = Math.max(longest, current); }
+        else { current = 0; }
+      }
+      cardWrap.appendChild(makeCard('Longest Streak', `${longest} sessions`, current>0 ? `Current: ${current}` : ''));
+
+      // 3) Form (Last 3 vs Career)
+      const ptsAttended = pointsSeries.points.filter((v,idx)=> attendedFlags[idx]);
+      const matches = ptsAttended.length;
+      const totalPts = ptsAttended.reduce((s,v)=> s+v, 0);
+      const careerPPM = matches>0 ? (totalPts/matches) : 0;
+      const last3Vals = ptsAttended.slice(-3);
+      const last3 = last3Vals.length>0 ? (last3Vals.reduce((s,v)=>s+v,0)/last3Vals.length) : 0;
+      let deltaPct = null;
+      if(matches>=2){ deltaPct = (careerPPM>0 ? ((last3 - careerPPM)/careerPPM*100) : (last3>0 ? Infinity : 0)); }
+      const formVal = document.createElement('span');
+      if(deltaPct === null){ formVal.textContent = '—'; }
+      else if(!Number.isFinite(deltaPct)){
+        formVal.className = 'delta-pos'; formVal.textContent = '+∞%';
+      } else {
+        formVal.className = deltaPct>=0 ? 'delta-pos' : 'delta-neg';
+        const sign = deltaPct>=0 ? '+' : '-';
+        formVal.textContent = `${sign}${Math.abs(deltaPct).toFixed(1)}%`;
+      }
+      cardWrap.appendChild(makeCard('Form (Last 3 vs Career)', formVal, `${last3.toFixed(2)} vs ${careerPPM.toFixed(2)}`));
+
+      // 4) Podium Rate (and Wins)
+      let wins = 0, podiums = 0, attendedDays = 0;
+      for(const d of datesAsc){
+        const arr = byDate.get(d) || [];
+        const sorted = arr.slice().sort((a,b)=> b.points - a.points || a.player.localeCompare(b.player));
+        const idx = sorted.findIndex(e => e.player === player);
+        if(idx !== -1){
+          attendedDays++;
+          const rank = idx+1;
+          if(rank === 1) wins++;
+          if(rank <= 3) podiums++;
+        }
+      }
+      const podPct = attendedDays>0 ? Math.round((podiums/attendedDays)*100) : 0;
+      cardWrap.appendChild(makeCard('Podium Rate', `${podPct}% Top 3`, `Wins: ${wins}`));
+
+      return cardWrap;
+    }
+
     // Build the top-right latest sync pill bar
     function buildLatestSyncPill(latestDate){
       if(!latestDate) return null;
@@ -3387,6 +3468,12 @@
       lockBodyScroll();
       // Prevent background scroll when touching the overlay (iOS Safari)
       function preventOverlayScroll(e){ e.preventDefault(); }
+
+      // Insight cards
+      try{
+        const cards = buildPlayerInsightCards(player);
+        if(cards) body.appendChild(cards);
+      }catch(_){ /* best-effort */ }
 
       // Chart: points across all sessions (zeros when absent)
       try{
