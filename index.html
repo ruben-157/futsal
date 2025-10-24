@@ -2898,17 +2898,13 @@
       const minVal = 0;
       const innerW = Math.max(1, width - padLeft - padRight);
       const innerH = Math.max(1, height - padTop - padBottom);
-      const dx = n > 1 ? (innerW / (n-1)) : innerW; // spacing between centers
+      // Use equal slots so bars never overlap the y-axis
+      const slotW = innerW / n;
       const range = Math.max(1e-6, maxVal - minVal);
-      function xAt(i){ return padLeft + (n>1 ? i*dx : innerW/2); }
+      function xCenterAt(i){ return padLeft + slotW * (i + 0.5); }
       function yAt(v){ return padTop + (1 - (v - minVal) / range) * innerH; }
-      // Bar width: keep within available slot and cap to avoid overflow on small n
-      let barW;
-      if(n > 1){
-        barW = Math.min(dx * 0.7, 18);
-      } else {
-        barW = Math.min(innerW * 0.4, 18);
-      }
+      // Bar width: bounded fraction of slot and absolute cap
+      const barW = Math.max(2, Math.min(slotW * 0.7, 18));
 
       const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -2966,7 +2962,7 @@
         const maxTicks = Math.min(6, n);
         const step = Math.max(1, Math.ceil((n-1) / (maxTicks-1)));
         for(let i=0;i<n;i+=step){
-          const x = xAt(i);
+          const x = xCenterAt(i);
           const label = document.createElementNS('http://www.w3.org/2000/svg','text');
           label.setAttribute('x', String(x));
           label.setAttribute('y', String(baseY + 14));
@@ -2983,8 +2979,10 @@
       // Bars
       for(let i=0;i<n;i++){
         const isAbsent = !!(absences && absences[i]);
-        const xCenter = xAt(i);
-        const x = xCenter - barW/2;
+        const xCenter = xCenterAt(i);
+        // Ensure we don't draw over the y-axis line: leave a 1px gap
+        const slotLeft = padLeft + slotW * i;
+        let x = slotLeft + (slotW - barW) / 2 + 1;
         const v = points[i] || 0;
         if(isAbsent){
           // Draw an X to mark absence
@@ -3009,20 +3007,26 @@
         rect.setAttribute('fill', fill);
         rect.setAttribute('opacity', v > 0 ? '0.95' : '0.7');
         svg.appendChild(rect);
-        // Label points above (only for v>0 to avoid clutter)
+        // Label points: inside the bar when tall enough; otherwise above
         if(v > 0){
-          const ty = Math.max(padTop + 10, y - 2);
           const label = document.createElementNS('http://www.w3.org/2000/svg','text');
           label.setAttribute('x', String(xCenter));
-          label.setAttribute('y', String(ty));
           label.setAttribute('text-anchor', 'middle');
           label.setAttribute('font-size', '10');
-          label.setAttribute('fill', 'var(--muted)');
+          if(h >= 14){
+            const ty = y + Math.min(h - 3, 10);
+            label.setAttribute('y', String(ty));
+            label.setAttribute('fill', '#ffffff');
+          } else {
+            const ty = Math.max(padTop + 10, y - 2);
+            label.setAttribute('y', String(ty));
+            label.setAttribute('fill', 'var(--muted)');
+          }
           label.textContent = String(v);
           svg.appendChild(label);
         }
       }
-
+      
       return svg;
     }
 
