@@ -3532,7 +3532,7 @@
           const svg = buildBarChart(seriesAll.points, { width: 360, height: 160, fill: 'var(--accent)', labels: seriesAll.dates, absences: seriesAll.absent, tops });
           if(svg){
             chartWrap.appendChild(svg);
-            // Legend: bar = points (present); thin bar = 0 points (present); × = absent; ⭐ = highest of day
+            // Legend: bar = points (present); thin bar = 0 points (present); × = absent; ⭐ = highest of session
             const legend = document.createElement('div');
             legend.className = 'stat-sub';
             legend.style.display = 'flex'; legend.style.alignItems = 'center'; legend.style.gap = '12px'; legend.style.marginTop = '4px';
@@ -3542,7 +3542,7 @@
             item2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="3" fill="currentColor"/></svg><span>0 points (present)</span>`;
             const item3 = document.createElement('div'); item3.style.display='flex'; item3.style.alignItems='center'; item3.style.gap='6px';
             item3.innerHTML = `<span style="display:inline-block; width:14px; height:14px; line-height:14px; text-align:center; color:#9ca3af; font-weight:700">×</span><span>Absent</span>`;
-            const item4 = document.createElement('div'); item4.style.display='flex'; item4.style.alignItems='center'; item4.style.gap='6px'; item4.innerHTML = `<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"6\" width=\"14\" height=\"12\" fill=\"#f59e0b\"/></svg><span>Highest of day</span>`; legend.appendChild(item1); legend.appendChild(item2); legend.appendChild(item3); legend.appendChild(item4);
+            const item4 = document.createElement('div'); item4.style.display='flex'; item4.style.alignItems='center'; item4.style.gap='6px'; item4.innerHTML = `<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"6\" width=\"14\" height=\"12\" fill=\"#f59e0b\"/></svg><span>Highest of session</span>`; legend.appendChild(item1); legend.appendChild(item2); legend.appendChild(item3); legend.appendChild(item4);
             chartWrap.appendChild(legend);
             body.appendChild(chartWrap);
           }
