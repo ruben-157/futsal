@@ -3132,8 +3132,8 @@
             star.setAttribute('text-anchor', 'middle');
             star.setAttribute('font-size', '11');
             // Position star above the value label, ensuring separation
-            // Place star ~7px above the number (lower than before)
-            let starY = Math.max(padTop + 8, valY - 7);
+            // Place star ~12px above the number (slightly higher)
+            let starY = Math.max(padTop + 8, valY - 12);
             // Keep star inside the bar if there's enough height
             if(h >= 26){
               starY = Math.max(y + 6, starY);
