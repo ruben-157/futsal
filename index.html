@@ -2682,17 +2682,32 @@
       cardWrap.appendChild(makeCard('Form (Last 3 vs Career)', formVal, `${last3.toFixed(2)} vs ${careerPPM.toFixed(2)}`));
 
       // 4) Highest Score Streak (consecutive sessions with highest points of the day)
-      let bestStreak = 0, curStreak = 0;
-      for(const d of datesAsc){
+      let bestStreak = 0, bestStartIdx = -1, bestEndIdx = -1;
+      let curStreak = 0, curStartIdx = -1;
+      for(let i=0;i<datesAsc.length;i++){
+        const d = datesAsc[i];
         const arr = byDate.get(d) || [];
-        if(!arr.length){ curStreak = 0; continue; }
+        if(!arr.length){ curStreak = 0; curStartIdx = -1; continue; }
         // Determine max points for the day
         let maxPts = -Infinity; for(const e of arr){ if(typeof e.points === 'number' && e.points > maxPts) maxPts = e.points; }
         const won = arr.some(e => e.player === player && e.points === maxPts);
-        if(won){ curStreak += 1; bestStreak = Math.max(bestStreak, curStreak); }
-        else { curStreak = 0; }
+        if(won){
+          if(curStreak === 0) curStartIdx = i;
+          curStreak += 1;
+          if(curStreak > bestStreak){ bestStreak = curStreak; bestStartIdx = curStartIdx; bestEndIdx = i; }
+        } else {
+          curStreak = 0; curStartIdx = -1;
+        }
       }
-      cardWrap.appendChild(makeCard('Highest Score Streak', `${bestStreak} sessions`, curStreak>0 ? `Current: ${curStreak}` : ''));
+      let rangeText = '';
+      if(bestStreak > 0 && bestStartIdx !== -1 && bestEndIdx !== -1){
+        const rs = datesAsc[bestStartIdx];
+        const re = datesAsc[bestEndIdx];
+        const rsTxt = formatDateShort(rs);
+        const reTxt = formatDateShort(re);
+        rangeText = (rs === re) ? (`${rsTxt}`) : (`${rsTxt} – ${reTxt}`);
+      }
+      cardWrap.appendChild(makeCard('Highest Score Streak', `${bestStreak} sessions`, rangeText));
 
       return cardWrap;
     }
