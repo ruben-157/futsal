@@ -2659,7 +2659,7 @@
           if(arr.some(e => e.player === player && (Number(e.points)||0) === maxPts)) topDays++;
         }
         const pctTop = attendedCount>0 ? Math.round((topDays/attendedCount)*100) : 0;
-        const full = makeCard('Percent of days with highest score', `${pctTop}%`, `${topDays} / ${attendedCount}`);
+        const full = makeCard('Percent of Sessions with highest score', `${pctTop}%`, `${topDays} / ${attendedCount}`);
         full.style.gridColumn = '1 / -1';
         cardWrap.appendChild(full);
       }catch(_){}
