@@ -2681,21 +2681,18 @@
       }
       cardWrap.appendChild(makeCard('Form (Last 3 vs Career)', formVal, `${last3.toFixed(2)} vs ${careerPPM.toFixed(2)}`));
 
-      // 4) Podium Rate (and Wins)
-      let wins = 0, podiums = 0, attendedDays = 0;
+      // 4) Highest Score Streak (consecutive sessions with highest points of the day)
+      let bestStreak = 0, curStreak = 0;
       for(const d of datesAsc){
         const arr = byDate.get(d) || [];
-        const sorted = arr.slice().sort((a,b)=> b.points - a.points || a.player.localeCompare(b.player));
-        const idx = sorted.findIndex(e => e.player === player);
-        if(idx !== -1){
-          attendedDays++;
-          const rank = idx+1;
-          if(rank === 1) wins++;
-          if(rank <= 3) podiums++;
-        }
+        if(!arr.length){ curStreak = 0; continue; }
+        // Determine max points for the day
+        let maxPts = -Infinity; for(const e of arr){ if(typeof e.points === 'number' && e.points > maxPts) maxPts = e.points; }
+        const won = arr.some(e => e.player === player && e.points === maxPts);
+        if(won){ curStreak += 1; bestStreak = Math.max(bestStreak, curStreak); }
+        else { curStreak = 0; }
       }
-      const podPct = attendedDays>0 ? Math.round((podiums/attendedDays)*100) : 0;
-      cardWrap.appendChild(makeCard('Podium Rate', `${podPct}% Top 3`, `Wins: ${wins}`));
+      cardWrap.appendChild(makeCard('Highest Score Streak', `${bestStreak} sessions`, curStreak>0 ? `Current: ${curStreak}` : ''));
 
       return cardWrap;
     }
