@@ -3112,9 +3112,13 @@
           let valY;
           if(h >= 16){
             valY = y + Math.min(h - 3, 12);
+            // Shift number lower by ~15px but keep within chart baseline
+            valY = Math.min(valY + 15, baseY - 2);
             val.setAttribute('fill', '#ffffff');
           } else {
             valY = Math.max(padTop + 10, y - 2);
+            // Shift number lower by ~15px for consistency
+            valY = valY + 15;
             val.setAttribute('fill', 'var(--muted)');
           }
           val.setAttribute('y', String(valY));
@@ -3128,7 +3132,8 @@
             star.setAttribute('text-anchor', 'middle');
             star.setAttribute('font-size', '11');
             // Position star above the value label, ensuring separation
-            let starY = Math.max(padTop + 8, valY - 12);
+            // Place star ~7px above the number (lower than before)
+            let starY = Math.max(padTop + 8, valY - 7);
             // Keep star inside the bar if there's enough height
             if(h >= 26){
               starY = Math.max(y + 6, starY);
