@@ -3111,14 +3111,13 @@
           val.setAttribute('font-size', '10');
           let valY;
           if(h >= 16){
-            valY = y + Math.min(h - 3, 12);
-            // Shift number lower by ~15px but keep within chart baseline
-            valY = Math.min(valY + 15, baseY - 2);
+            const basePos = y + Math.min(h - 3, 12);
+            // If highest-of-day, shift lower to leave room for star; otherwise use old top-of-bar position
+            valY = isTop ? Math.min(basePos + 15, baseY - 2) : basePos;
             val.setAttribute('fill', '#ffffff');
           } else {
-            valY = Math.max(padTop + 10, y - 2);
-            // Shift number lower by ~15px for consistency
-            valY = valY + 15;
+            const basePos = Math.max(padTop + 10, y - 2);
+            valY = isTop ? (basePos + 15) : basePos;
             val.setAttribute('fill', 'var(--muted)');
           }
           val.setAttribute('y', String(valY));
