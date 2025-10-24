@@ -2881,6 +2881,133 @@
       return svg;
     }
 
+    // Simple bar chart with absence handling
+    function buildBarChart(points, opts){
+      const width = (opts && opts.width) || 360;
+      const height = (opts && opts.height) || 160;
+      const padTop = 8;
+      const padRight = 10;
+      const padBottom = 22;
+      const padLeft = 34;
+      const fill = (opts && opts.fill) || 'var(--accent)';
+      const labels = (opts && opts.labels) || null;
+      const absences = (opts && opts.absences) || null;
+      const n = Array.isArray(points) ? points.length : 0;
+      if(!n){ return null; }
+      const maxVal = Math.max(0, ...points);
+      const minVal = 0;
+      const innerW = Math.max(1, width - padLeft - padRight);
+      const innerH = Math.max(1, height - padTop - padBottom);
+      const dx = n > 1 ? (innerW / (n-1)) : innerW; // spacing between centers
+      const range = Math.max(1e-6, maxVal - minVal);
+      function xAt(i){ return padLeft + (n>1 ? i*dx : innerW/2); }
+      function yAt(v){ return padTop + (1 - (v - minVal) / range) * innerH; }
+      const barW = Math.max(2, (n>1 ? dx : innerW) * 0.6);
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      svg.style.width = '100%';
+      svg.style.height = 'auto';
+      svg.setAttribute('role','img');
+      svg.setAttribute('aria-label','Points by session (bar)');
+
+      // Y-axis + grid
+      function computeYTicks(minV, maxV){
+        if(maxV <= minV) return [minV, maxV];
+        let span = maxV - minV;
+        let step = 1;
+        if(span > 20) step = 5; else if(span > 10) step = 2; else step = 1;
+        const out = [];
+        let start = Math.ceil(minV / step) * step;
+        if(start > minV) start = minV;
+        for(let v=start; v<=maxV; v+=step){ out.push(v); }
+        if(out[0] !== minV) out.unshift(minV);
+        if(out[out.length-1] !== maxV) out.push(maxV);
+        return Array.from(new Set(out));
+      }
+      const yTicks = computeYTicks(minVal, maxVal);
+      const yAxis = document.createElementNS('http://www.w3.org/2000/svg','line');
+      yAxis.setAttribute('x1', String(padLeft)); yAxis.setAttribute('x2', String(padLeft));
+      yAxis.setAttribute('y1', String(padTop)); yAxis.setAttribute('y2', String(padTop + innerH));
+      yAxis.setAttribute('stroke', 'var(--border)'); yAxis.setAttribute('stroke-width', '1');
+      svg.appendChild(yAxis);
+      yTicks.forEach(v => {
+        const y = yAt(v);
+        const grid = document.createElementNS('http://www.w3.org/2000/svg','line');
+        grid.setAttribute('x1', String(padLeft)); grid.setAttribute('x2', String(padLeft + innerW));
+        grid.setAttribute('y1', String(y)); grid.setAttribute('y2', String(y));
+        grid.setAttribute('stroke', 'var(--border)'); grid.setAttribute('stroke-width', '1'); grid.setAttribute('opacity', '0.7');
+        svg.appendChild(grid);
+        const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+        txt.setAttribute('x', String(padLeft - 6));
+        txt.setAttribute('y', String(y + 3));
+        txt.setAttribute('text-anchor', 'end');
+        txt.setAttribute('font-size', '10');
+        txt.setAttribute('fill', 'var(--muted)');
+        txt.textContent = String(v);
+        svg.appendChild(txt);
+      });
+      const baseY = yAt(0);
+      const xAxis = document.createElementNS('http://www.w3.org/2000/svg','line');
+      xAxis.setAttribute('x1', String(padLeft)); xAxis.setAttribute('x2', String(padLeft + innerW));
+      xAxis.setAttribute('y1', String(baseY)); xAxis.setAttribute('y2', String(baseY));
+      xAxis.setAttribute('stroke', 'var(--border)'); xAxis.setAttribute('stroke-width', '1');
+      svg.appendChild(xAxis);
+
+      // X ticks/labels
+      if(n >= 1){
+        const maxTicks = Math.min(6, n);
+        const step = Math.max(1, Math.ceil((n-1) / (maxTicks-1)));
+        for(let i=0;i<n;i+=step){
+          const x = xAt(i);
+          const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+          label.setAttribute('x', String(x));
+          label.setAttribute('y', String(baseY + 14));
+          label.setAttribute('text-anchor', 'middle');
+          label.setAttribute('font-size', '10');
+          label.setAttribute('fill', 'var(--muted)');
+          let text = String(i+1);
+          if(labels && labels[i]) text = formatDateShort ? formatDateShort(labels[i]) : labels[i];
+          label.textContent = text;
+          svg.appendChild(label);
+        }
+      }
+
+      // Bars
+      for(let i=0;i<n;i++){
+        const isAbsent = !!(absences && absences[i]);
+        const xCenter = xAt(i);
+        const x = xCenter - barW/2;
+        const v = points[i] || 0;
+        if(isAbsent){
+          // Draw an X to mark absence
+          const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+          t.setAttribute('x', String(xCenter));
+          t.setAttribute('y', String(baseY - 1));
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('dominant-baseline', 'alphabetic');
+          t.setAttribute('font-size', '12');
+          t.setAttribute('fill', '#9ca3af');
+          t.textContent = '×';
+          svg.appendChild(t);
+          continue;
+        }
+        const y = v > 0 ? yAt(v) : (baseY - 2);
+        const h = Math.max(2, baseY - y);
+        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        rect.setAttribute('x', String(x));
+        rect.setAttribute('y', String(y));
+        rect.setAttribute('width', String(barW));
+        rect.setAttribute('height', String(h));
+        rect.setAttribute('fill', fill);
+        rect.setAttribute('opacity', v > 0 ? '0.95' : '0.7');
+        svg.appendChild(rect);
+      }
+
+      return svg;
+    }
+
     // Build header stat cards for All-Time page
     function buildAllTimeHeaderCards(preRows, rows, byDate, latestDate, basis){
       if(!rows || !rows.length) return null;
@@ -3257,10 +3384,12 @@
             legend.className = 'stat-sub';
             legend.style.display = 'flex'; legend.style.alignItems = 'center'; legend.style.gap = '12px'; legend.style.marginTop = '4px';
             const item1 = document.createElement('div'); item1.style.display='flex'; item1.style.alignItems='center'; item1.style.gap='6px';
-            item1.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg><span>0 points (present)</span>`;
+            item1.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="12" fill="currentColor"/></svg><span>Points (present)</span>`;
             const item2 = document.createElement('div'); item2.style.display='flex'; item2.style.alignItems='center'; item2.style.gap='6px';
-            item2.innerHTML = `<span style="display:inline-block; width:14px; height:14px; line-height:14px; text-align:center; color:#9ca3af; font-weight:700">×</span><span>Absent</span>`;
-            legend.appendChild(item1); legend.appendChild(item2);
+            item2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="3" fill="currentColor"/></svg><span>0 points (present)</span>`;
+            const item3 = document.createElement('div'); item3.style.display='flex'; item3.style.alignItems='center'; item3.style.gap='6px';
+            item3.innerHTML = `<span style="display:inline-block; width:14px; height:14px; line-height:14px; text-align:center; color:#9ca3af; font-weight:700">×</span><span>Absent</span>`;
+            legend.appendChild(item1); legend.appendChild(item2); legend.appendChild(item3);
             chartWrap.appendChild(legend);
             body.appendChild(chartWrap);
           }
