@@ -2902,7 +2902,13 @@
       const range = Math.max(1e-6, maxVal - minVal);
       function xAt(i){ return padLeft + (n>1 ? i*dx : innerW/2); }
       function yAt(v){ return padTop + (1 - (v - minVal) / range) * innerH; }
-      const barW = Math.max(2, (n>1 ? dx : innerW) * 0.6);
+      // Bar width: keep within available slot and cap to avoid overflow on small n
+      let barW;
+      if(n > 1){
+        barW = Math.min(dx * 0.7, 18);
+      } else {
+        barW = Math.min(innerW * 0.4, 18);
+      }
 
       const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -3003,6 +3009,18 @@
         rect.setAttribute('fill', fill);
         rect.setAttribute('opacity', v > 0 ? '0.95' : '0.7');
         svg.appendChild(rect);
+        // Label points above (only for v>0 to avoid clutter)
+        if(v > 0){
+          const ty = Math.max(padTop + 10, y - 2);
+          const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+          label.setAttribute('x', String(xCenter));
+          label.setAttribute('y', String(ty));
+          label.setAttribute('text-anchor', 'middle');
+          label.setAttribute('font-size', '10');
+          label.setAttribute('fill', 'var(--muted)');
+          label.textContent = String(v);
+          svg.appendChild(label);
+        }
       }
 
       return svg;
