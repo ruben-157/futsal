@@ -3453,37 +3453,9 @@
       headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Match: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''}`;
       body.appendChild(headerStats);
 
-      // Build list per session (latest first)
-      const byDate = window.__allTimeByDate || new Map();
-      const dates = rows.map(r=> r.date).sort().reverse();
-      for(const d of dates){
-        const entries = byDate.get(d) || [];
-        const sorted = entries.slice().sort((a,b)=> b.points - a.points || a.player.localeCompare(b.player));
-        const idx = sorted.findIndex(e => e.player === player);
-        const rank = idx>=0 ? (idx+1) : '?';
-        const total = sorted.length;
-        const points = rows.find(r=> r.date===d)?.points || 0;
-        const max = sorted.length ? sorted[0].points : points;
-        const perf = max>0 ? Math.round((points/max)*100) : 0;
+            // Session list removed (redundant with chart and labels)
 
-        const row = document.createElement('div');
-        row.style.display = 'flex'; row.style.justifyContent='space-between'; row.style.alignItems='center';
-        row.style.border = '1px solid var(--border)'; row.style.borderRadius='10px'; row.style.padding='8px 10px'; row.style.margin='6px 0';
-
-        const left = document.createElement('div');
-        left.innerHTML = `<div style="font-weight:700">${formatDateLong(d)}</div>`;
-
-        const right = document.createElement('div');
-        const badge = document.createElement('span');
-        badge.className = 'badge ' + (points>6 ? 'badge-good' : (points>=4 ? 'badge-avg' : 'badge-low'));
-        badge.textContent = String(points);
-        right.appendChild(badge);
-
-        row.appendChild(left); row.appendChild(right);
-        body.appendChild(row);
-      }
-
-      const closeBtn = document.getElementById('playerModalClose');
+const closeBtn = document.getElementById('playerModalClose');
       const close = ()=>{ overlay.hidden = true; modal.hidden = true; closeBtn.onclick = null; overlay.onclick = null; overlay.removeEventListener('touchmove', preventOverlayScroll); __openModalEl = null; unlockBodyScroll(); };
       closeBtn.onclick = close;
       overlay.onclick = close;
