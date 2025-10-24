@@ -2739,13 +2739,15 @@
       function yAt(v){ return padTop + (1 - (v - minVal) / range) * innerH; }
 
       // Build path
+      // Build a path that connects only between non-absent consecutive points.
       let d = '';
+      let segmentOpen = false;
       for(let i=0;i<n;i++){
+        const isAbsent = !!(absences && absences[i]);
+        if(isAbsent){ segmentOpen = false; continue; }
         const x = xAt(i); const y = yAt(points[i]);
-        const curAbsent = !!(absences && absences[i]);
-        const prevAbsent = i>0 ? !!(absences && absences[i-1]) : false;
-        const cmd = (i===0 || curAbsent || prevAbsent) ? 'M' : 'L';
-        d += cmd + x + ' ' + y + ' ';
+        if(!segmentOpen){ d += 'M' + x + ' ' + y + ' '; segmentOpen = true; }
+        else{ d += 'L' + x + ' ' + y + ' '; }
       }
       const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -2854,21 +2856,27 @@
 
       // Dots
       for(let i=0;i<n;i++){
-        const cx = String(xAt(i));
-        const cy = String(yAt(points[i]));
+        const x = xAt(i);
+        const y = yAt(points[i]);
         const isAbsent = !!(absences && absences[i]);
-        const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-        c.setAttribute('cx', cx); c.setAttribute('cy', cy);
-        c.setAttribute('r', String(dot + (isAbsent ? 1 : 0))); // slightly larger for hollow
         if(isAbsent){
-          c.setAttribute('fill', '#ffffff');
-          c.setAttribute('stroke', '#9ca3af');
-          c.setAttribute('stroke-width', '2');
+          const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+          t.setAttribute('x', String(x));
+          t.setAttribute('y', String(y));
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('dominant-baseline', 'central');
+          t.setAttribute('font-size', '12');
+          t.setAttribute('fill', '#9ca3af');
+          t.textContent = '×';
+          svg.appendChild(t);
         } else {
+          const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+          c.setAttribute('cx', String(x)); c.setAttribute('cy', String(y));
+          c.setAttribute('r', String(dot));
           c.setAttribute('fill', stroke);
           c.setAttribute('opacity', '0.9');
+          svg.appendChild(c);
         }
-        svg.appendChild(c);
       }
       return svg;
     }
@@ -3251,7 +3259,7 @@
             const item1 = document.createElement('div'); item1.style.display='flex'; item1.style.alignItems='center'; item1.style.gap='6px';
             item1.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg><span>0 points (present)</span>`;
             const item2 = document.createElement('div'); item2.style.display='flex'; item2.style.alignItems='center'; item2.style.gap='6px';
-            item2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#fff" stroke="#9ca3af" stroke-width="2"/></svg><span>Absent</span>`;
+            item2.innerHTML = `<span style="display:inline-block; width:14px; height:14px; line-height:14px; text-align:center; color:#9ca3af; font-weight:700">×</span><span>Absent</span>`;
             legend.appendChild(item1); legend.appendChild(item2);
             chartWrap.appendChild(legend);
             body.appendChild(chartWrap);
