@@ -2667,12 +2667,20 @@
     function getPlayerPointsAcrossDates(player){
       const byDate = window.__allTimeByDate || new Map();
       const dates = getAllDatesAsc();
-      const points = dates.map(d => {
+      const points = [];
+      const absent = [];
+      for(const d of dates){
         const arr = byDate.get(d) || [];
         const hit = arr.find(e => e.player === player);
-        return hit ? (Number(hit.points) || 0) : 0;
-      });
-      return { dates, points };
+        if(hit){
+          points.push(Number(hit.points) || 0);
+          absent.push(false);
+        } else {
+          points.push(0);
+          absent.push(true);
+        }
+      }
+      return { dates, points, absent };
     }
     function getAllPlayers(){
       const rows = window.__allTimeRows || [];
@@ -2718,6 +2726,7 @@
       const strokeWidth = (opts && opts.strokeWidth) || 2;
       const dot = (opts && opts.dotRadius) || 2;
       const labels = (opts && opts.labels) || null; // optional x labels (dates)
+      const absences = (opts && opts.absences) || null; // optional boolean[] whether player was absent that session
       const n = Array.isArray(points) ? points.length : 0;
       if(!n){ return null; }
       const maxVal = Math.max(0, ...points);
@@ -2733,7 +2742,10 @@
       let d = '';
       for(let i=0;i<n;i++){
         const x = xAt(i); const y = yAt(points[i]);
-        d += (i===0 ? 'M' : 'L') + x + ' ' + y + ' ';
+        const curAbsent = !!(absences && absences[i]);
+        const prevAbsent = i>0 ? !!(absences && absences[i-1]) : false;
+        const cmd = (i===0 || curAbsent || prevAbsent) ? 'M' : 'L';
+        d += cmd + x + ' ' + y + ' ';
       }
       const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -2842,11 +2854,20 @@
 
       // Dots
       for(let i=0;i<n;i++){
+        const cx = String(xAt(i));
+        const cy = String(yAt(points[i]));
+        const isAbsent = !!(absences && absences[i]);
         const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-        c.setAttribute('cx', String(xAt(i))); c.setAttribute('cy', String(yAt(points[i])));
-        c.setAttribute('r', String(dot));
-        c.setAttribute('fill', stroke);
-        c.setAttribute('opacity', '0.9');
+        c.setAttribute('cx', cx); c.setAttribute('cy', cy);
+        c.setAttribute('r', String(dot + (isAbsent ? 1 : 0))); // slightly larger for hollow
+        if(isAbsent){
+          c.setAttribute('fill', '#ffffff');
+          c.setAttribute('stroke', '#9ca3af');
+          c.setAttribute('stroke-width', '2');
+        } else {
+          c.setAttribute('fill', stroke);
+          c.setAttribute('opacity', '0.9');
+        }
         svg.appendChild(c);
       }
       return svg;
@@ -3220,8 +3241,21 @@
           const chartWrap = document.createElement('div');
           chartWrap.style.marginBottom = '8px';
           chartWrap.style.width = '100%';
-          const svg = buildLineChart(seriesAll.points, { width: 360, height: 140, stroke: 'var(--accent)', strokeWidth: 2, dotRadius: 2, labels: seriesAll.dates });
-          if(svg){ chartWrap.appendChild(svg); body.appendChild(chartWrap); }
+          const svg = buildLineChart(seriesAll.points, { width: 360, height: 140, stroke: 'var(--accent)', strokeWidth: 2, dotRadius: 2, labels: seriesAll.dates, absences: seriesAll.absent });
+          if(svg){
+            chartWrap.appendChild(svg);
+            // Legend: filled = 0 points (present); hollow = absent
+            const legend = document.createElement('div');
+            legend.className = 'stat-sub';
+            legend.style.display = 'flex'; legend.style.alignItems = 'center'; legend.style.gap = '12px'; legend.style.marginTop = '4px';
+            const item1 = document.createElement('div'); item1.style.display='flex'; item1.style.alignItems='center'; item1.style.gap='6px';
+            item1.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg><span>0 points (present)</span>`;
+            const item2 = document.createElement('div'); item2.style.display='flex'; item2.style.alignItems='center'; item2.style.gap='6px';
+            item2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#fff" stroke="#9ca3af" stroke-width="2"/></svg><span>Absent</span>`;
+            legend.appendChild(item1); legend.appendChild(item2);
+            chartWrap.appendChild(legend);
+            body.appendChild(chartWrap);
+          }
         }
       }catch(_){ /* best-effort chart */ }
 
