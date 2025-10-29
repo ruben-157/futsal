@@ -357,6 +357,13 @@
         </svg>
         <span>All-Time Leaderboard</span>
       </button>
+      <button class="btn" id="btnAllTimeRefresh" type="button" aria-label="Refresh All-Time leaderboard" hidden>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right:6px; vertical-align:middle">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21 3v6h-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Refresh</span>
+      </button>
     </div>
   </header>
   <nav class="tabs" role="tablist" aria-label="Futsal sections">
@@ -2416,6 +2423,8 @@
       // Reflect active state on All-Time header button
       const btnAllTimeHeaderEl = document.getElementById('btnAllTimeHeader');
       if(btnAllTimeHeaderEl){ btnAllTimeHeaderEl.classList.toggle('active', which === 'alltime'); }
+      const btnAllTimeRefreshEl = document.getElementById('btnAllTimeRefresh');
+      if(btnAllTimeRefreshEl){ btnAllTimeRefreshEl.hidden = (which !== 'alltime'); }
       if(which === 'players'){
         renderRoster(); // ensure lock state reflected immediately
       } else if(which === 'alltime'){
@@ -2440,6 +2449,8 @@
     tabs.leaderboard.addEventListener('click', ()=> switchTab('leaderboard'));
     const btnAllTimeHeader = document.getElementById('btnAllTimeHeader');
     if(btnAllTimeHeader){ btnAllTimeHeader.addEventListener('click', ()=> switchTab('alltime')); }
+    const btnAllTimeRefresh = document.getElementById('btnAllTimeRefresh');
+    if(btnAllTimeRefresh){ btnAllTimeRefresh.addEventListener('click', ()=> renderAllTime(true)); }
 
     // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
     let allTimeCache = { rows: null, ts: 0 };
