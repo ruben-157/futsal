@@ -1372,11 +1372,12 @@
       const scorerTotals = new Map();
       const playedCounts = new Map();
       const teamById = new Map(state.teams.map(t => [t.id, t]));
+      const isGuest = (name)=> String(name||'').trim().toLowerCase() === 'guest player';
       for(const key of Object.keys(state.results || {})){
         const r = state.results[key]; if(!r) continue;
         const { a, b, ga, gb, gpa, gpb } = r || {};
-        if(gpa){ for(const [name, n] of Object.entries(gpa)){ if(n>0){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
-        if(gpb){ for(const [name, n] of Object.entries(gpb)){ if(n>0){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
+        if(gpa){ for(const [name, n] of Object.entries(gpa)){ if(n>0 && !isGuest(name)){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
+        if(gpb){ for(const [name, n] of Object.entries(gpb)){ if(n>0 && !isGuest(name)){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
         const played = ga != null && gb != null;
         if(played){
           const teamA = teamById.get(a); const teamB = teamById.get(b);
@@ -1394,7 +1395,7 @@
         const sHead = document.createElement('thead'); sHead.innerHTML = '<tr><th style="width:60%">Player</th><th>Goals</th><th>GPM</th></tr>';
         const sBody = document.createElement('tbody');
         const topGoals = scorers[0][1];
-        for(const [name, goals] of scorers){
+      for(const [name, goals] of scorers){
           const played = playedCounts.get(name) || 0;
           const avg = played ? (goals/played) : 0;
           const tr = document.createElement('tr');
@@ -1467,11 +1468,12 @@
       });
       // Include Top Scorers section if it is visible in the view
       const scorerTotals = new Map();
+      const isGuest = (name)=> String(name||'').trim().toLowerCase() === 'guest player';
       for(const key of Object.keys(state.results || {})){
         const r = state.results[key]; if(!r) continue;
         const { gpa, gpb } = r;
-        if(gpa){ for(const [name, n] of Object.entries(gpa)){ if(n>0){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
-        if(gpb){ for(const [name, n] of Object.entries(gpb)){ if(n>0){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
+        if(gpa){ for(const [name, n] of Object.entries(gpa)){ if(n>0 && !isGuest(name)){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
+        if(gpb){ for(const [name, n] of Object.entries(gpb)){ if(n>0 && !isGuest(name)){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
       }
       const scorerRows = Array.from(scorerTotals.entries()).filter(([_,n])=> n>0).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
       if(scorerRows.length){
@@ -1642,7 +1644,11 @@
         map.set(name, inp);
       }
       for(const p of a.members){ makeRow(p, gpa[p] ?? 0, aInputs, aCard); }
+      // If team A has only 3 players, add a Guest player row (excluded from leaderboards)
+      if((a.members || []).length === 3){ makeRow('Guest player', gpa['Guest player'] ?? 0, aInputs, aCard); }
       for(const p of b.members){ makeRow(p, gpb[p] ?? 0, bInputs, bCard); }
+      // If team B has only 3 players, add a Guest player row (excluded from leaderboards)
+      if((b.members || []).length === 3){ makeRow('Guest player', gpb['Guest player'] ?? 0, bInputs, bCard); }
 
       // Toggle tracking visibility
       const trackToggle = document.getElementById('modalTrackScorers');
