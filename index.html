@@ -2273,9 +2273,7 @@
       if(n === 11){
         return openTeamCountModal([2,3], 11);
       }
-      if(n === 15){
-        return openTeamCountModal([3,4], 15);
-      }
+      // For 15 players, default to 3 teams (5-5-5); no choice modal
       if(!state.timestamp){ state.timestamp = Date.now(); saveTimestamp(); }
 
       const t = computeTeamCount(n);
