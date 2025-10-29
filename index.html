@@ -1221,6 +1221,13 @@
 
     // Order pairings within a round to avoid any team playing 3 matches in a row across the schedule
     function orderRoundPairings(pairs, streakMap, seed){
+      // Special case: 4 teams use classic round-robin order
+      // A-B, C-D, A-C, B-D, A-D, B-C
+      if(state.teams && state.teams.length === 4){
+        const teams4 = [...state.teams].sort((a,b)=> a.id - b.id);
+        const [A,B,C,D] = teams4;
+        return [[A,B],[C,D],[A,C],[B,D],[A,D],[B,C]];
+      }
       const rng = mulberry32((seed >>> 0));
       // Shuffle a copy to vary the base order deterministically
       const remaining = [...pairs].sort(() => rng() - 0.5);
