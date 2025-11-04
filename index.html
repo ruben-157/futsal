@@ -1310,10 +1310,6 @@
         win.className = 'winner-banner';
         win.textContent = `WINNER: ${top.team.name.toUpperCase()}!!`;
         lb.appendChild(win);
-        if(!state.celebrated){
-          celebrateWinner();
-          state.celebrated = true;
-        }
       }
 
       const wrap = document.createElement('div');
