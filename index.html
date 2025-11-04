@@ -1725,50 +1725,68 @@
           delete state.results[matchId].gpbDraft;
         }catch(_){ }
         saveResults();
-        closeResultModal();
-        // Suppress non-final toasts; only celebrate winner at tournament end
-        renderSchedule();
-        renderLeaderboard();
-        if(areAllMatchesScored() && !state.celebrated){
+        const completedNow = areAllMatchesScored() && !state.celebrated;
+        if(completedNow){
+          // Hide only the result modal; keep overlay visible for confirmation modal
+          try{
+            const modal = document.getElementById('resultModal');
+            if(modal) modal.hidden = true;
+            const overlay = document.getElementById('overlay');
+            if(overlay) overlay.onclick = null; // rebind in confirmation modal
+          }catch(_){/* no-op */}
+          // Update views in the background
+          renderSchedule();
+          renderLeaderboard();
           openEndTournamentModal();
+          // Clear modalCtx since the result modal is done
+          modalCtx = null;
+        } else {
+          closeResultModal();
+          // Suppress non-final toasts; only celebrate winner at tournament end
+          renderSchedule();
+          renderLeaderboard();
         }
       };
     }
 
     function closeResultModal(){
-      // Persist current inputs as a draft so users don't lose mid-game entries
+      // Persist current inputs as a draft only if this match is not finalized
       try{
         if(modalCtx && modalCtx.matchId){
           const matchId = modalCtx.matchId;
-          const aInput = document.getElementById('modalTeamAScore');
-          const bInput = document.getElementById('modalTeamBScore');
-          const gaDraft = Math.max(0, parseInt(aInput.value || '0', 10));
-          const gbDraft = Math.max(0, parseInt(bInput.value || '0', 10));
-          const scorersWrap = document.getElementById('modalScorers');
-          const cards = scorersWrap ? scorersWrap.querySelectorAll('.scorer-card') : null;
-          let gpaDraft = {}, gpbDraft = {};
-          if(cards && cards.length >= 2){
-            const aCard = cards[0];
-            const bCard = cards[1];
-            const readCard = (card)=>{
-              const map = {};
-              if(!card) return map;
-              const rows = card.querySelectorAll('.scorer-row');
-              rows.forEach(row=>{
-                const nameEl = row.children[0];
-                const inp = row.querySelector('input.scorer-input');
-                const name = nameEl ? String(nameEl.textContent||'').trim() : '';
-                const v = Math.max(0, parseInt((inp && inp.value) || '0', 10));
-                if(name && v > 0){ map[name] = v; }
-              });
-              return map;
-            };
-            gpaDraft = readCard(aCard);
-            gpbDraft = readCard(bCard);
+          const rec = state.results[matchId];
+          const isFinal = rec && rec.ga != null && rec.gb != null;
+          if(!isFinal){
+            const aInput = document.getElementById('modalTeamAScore');
+            const bInput = document.getElementById('modalTeamBScore');
+            const gaDraft = Math.max(0, parseInt(aInput.value || '0', 10));
+            const gbDraft = Math.max(0, parseInt(bInput.value || '0', 10));
+            const scorersWrap = document.getElementById('modalScorers');
+            const cards = scorersWrap ? scorersWrap.querySelectorAll('.scorer-card') : null;
+            let gpaDraft = {}, gpbDraft = {};
+            if(cards && cards.length >= 2){
+              const aCard = cards[0];
+              const bCard = cards[1];
+              const readCard = (card)=>{
+                const map = {};
+                if(!card) return map;
+                const rows = card.querySelectorAll('.scorer-row');
+                rows.forEach(row=>{
+                  const nameEl = row.children[0];
+                  const inp = row.querySelector('input.scorer-input');
+                  const name = nameEl ? String(nameEl.textContent||'').trim() : '';
+                  const v = Math.max(0, parseInt((inp && inp.value) || '0', 10));
+                  if(name && v > 0){ map[name] = v; }
+                });
+                return map;
+              };
+              gpaDraft = readCard(aCard);
+              gpbDraft = readCard(bCard);
+            }
+            const prev = state.results[matchId] || { a: modalCtx.aId, b: modalCtx.bId, round: modalCtx.round };
+            state.results[matchId] = { ...prev, gaDraft, gbDraft, gpaDraft, gpbDraft };
+            saveResults();
           }
-          const prev = state.results[matchId] || { a: modalCtx.aId, b: modalCtx.bId, round: modalCtx.round };
-          state.results[matchId] = { ...prev, gaDraft, gbDraft, gpaDraft, gpbDraft };
-          saveResults();
         }
       }catch(_){ /* draft save is best-effort */ }
       const overlay = document.getElementById('overlay');
@@ -2036,10 +2054,13 @@
       const yes = document.getElementById('endTournamentYes');
       const add = document.getElementById('endTournamentAddRound');
       overlay.hidden = false; modal.hidden = false;
+      // Lock scrolling while modal is open (consistent UX)
+      try{ __openModalEl = modal; lockBodyScroll(); }catch(_){/* no-op */}
       function close(){
         overlay.hidden = true; modal.hidden = true;
         overlay.onclick = null; yes.onclick = null; add.onclick = null;
         document.removeEventListener('keydown', escHandler);
+        try{ __openModalEl = null; unlockBodyScroll(); }catch(_){/* no-op */}
       }
       function escHandler(e){ if(e.key==='Escape'){ close(); } }
       document.addEventListener('keydown', escHandler);
