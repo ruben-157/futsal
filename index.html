@@ -1431,7 +1431,6 @@
           const text = doText();
           try{
             await navigator.clipboard.writeText(text);
-            showToast('Copied summary to clipboard');
           }catch{
             // no clipboard: show text in prompt as a last resort
             window.prompt('Copy the results:', text);
@@ -1702,10 +1701,7 @@
         }
         saveResults();
         closeResultModal();
-        // Hype toast after every saved result (streak-aware)
-        try {
-          showHypeToastForMatch(matchId, a, b);
-        } catch(e) { /* best-effort */ }
+        // Suppress non-final toasts; only celebrate winner at tournament end
         renderSchedule();
         renderLeaderboard();
         if(areAllMatchesScored() && !state.celebrated){
@@ -2014,7 +2010,7 @@
 
     function removeLastRound(r){
       if(roundHasResults(r)){
-        showToast('Cannot remove a round with results');
+        // Suppress toast; rely on modal messaging/disabled confirm
         return;
       }
       // Remove all results for round r, decrement rounds, save, and re-render
