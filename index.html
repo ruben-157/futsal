@@ -461,8 +461,8 @@
       <div id="modalScorers" class="scorers"></div>
     </div>
     <div class="modal-actions">
-      <button id="modalCancel" type="button" class="btn">Cancel</button>
-      <button id="modalSave" type="button" class="btn primary" disabled>Save</button>
+      <button id="modalCancel" type="button" class="btn">Close</button>
+      <button id="modalSave" type="button" class="btn primary" disabled>Save - Match End</button>
     </div>
   </div>
 
@@ -1580,8 +1580,11 @@
       label.textContent = `${a.name} vs ${b.name} • Round ${round}`;
 
       const existing = state.results[matchId];
-      aInput.value = existing && existing.ga != null ? existing.ga : '0';
-      bInput.value = existing && existing.gb != null ? existing.gb : '0';
+      // Prefill totals from draft if present, else from final, else 0
+      const initialA = (existing && (existing.gaDraft != null)) ? existing.gaDraft : (existing && (existing.ga != null) ? existing.ga : 0);
+      const initialB = (existing && (existing.gbDraft != null)) ? existing.gbDraft : (existing && (existing.gb != null) ? existing.gb : 0);
+      aInput.value = String(initialA);
+      bInput.value = String(initialB);
 
       function canSave(){ return aInput.value !== '' && bInput.value !== ''; }
       saveBtn.disabled = !canSave();
@@ -1619,8 +1622,9 @@
       bCard.appendChild(bTitle);
       scorersWrap.appendChild(aCard); scorersWrap.appendChild(bCard);
 
-      const gpa = (existing && existing.gpa) ? existing.gpa : {};
-      const gpb = (existing && existing.gpb) ? existing.gpb : {};
+      // Prefill per-player scorers from draft if present, else from final
+      const gpa = (existing && (existing.gpaDraft || existing.gpa)) ? (existing.gpaDraft || existing.gpa) : {};
+      const gpb = (existing && (existing.gpbDraft || existing.gpb)) ? (existing.gpbDraft || existing.gpb) : {};
       const aInputs = new Map();
       const bInputs = new Map();
       function makeRow(name, initial, map, parent){
@@ -1699,6 +1703,13 @@
           saveError.style.display='none';
           state.results[matchId] = { a: modalCtx.aId, b: modalCtx.bId, round: modalCtx.round, ga, gb };
         }
+        // Clear any drafts now that the match is finalized
+        try{
+          delete state.results[matchId].gaDraft;
+          delete state.results[matchId].gbDraft;
+          delete state.results[matchId].gpaDraft;
+          delete state.results[matchId].gpbDraft;
+        }catch(_){ }
         saveResults();
         closeResultModal();
         // Suppress non-final toasts; only celebrate winner at tournament end
@@ -1713,6 +1724,41 @@
     }
 
     function closeResultModal(){
+      // Persist current inputs as a draft so users don't lose mid-game entries
+      try{
+        if(modalCtx && modalCtx.matchId){
+          const matchId = modalCtx.matchId;
+          const aInput = document.getElementById('modalTeamAScore');
+          const bInput = document.getElementById('modalTeamBScore');
+          const gaDraft = Math.max(0, parseInt(aInput.value || '0', 10));
+          const gbDraft = Math.max(0, parseInt(bInput.value || '0', 10));
+          const scorersWrap = document.getElementById('modalScorers');
+          const cards = scorersWrap ? scorersWrap.querySelectorAll('.scorer-card') : null;
+          let gpaDraft = {}, gpbDraft = {};
+          if(cards && cards.length >= 2){
+            const aCard = cards[0];
+            const bCard = cards[1];
+            const readCard = (card)=>{
+              const map = {};
+              if(!card) return map;
+              const rows = card.querySelectorAll('.scorer-row');
+              rows.forEach(row=>{
+                const nameEl = row.children[0];
+                const inp = row.querySelector('input.scorer-input');
+                const name = nameEl ? String(nameEl.textContent||'').trim() : '';
+                const v = Math.max(0, parseInt((inp && inp.value) || '0', 10));
+                if(name && v > 0){ map[name] = v; }
+              });
+              return map;
+            };
+            gpaDraft = readCard(aCard);
+            gpbDraft = readCard(bCard);
+          }
+          const prev = state.results[matchId] || { a: modalCtx.aId, b: modalCtx.bId, round: modalCtx.round };
+          state.results[matchId] = { ...prev, gaDraft, gbDraft, gpaDraft, gpbDraft };
+          saveResults();
+        }
+      }catch(_){ /* draft save is best-effort */ }
       const overlay = document.getElementById('overlay');
       const modal = document.getElementById('resultModal');
       overlay.hidden = true; modal.hidden = true; modalCtx = null;
