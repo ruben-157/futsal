@@ -551,6 +551,20 @@
     </div>
   </div>
 
+  <!-- End Tournament Confirmation Modal -->
+  <div id="endTournamentModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="endTournamentTitle" hidden>
+    <div class="modal-header">
+      <h3 id="endTournamentTitle" style="margin:0; font-size:18px">End Tournament?</h3>
+    </div>
+    <div class="modal-body">
+      <div id="endTournamentInfo">Do you want to end the tournament?</div>
+    </div>
+    <div class="modal-actions">
+      <button id="endTournamentAddRound" class="btn" type="button">Add New Round</button>
+      <button id="endTournamentYes" class="btn primary" type="button">Yes</button>
+    </div>
+  </div>
+
   <script>
     // ----- Data & Storage -----
     const DEFAULT_PLAYERS = [
@@ -1716,9 +1730,7 @@
         renderSchedule();
         renderLeaderboard();
         if(areAllMatchesScored() && !state.celebrated){
-          switchTab('leaderboard');
-          celebrateWinner();
-          state.celebrated = true;
+          openEndTournamentModal();
         }
       };
     }
@@ -2015,6 +2027,30 @@
       state.celebrated = false;
       saveRounds();
       renderSchedule();
+    }
+
+    // ----- Modal: End Tournament Confirmation -----
+    function openEndTournamentModal(){
+      const overlay = document.getElementById('overlay');
+      const modal = document.getElementById('endTournamentModal');
+      const yes = document.getElementById('endTournamentYes');
+      const add = document.getElementById('endTournamentAddRound');
+      overlay.hidden = false; modal.hidden = false;
+      function close(){
+        overlay.hidden = true; modal.hidden = true;
+        overlay.onclick = null; yes.onclick = null; add.onclick = null;
+        document.removeEventListener('keydown', escHandler);
+      }
+      function escHandler(e){ if(e.key==='Escape'){ close(); } }
+      document.addEventListener('keydown', escHandler);
+      overlay.onclick = close;
+      add.onclick = ()=>{ addAdditionalRound(); close(); };
+      yes.onclick = ()=>{
+        switchTab('leaderboard');
+        celebrateWinner();
+        state.celebrated = true;
+        close();
+      };
     }
 
     // Utility: does a given round have any recorded results?
