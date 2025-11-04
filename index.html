@@ -157,6 +157,8 @@
     .schedule{margin-top:0}
     .pair{padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:#ffffff; margin-top:8px}
     .pair.played{ opacity:.6 }
+    /* Future (after the next match) is slightly dimmed to highlight current */
+    .pair.future{ opacity:.5 }
     .match-score{ text-align:right; margin-left:auto; display:flex; align-items:center; justify-content:flex-end; gap:8px }
     /* Next match highlighting */
     .pair.next{ border-color:#2563eb; border-width:2px }
@@ -1177,6 +1179,11 @@
                 pillB.appendChild(ball);
               }
             }
+          }
+          // Dim all future matches (after the immediate next unplayed)
+          const currentIdx = flatCursor; // index in the flattened schedule
+          if(!isPlayed && nextIndex >= 0 && currentIdx > nextIndex){
+            row.classList.add('future');
           }
           // Winner styling: solid team-color pill with white text
           if(isPlayed){
