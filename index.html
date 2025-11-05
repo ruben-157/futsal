@@ -1311,11 +1311,19 @@
       const tournamentComplete = areAllMatchesScored();
       const prevRanks = getPrevRanks();
       // Winner banner if tournament complete
+      let winningTeamIds = null;
       if(tournamentComplete && rows.length){
-        const top = rows[0];
+        const topPts = rows[0].pts;
+        const topGD = (rows[0].gf - (rows[0].ga || 0));
+        const coWinners = rows.filter(r => r.pts === topPts && ((r.gf - (r.ga || 0)) === topGD));
+        winningTeamIds = new Set(coWinners.map(r => r.team.id));
+        const names = coWinners.map(r => r.team.name.toUpperCase());
+        const list = names.length === 1 ? names[0]
+          : (names.length === 2 ? `${names[0]} & ${names[1]}`
+             : `${names.slice(0, -1).join(', ')} & ${names[names.length-1]}`);
         const win = document.createElement('div');
         win.className = 'winner-banner';
-        win.textContent = `WINNER: ${top.team.name.toUpperCase()}!!`;
+        win.textContent = `${names.length > 1 ? 'WINNERS' : 'WINNER'}: ${list}!!`;
         lb.appendChild(win);
       }
 
@@ -1325,7 +1333,7 @@
       const thead = document.createElement('thead');
       thead.innerHTML = '<tr><th style="width:50%">Team</th><th>Played</th><th>Points</th><th>GS</th><th>GA</th><th>GD</th></tr>';
       const tbody = document.createElement('tbody');
-      const winningTeamId = (tournamentComplete && rows.length) ? rows[0].team.id : null;
+      const winningTeamId = null; // deprecated in favor of winningTeamIds
       rows.forEach((r, idx)=>{
         const tr = document.createElement('tr');
         const tdTeam = document.createElement('td');
@@ -1348,7 +1356,7 @@
           else { arrow.textContent = ' ▼'; arrow.style.color = 'var(--danger)'; }
           tdTeam.appendChild(arrow);
         }
-        if(winningTeamId && r.team.id === winningTeamId){
+        if(winningTeamIds && winningTeamIds.has(r.team.id)){
           const trophy = document.createElement('span');
           trophy.textContent = ' 🏆';
           trophy.style.marginLeft = '6px';
@@ -1473,9 +1481,19 @@
         if(ga > gb) A.pts += 3; else if(gb > ga) B.pts += 3; else { A.pts += 1; B.pts += 1; }
       }
       const rows = Array.from(byId.values()).sort((x,y)=> y.pts - x.pts || (y.gf - y.ga) - (x.gf - x.ga) || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
-      const winner = rows.length ? rows[0].team.name : 'Winner';
+      let winnerLine = 'Winner';
+      if(rows.length){
+        const topPts = rows[0].pts;
+        const topGD = (rows[0].gf - rows[0].ga);
+        const coWinners = rows.filter(r => r.pts === topPts && ((r.gf - r.ga) === topGD));
+        const names = coWinners.map(r => r.team.name);
+        const list = names.length === 1 ? names[0]
+          : (names.length === 2 ? `${names[0]} & ${names[1]}`
+             : `${names.slice(0, -1).join(', ')} & ${names[names.length-1]}`);
+        winnerLine = `${names.length > 1 ? 'WINNERS' : 'WINNER'}: ${list}`;
+      }
       const lines = [];
-      lines.push(`🏆 WINNER: ${winner}`);
+      lines.push(`🏆 ${winnerLine}`);
       lines.push('Standings:');
       rows.forEach((r, i)=>{
         const gd = r.gf - r.ga; const gdStr = gd>=0? `+${gd}`: `${gd}`;
@@ -2167,8 +2185,8 @@
     }
 
     function celebrateWinner(){
-      // Compute top team like leaderboard
-      const byId = new Map(state.teams.map(t => [t.id, { team: t, pts: 0, played: 0, gf: 0 }]));
+      // Compute winners (supports co-winners on equal Pts and GD)
+      const byId = new Map(state.teams.map(t => [t.id, { team: t, pts: 0, played: 0, gf: 0, ga: 0 }]));
       for(const key of Object.keys(state.results || {})){
         const r = state.results[key];
         if(!r) continue;
@@ -2178,11 +2196,20 @@
         if(!A || !B) continue;
         A.played++; B.played++;
         A.gf += ga; B.gf += gb;
+        A.ga += gb; B.ga += ga;
         if(ga > gb){ A.pts += 3; } else if(gb > ga){ B.pts += 3; } else { A.pts += 1; B.pts += 1; }
       }
       const rows = Array.from(byId.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
-      const winner = rows.length ? rows[0].team.name : 'Winner';
-      showToast(`🎉 WINNER: ${winner.toUpperCase()}!!`, 'winner');
+      if(rows.length){
+        const topPts = rows[0].pts;
+        const topGD = (rows[0].gf - (rows[0].ga || 0));
+        const coWinners = rows.filter(r => r.pts === topPts && ((r.gf - (r.ga || 0)) === topGD));
+        const names = coWinners.map(r => r.team.name.toUpperCase());
+        const list = names.length === 1 ? names[0]
+          : (names.length === 2 ? `${names[0]} & ${names[1]}`
+             : `${names.slice(0, -1).join(', ')} & ${names[names.length-1]}`);
+        showToast(`🎉 ${names.length > 1 ? 'WINNERS' : 'WINNER'}: ${list}!!`, 'winner');
+      }
       launchConfetti();
     }
 
