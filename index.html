@@ -983,7 +983,8 @@
         tdTeam.appendChild(pill);
 
         const tdMembers = document.createElement('td');
-        tdMembers.textContent = team.members.join(', ');
+        const membersSorted = [...team.members].sort((a,b)=> a.localeCompare(b));
+        tdMembers.textContent = membersSorted.join(', ');
 
         const tdSize = document.createElement('td');
         tdSize.textContent = String(team.members.length);
