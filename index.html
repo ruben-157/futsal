@@ -587,7 +587,6 @@
     const MAX_ATTENDEES = 20;
 
     const SKILLS = {
-      Ruben: 4,
       Job: 3,
       Ramtin: 2,
       Thijs: 4,
@@ -606,7 +605,8 @@
       Jefta: 3,
       Lenn: 3,
       Nathan: 3,
-      Rene: 4,
+      Ruben: 4,
+      Rene: 3,
       Sem: 5,
       Timo: 3,
       Wijnand: 3,
@@ -618,8 +618,7 @@
     const getSkill = (name) => (typeof SKILLS[name] === 'number' ? SKILLS[name] : DEFAULT_SKILL);
 
     // Stamina levels (1-5). Secondary to skill; used only for tie-breaks and safe post-pass swaps.
-    const STAMINA = {
-      Ruben: 4,
+    const STAMINA = {     
       Job: 3,
       Ramtin: 1,
       Thijs: 4,
@@ -638,6 +637,7 @@
       Jefta: 4,
       Lenn: 4,
       Nathan: 4,
+      Ruben: 4,
       Rene: 3,
       Sem: 4,
       Timo: 2,
