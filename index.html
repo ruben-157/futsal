@@ -387,7 +387,7 @@
         <div id="listNot" class="lists" role="list" aria-label="Available players list"></div>
       </div>
 
-      <div id="limitNotice" class="notice" role="status" aria-live="polite" style="display:none">Limit reached: maximum 16 players.</div>
+      <div id="limitNotice" class="notice" role="status" aria-live="polite" style="display:none">Limit reached: maximum 20 players.</div>
       <div class="actions" id="playersActions">
         <div id="genError" class="notice error" role="alert" style="margin-right:auto; display:none"></div>
         <button class="btn primary" id="btnGenerateBottom" aria-label="Generate balanced teams (bottom)" disabled>Generate Teams</button>
@@ -581,6 +581,9 @@
     ];
 
     // Skill levels (0-5). Adjust in code here when needed.
+    // Max attendees per session
+    const MAX_ATTENDEES = 20;
+
     const SKILLS = {
       Ruben: 4,
       Job: 3,
@@ -862,13 +865,16 @@
     }
 
     function clampPlayLimit(){
-      const over = state.attendees.length > 16;
+      const over = state.attendees.length > MAX_ATTENDEES;
       if(over){
-        state.attendees = state.attendees.slice(0,16);
+        state.attendees = state.attendees.slice(0, MAX_ATTENDEES);
         saveAttendees();
       }
       const notice = document.getElementById('limitNotice');
-      if(state.attendees.length >= 16){
+      if(notice){
+        notice.textContent = `Limit reached: maximum ${MAX_ATTENDEES} players.`;
+      }
+      if(state.attendees.length >= MAX_ATTENDEES){
         notice.style.display = '';
       } else {
         notice.style.display = 'none';
@@ -1852,8 +1858,8 @@
       save.onclick = ()=>{
         const name = input.value.trim();
         if(!name){ return; }
-        if(state.attendees.length >= 16){
-          err.textContent = 'Cannot add more than 16 attendees.';
+        if(state.attendees.length >= MAX_ATTENDEES){
+          err.textContent = `Cannot add more than ${MAX_ATTENDEES} attendees.`;
           err.style.display = '';
           return;
         }
@@ -2018,7 +2024,7 @@
     // ----- Actions -----
     function moveToPlay(name){
       if(state.attendees.includes(name)) return;
-      if(state.attendees.length >= 16){
+      if(state.attendees.length >= MAX_ATTENDEES){
         clampPlayLimit();
         return;
       }
