@@ -3883,7 +3883,7 @@
         }
       }catch(_){ /* best-effort chart */ }
 
-      // Chart: goals per session
+      // Chart: goals per session (mirrors points chart styling)
       try{
         const goalsSeries = getPlayerGoalsAcrossDates(player);
         if(goalsSeries && goalsSeries.goals && goalsSeries.goals.some(v => v !== null)){
@@ -3895,13 +3895,24 @@
           const chartWrap = document.createElement('div');
           chartWrap.style.marginBottom = '8px';
           chartWrap.style.width = '100%';
-          const svg = buildLineChart(goalsSeries.goals, { width: 360, height: 140, stroke: 'var(--accent-2)', strokeWidth: 2, dotRadius: 2.5, labels: goalsSeries.dates, absences: goalsSeries.absent });
+          const values = goalsSeries.goals.map(v => v == null ? 0 : v);
+          const noDataFlags = goalsSeries.goals.map(v => v == null);
+          const svg = buildBarChart(values, { width: 360, height: 160, fill: 'var(--accent-2)', labels: goalsSeries.dates, absences: noDataFlags });
           if(svg){
             chartWrap.appendChild(svg);
             const legend = document.createElement('div');
             legend.className = 'stat-sub';
-            legend.textContent = 'Line breaks indicate sessions without recorded goal data (absence or pre-tracking).';
+            legend.style.display = 'flex';
+            legend.style.alignItems = 'center';
+            legend.style.gap = '12px';
             legend.style.marginTop = '4px';
+            const item1 = document.createElement('div'); item1.style.display='flex'; item1.style.alignItems='center'; item1.style.gap='6px';
+            item1.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="12" fill="currentColor"/></svg><span>Goals (present)</span>`;
+            const item2 = document.createElement('div'); item2.style.display='flex'; item2.style.alignItems='center'; item2.style.gap='6px';
+            item2.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="3" fill="currentColor"/></svg><span>0 goals (present)</span>`;
+            const item3 = document.createElement('div'); item3.style.display='flex'; item3.style.alignItems='center'; item3.style.gap='6px';
+            item3.innerHTML = `<span style="display:inline-block; width:14px; height:14px; line-height:14px; text-align:center; color:#9ca3af; font-weight:700">×</span><span>No goal data (absent or pre-tracking)</span>`;
+            legend.appendChild(item1); legend.appendChild(item2); legend.appendChild(item3);
             chartWrap.appendChild(legend);
             body.appendChild(chartWrap);
           }
