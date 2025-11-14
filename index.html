@@ -4005,7 +4005,9 @@
           const gpmBadge = document.createElement('span');
           const gpm = r.gpm || 0;
           gpmBadge.textContent = gpm.toFixed(2);
-          gpmBadge.className = 'badge badge-neutral';
+          if(gpm <= 0.5){ gpmBadge.className = 'badge badge-low'; }
+          else if(gpm <= 1){ gpmBadge.className = 'badge badge-avg'; }
+          else { gpmBadge.className = 'badge badge-good'; }
           gpmBadge.title = `Goals per session (${r.goalSessions} tracked)`;
           tdGpm.appendChild(gpmBadge);
         } else {
