@@ -2669,14 +2669,15 @@
     const BADGE_CONFIG = {
       latestTop: { icon:'⭐', label:'Latest Top Scorer', short:'Top Scorer', desc:'Led the latest session in goals.' },
       allTimeTop: { icon:'🥇', label:'All-Time Top Scorer', short:'All-Time Top', desc:'Most total goals across all sessions.' },
+      clutch: { icon:'🏆', label:'Session Ace', short:'Session Ace', desc:'Most sessions finishing with the highest points.' },
       hatTrick: { icon:'🔥', label:'Hat Trick Hero', short:'Hat Trick', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
       sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
       ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Attended 6+ sessions in a row.' },
       rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
       form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
-      mvp: { icon:'🏅', label:'MVP', short:'MVP', desc:'Highest Pts/Session with ≥60% attendance.' },
+      mvp: { icon:'🏅', label:'Most Valuable Player', short:'MVP', desc:'Highest Pts/Session with ≥60% attendance.' },
     };
-    const BADGE_PRIORITY = ['latestTop','allTimeTop','mvp','hatTrick','sharpshooter','form','ironMan','rocket'];
+    const BADGE_PRIORITY = ['latestTop','allTimeTop','clutch','mvp','hatTrick','sharpshooter','form','ironMan','rocket'];
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
       if(!wrap) return;
@@ -2928,12 +2929,13 @@
       const players = Array.from(statsMap.keys());
       const perPlayer = new Map(players.map(p => [p, { goalStreak:0, bestGoalStreak:0, attendStreak:0, bestAttendStreak:0 }]));
       const pointsHistory = new Map(players.map(p => [p, []]));
+      const sessionAceCounts = new Map(players.map(p => [p, 0]));
       for(const d of dates){
         const entries = byDate.get(d) || [];
         const entryMap = new Map(entries.map(e => [e.player, e]));
-        for(const player of players){
-          const stat = perPlayer.get(player);
-          const entry = entryMap.get(player);
+       for(const player of players){
+         const stat = perPlayer.get(player);
+         const entry = entryMap.get(player);
           if(entry){
             stat.attendStreak += 1;
             if(stat.attendStreak > stat.bestAttendStreak) stat.bestAttendStreak = stat.attendStreak;
@@ -2967,6 +2969,8 @@
       let bestPPM = 0;
       let allTimeTopPlayer = null;
       let maxTotalGoals = 0;
+      let sessionAcePlayer = null;
+      let sessionAceMax = 0;
       for(const player of players){
         const stats = perPlayer.get(player) || { bestGoalStreak:0, bestAttendStreak:0 };
         const agg = statsMap.get(player) || {};
@@ -2979,6 +2983,7 @@
         const flags = {
           latestTop: false,
           allTimeTop: false,
+          clutch: false,
           mvp: false,
           hatTrick: stats.bestGoalStreak >= 3,
           sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
@@ -2998,6 +3003,11 @@
           if(pre != null && post != null && (pre - post) >= 5){
             flags.rocket = true;
           }
+        }
+        const aceCount = sessionAceCounts.get(player) || 0;
+        if(aceCount > sessionAceMax){
+          sessionAceMax = aceCount;
+          sessionAcePlayer = player;
         }
         const totalSessions = dates.length;
         if(totalSessions > 0){
@@ -3030,6 +3040,10 @@
       if(mvpPlayer && badgeMap.has(mvpPlayer)){
         const list = badgeMap.get(mvpPlayer);
         if(list && !list.includes('mvp')) list.unshift('mvp');
+      }
+      if(sessionAcePlayer && badgeMap.has(sessionAcePlayer)){
+        const list = badgeMap.get(sessionAcePlayer);
+        if(list && !list.includes('clutch')) list.unshift('clutch');
       }
       if(allTimeTopPlayer && badgeMap.has(allTimeTopPlayer)){
         const list = badgeMap.get(allTimeTopPlayer);
