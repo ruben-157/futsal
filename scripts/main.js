@@ -3190,16 +3190,13 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     if(badgeList && badgeList.length){
       const badgesWrap = document.createElement('span');
       badgesWrap.className = 'player-badges';
-      let count = 0;
       for(const id of badgeList){
-        if(count >= 2) break;
         const badgeEl = renderPlayerBadge(id, 'short');
         if(badgeEl){
           badgesWrap.appendChild(badgeEl);
-          count++;
         }
       }
-      if(count > 0){ tdN.appendChild(badgesWrap); }
+      if(badgesWrap.childNodes.length > 0){ tdN.appendChild(badgesWrap); }
     }
     const tdM = document.createElement('td');
     if(totalSessions && totalSessions > 0){
