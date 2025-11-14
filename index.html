@@ -2667,7 +2667,8 @@
     let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
     const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
     const BADGE_CONFIG = {
-      latestTop: { icon:'⭐', label:'Latest Top Scorer', short:'Top Scorer', desc:'Led the latest session in goals.' },
+      latestTop: { icon:'⭐', label:'Latest Top Scorer', short:'Latest Top Scorer', desc:'Led the latest session in goals.' },
+      playmaker: { icon:'🎖️', label:'Playmaker', short:'Playmaker', desc:'Highest contribution (points + goals) in the latest session.' },
       allTimeTop: { icon:'🥇', label:'All-Time Topscorer', short:'All-Time Topscorer', desc:'Most total goals across all sessions.' },
       clutch: { icon:'🏆', label:'Session Ace', short:'Session Ace', desc:'Most sessions finishing with the highest points.' },
       hatTrick: { icon:'🔥', label:'Hat Trick Hero', short:'Hat Trick', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
@@ -2677,7 +2678,7 @@
       form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
       mvp: { icon:'🏅', label:'Most Valuable Player', short:'MVP', desc:'Highest Pts/Session with ≥60% attendance.' },
     };
-    const BADGE_PRIORITY = ['clutch','latestTop','allTimeTop','mvp','hatTrick','sharpshooter','form','ironMan','rocket'];
+    const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','hatTrick','sharpshooter','form','ironMan','rocket'];
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
       if(!wrap) return;
@@ -2982,6 +2983,8 @@
       let bestPPM = 0;
       let allTimeTopPlayer = null;
       let maxTotalGoals = 0;
+      let playmakerPlayer = null;
+      let bestContribution = -Infinity;
       for(const player of players){
         const stats = perPlayer.get(player) || { bestGoalStreak:0, bestAttendStreak:0 };
         const agg = statsMap.get(player) || {};
@@ -3029,11 +3032,16 @@
           maxTotalGoals = agg.goals || 0;
           allTimeTopPlayer = player;
         }
-        if(maxGoals != null && latestMap.size){
-          const entry = latestMap.get(player);
-          if(entry && entry.goals != null){
-            const g = Number(entry.goals) || 0;
-            if(g === maxGoals && g > 0){ flags.latestTop = true; }
+        const latestEntry = latestMap.get(player);
+        if(latestEntry){
+          const goalsVal = latestEntry.goals != null ? Number(latestEntry.goals) || 0 : 0;
+          if(maxGoals != null && goalsVal > 0 && goalsVal === maxGoals){
+            flags.latestTop = true;
+          }
+          const contribution = (Number(latestEntry.points) || 0) + goalsVal;
+          if(contribution > bestContribution){
+            bestContribution = contribution;
+            playmakerPlayer = player;
           }
         }
         const badgeList = BADGE_PRIORITY.filter(id => flags[id]);
@@ -3042,6 +3050,10 @@
       if(bestFormPlayer && bestFormDelta > 0 && badgeMap.has(bestFormPlayer)){
         const list = badgeMap.get(bestFormPlayer);
         if(list && !list.includes('form')) list.unshift('form');
+      }
+      if(playmakerPlayer && bestContribution > -Infinity && badgeMap.has(playmakerPlayer)){
+        const list = badgeMap.get(playmakerPlayer);
+        if(list && !list.includes('playmaker')) list.unshift('playmaker');
       }
       if(mvpPlayer && badgeMap.has(mvpPlayer)){
         const list = badgeMap.get(mvpPlayer);
