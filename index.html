@@ -4100,20 +4100,37 @@
         const badgeWrap = document.createElement('div');
         badgeWrap.style.display = 'flex';
         badgeWrap.style.flexDirection = 'column';
-        badgeWrap.style.gap = '6px';
+        badgeWrap.style.gap = '8px';
         for(const id of modalBadges){
           const badgeEl = renderPlayerBadge(id, 'long');
           if(!badgeEl) continue;
-          const row = document.createElement('div');
-          row.style.display = 'flex';
-          row.style.alignItems = 'center';
-          row.style.gap = '8px';
-          const desc = document.createElement('span');
+          const card = document.createElement('div');
+          card.style.display = 'flex';
+          card.style.alignItems = 'center';
+          card.style.gap = '12px';
+          card.style.padding = '10px 12px';
+          card.style.border = '1px solid var(--border)';
+          card.style.borderRadius = '12px';
+          card.style.background = '#fff';
+          card.style.boxShadow = '0 1px 2px rgba(15,23,42,0.05)';
+          const icon = document.createElement('div');
+          icon.style.fontSize = '24px';
+          icon.textContent = BADGE_CONFIG[id]?.icon || '🏅';
+          const meta = document.createElement('div');
+          meta.style.display = 'flex';
+          meta.style.flexDirection = 'column';
+          meta.style.gap = '2px';
+          const title = document.createElement('div');
+          title.style.fontWeight = '700';
+          title.textContent = BADGE_CONFIG[id]?.label || 'Badge';
+          const desc = document.createElement('div');
           desc.className = 'stat-sub';
           desc.textContent = BADGE_CONFIG[id]?.desc || '';
-          row.appendChild(badgeEl);
-          row.appendChild(desc);
-          badgeWrap.appendChild(row);
+          meta.appendChild(title);
+          meta.appendChild(desc);
+          card.appendChild(icon);
+          card.appendChild(meta);
+          badgeWrap.appendChild(card);
         }
         body.appendChild(badgeWrap);
       }
