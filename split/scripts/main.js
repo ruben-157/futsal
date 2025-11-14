@@ -14,7 +14,7 @@ import {
   KEYS,
   savePrevRanksFromRows
 } from './state/storage.js';
-import { computeStableSeedFromAttendees, shuffleSeeded } from './utils/random.js';
+import { computeStableSeedFromAttendees, shuffleSeeded, mulberry32 } from './utils/random.js';
 import { balanceSkillToTargets, balanceStaminaEqualSkill } from './logic/balance.js';
 
 
