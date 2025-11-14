@@ -234,27 +234,9 @@ function renderTeams(){
     const tdSize = document.createElement('td');
     tdSize.textContent = String(team.members.length);
 
-    // Compute averages for the team
-    let avgSkill = '-';
-    let avgStam = '-';
-    const mCount = team.members.length;
-    if(mCount > 0){
-      const totalSkill = team.members.reduce((s,nm)=> s + getSkill(nm), 0);
-      const totalStam = team.members.reduce((s,nm)=> s + getStamina(nm), 0);
-      avgSkill = (totalSkill / mCount).toFixed(1);
-      avgStam = (totalStam / mCount).toFixed(1);
-    }
-
-    const tdAvgSkill = document.createElement('td');
-    tdAvgSkill.textContent = String(avgSkill);
-    const tdAvgStam = document.createElement('td');
-    tdAvgStam.textContent = String(avgStam);
-
     tr.appendChild(tdTeam);
     tr.appendChild(tdMembers);
     tr.appendChild(tdSize);
-    tr.appendChild(tdAvgSkill);
-    tr.appendChild(tdAvgStam);
     tbody.appendChild(tr);
   }
   renderSchedule();

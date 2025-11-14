@@ -212,10 +212,6 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   #teamsSection th:nth-child(1){ width:160px }
   #teamsSection th:nth-child(3),
   #teamsSection td:nth-child(3){ width:64px; text-align:right }
-  #teamsSection th:nth-child(4),
-  #teamsSection th:nth-child(5),
-  #teamsSection td:nth-child(4),
-  #teamsSection td:nth-child(5){ width:90px; text-align:right }
   #teamsSection td:nth-child(2){ word-break:break-word }
 
   /* Matches: single full-width column per match on tablet */
@@ -245,16 +241,18 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   /* All-Time: fixed layout, numeric columns right-aligned */
   #allTimeSection table{ table-layout:fixed }
   #allTimeSection th:nth-child(1){ width:56px; text-align:left }
-  #allTimeSection th:nth-child(2){ width:50% }
-  #allTimeSection th:nth-child(3),
+  #allTimeSection th:nth-child(2){ width:40% }
+  #allTimeSection th:nth-child(3){ width:130px; text-align:right; white-space:nowrap }
   #allTimeSection th:nth-child(4),
-  #allTimeSection th:nth-child(5){ width:100px; text-align:right }
-  /* Ensure Matches header stays on one line */
-  #allTimeSection th:nth-child(3){ width:150px; white-space:nowrap }
+  #allTimeSection th:nth-child(5),
+  #allTimeSection th:nth-child(6),
+  #allTimeSection th:nth-child(7){ width:110px; text-align:right }
   #allTimeSection td:nth-child(1){ text-align:left }
   #allTimeSection td:nth-child(3),
   #allTimeSection td:nth-child(4),
-  #allTimeSection td:nth-child(5){ text-align:right }
+  #allTimeSection td:nth-child(5),
+  #allTimeSection td:nth-child(6),
+  #allTimeSection td:nth-child(7){ text-align:right }
 
   /* Modals: wider and two-column fields */
   .modal{ width:min(92vw, 640px) }
