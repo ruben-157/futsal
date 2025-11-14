@@ -1,3 +1,14 @@
+function betterSwapCandidate(i, j, a, b, bestI, bestJ, bestA, bestB){
+  if(bestI === -1) return true;
+  if(i < bestI) return true;
+  if(i > bestI) return false;
+  if(j < bestJ) return true;
+  if(j > bestJ) return false;
+  if(a < bestA) return true;
+  if(a > bestA) return false;
+  return b < bestB;
+}
+
 export function balanceSkillToTargets(teams, attendees, getSkill){
   if(!teams || teams.length < 2) return;
   const roster = attendees || [];
@@ -26,9 +37,11 @@ export function balanceSkillToTargets(teams, attendees, getSkill){
             const afterJ = sums[j] - sb + sa;
             const afterErr = Math.abs(afterI - targets[i]) + Math.abs(afterJ - targets[j]);
             const delta = beforeErr - afterErr;
-            if(delta > bestDelta + eps || (Math.abs(delta - bestDelta) <= eps && delta > eps &&
-               (bestI === -1 || i < bestI || (i === bestI && (j < bestJ || (j === bestJ && (a < bestA || (a === bestA && b < bestB))))))){
-              bestDelta = delta; bestI = i; bestJ = j; bestA = a; bestB = b;
+            const improves = delta > bestDelta + eps;
+            const ties = !improves && Math.abs(delta - bestDelta) <= eps && delta > eps;
+            if(improves || (ties && betterSwapCandidate(i, j, a, b, bestI, bestJ, bestA, bestB))){
+              bestDelta = delta;
+              bestI = i; bestJ = j; bestA = a; bestB = b;
             }
           }
         }
@@ -82,9 +95,11 @@ export function balanceStaminaEqualSkill(teams, getSkill, getStamina){
               const afterDiff = Math.abs(after_i - after_j);
               gain = beforeDiff - afterDiff;
             }
-            if(gain > bestGain + eps || (Math.abs(gain - bestGain) <= eps && gain > eps &&
-               (bestI === -1 || i < bestI || (i === bestI && (j < bestJ || (j === bestJ && (a < bestA || (a === bestA && b < bestB))))))){
-              bestGain = gain; bestI = i; bestJ = j; bestA = a; bestB = b;
+            const improves = gain > bestGain + eps;
+            const ties = !improves && Math.abs(gain - bestGain) <= eps && gain > eps;
+            if(improves || (ties && betterSwapCandidate(i, j, a, b, bestI, bestJ, bestA, bestB))){
+              bestGain = gain;
+              bestI = i; bestJ = j; bestA = a; bestB = b;
             }
           }
         }
