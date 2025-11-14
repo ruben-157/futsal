@@ -145,6 +145,9 @@
     .badge-avg{ background: #facc15; color: #111827 }
     .badge-low{ background: var(--danger); color: #fff }
     .badge-neutral{ background: #e5e7eb; color: var(--muted); border: 1px solid var(--border) }
+    .player-badges{ display:inline-flex; flex-wrap:wrap; gap:4px; margin-left:6px }
+    .player-badge{ display:inline-flex; align-items:center; gap:4px; padding:1px 6px; border-radius:12px; font-size:11px; font-weight:600; border:1px solid var(--border); color:var(--muted); background:#f9fafb }
+    .player-badge strong{ font-size:12px }
     /* Podium row tints removed */
     /* Teams: vertically center cells */
     #teamsSection table th,
@@ -2657,6 +2660,14 @@
     // Basis for header insight cards' rank comparisons (only changes when user selects Points or Pts/Session)
     let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
     const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
+    const BADGE_CONFIG = {
+      latestTop: { icon:'⭐', label:'Latest Top Scorer', short:'Top Scorer', desc:'Led the latest session in goals.' },
+      hatTrick: { icon:'🔥', label:'Hat Trick Hero', short:'Hat Trick', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
+      sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
+      ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Attended 6+ sessions in a row.' },
+      rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 3+ positions since last session.' },
+    };
+    const BADGE_PRIORITY = ['latestTop','hatTrick','sharpshooter','ironMan','rocket'];
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
       if(!wrap) return;
@@ -2668,7 +2679,9 @@
 
       try{
         const data = await loadAllTimeCSV(force);
+        window.__allTimeBadges = new Map();
         const stats = aggregateAllTime(data);
+        const statsMap = new Map(stats.map(s => [s.player, s]));
         sortAllTimeStats(stats);
         wrap.innerHTML = '';
         if(stats.length === 0){
@@ -2691,6 +2704,7 @@
           sortAllTimeStats(preStats);
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats);
+          window.__allTimeBadges = computeAllTimeBadges(data, byDate, statsMap, preRanks, postRanks);
           // Latest sync pill (top-right) then header stat cards
           const pillBar = buildLatestSyncPill(latestDate);
           if(pillBar) wrap.appendChild(pillBar);
@@ -2895,6 +2909,100 @@
         byDate.get(r.date).push({ player: r.player, points: Number(r.points)||0, goals: goalVal });
       }
       return byDate;
+    }
+
+    function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
+      const badgeMap = new Map();
+      if(!rows || !rows.length || !byDate) return badgeMap;
+      const dates = Array.from(byDate.keys()).sort();
+      if(!dates.length) return badgeMap;
+      const players = Array.from(statsMap.keys());
+      const perPlayer = new Map(players.map(p => [p, { goalStreak:0, bestGoalStreak:0, attendStreak:0, bestAttendStreak:0 }]));
+      for(const d of dates){
+        const entries = byDate.get(d) || [];
+        const entryMap = new Map(entries.map(e => [e.player, e]));
+        for(const player of players){
+          const stat = perPlayer.get(player);
+          const entry = entryMap.get(player);
+          if(entry){
+            stat.attendStreak += 1;
+            if(stat.attendStreak > stat.bestAttendStreak) stat.bestAttendStreak = stat.attendStreak;
+            if(entry.goals != null && Number(entry.goals) > 0){
+              stat.goalStreak += 1;
+            } else {
+              stat.goalStreak = 0;
+            }
+            if(stat.goalStreak > stat.bestGoalStreak) stat.bestGoalStreak = stat.goalStreak;
+          } else {
+            stat.attendStreak = 0;
+            stat.goalStreak = 0;
+          }
+        }
+      }
+      const latestDate = dates[dates.length-1];
+      const latestEntries = byDate.get(latestDate) || [];
+      const latestMap = new Map(latestEntries.map(e => [e.player, e]));
+      let maxGoals = null;
+      for(const entry of latestEntries){
+        if(entry && entry.goals != null){
+          const g = Number(entry.goals) || 0;
+          if(g > 0 && (maxGoals === null || g > maxGoals)){ maxGoals = g; }
+        }
+      }
+      for(const player of players){
+        const stats = perPlayer.get(player) || { bestGoalStreak:0, bestAttendStreak:0 };
+        const agg = statsMap.get(player) || {};
+        const hasGoalData = agg.goalSessions && agg.goalSessions > 0;
+        const flags = {
+          latestTop: false,
+          hatTrick: stats.bestGoalStreak >= 3,
+          sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
+          ironMan: stats.bestAttendStreak >= 6,
+          rocket: false,
+        };
+        if(preRanks && postRanks){
+          const pre = preRanks.get(player);
+          const post = postRanks.get(player);
+          if(pre != null && post != null && (pre - post) >= 3){
+            flags.rocket = true;
+          }
+        }
+        if(maxGoals != null && latestMap.size){
+          const entry = latestMap.get(player);
+          if(entry && entry.goals != null){
+            const g = Number(entry.goals) || 0;
+            if(g === maxGoals && g > 0){ flags.latestTop = true; }
+          }
+        }
+        const badgeList = BADGE_PRIORITY.filter(id => flags[id]);
+        badgeMap.set(player, badgeList);
+      }
+      return badgeMap;
+    }
+
+    function getPlayerBadges(player){
+      const map = window.__allTimeBadges;
+      if(!map) return [];
+      return map.get(player) || [];
+    }
+
+    function renderPlayerBadge(id, variant){
+      const conf = BADGE_CONFIG[id];
+      if(!conf) return null;
+      const span = document.createElement('span');
+      span.className = 'player-badge';
+      span.title = conf.desc;
+      const icon = document.createElement('strong');
+      icon.textContent = conf.icon;
+      span.appendChild(icon);
+      const text = document.createElement('span');
+      if(variant === 'long'){
+        text.textContent = conf.label;
+      } else {
+        text.textContent = conf.short || conf.label;
+      }
+      span.appendChild(text);
+      return span;
     }
 
     function buildPlayerInsightCards(player){
@@ -3691,6 +3799,7 @@
           const container = document.getElementById('allTimeContent');
           if(!allTimeCache.rows){ return; }
           const stats2 = aggregateAllTime(allTimeCache.rows);
+          const statsMap2 = new Map(stats2.map(s => [s.player, s]));
           sortAllTimeStats(stats2);
           const totalSessions = countUniqueSessions(allTimeCache.rows);
           const series = buildAllTimeSeries(allTimeCache.rows);
@@ -3703,6 +3812,7 @@
           sortAllTimeStats(preStats);
           const preRanks = makeRankMap(preStats);
           const postRanks = makeRankMap(stats2);
+          window.__allTimeBadges = computeAllTimeBadges(allTimeCache.rows, byDate, statsMap2, preRanks, postRanks);
           // Update insight basis only when sorting by Points or Pts/Session
           if(col.key === 'points' || col.key === 'ppm'){
             allTimeInsightBasis = col.key;
@@ -3746,6 +3856,21 @@
               tdN.appendChild(arrow);
             }
           }
+        }
+        const badgeList = getPlayerBadges(r.player);
+        if(badgeList && badgeList.length){
+          const badgesWrap = document.createElement('span');
+          badgesWrap.className = 'player-badges';
+          let count = 0;
+          for(const id of badgeList){
+            if(count >= 2) break;
+            const badgeEl = renderPlayerBadge(id, 'short');
+            if(badgeEl){
+              badgesWrap.appendChild(badgeEl);
+              count++;
+            }
+          }
+          if(count > 0){ tdN.appendChild(badgesWrap); }
         }
         const tdM = document.createElement('td');
         if(totalSessions && totalSessions > 0){
@@ -3964,6 +4089,25 @@
       }
       headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Session: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''}${goalText}`;
       body.appendChild(headerStats);
+
+      const modalBadges = getPlayerBadges(player);
+      if(modalBadges && modalBadges.length){
+        const badgeTitle = document.createElement('div');
+        badgeTitle.className = 'stat-title';
+        badgeTitle.style.margin = '8px 0 2px 0';
+        badgeTitle.textContent = 'Badges';
+        body.appendChild(badgeTitle);
+        const badgeWrap = document.createElement('div');
+        badgeWrap.className = 'player-badges';
+        badgeWrap.style.display = 'flex';
+        badgeWrap.style.flexWrap = 'wrap';
+        badgeWrap.style.gap = '6px';
+        for(const id of modalBadges){
+          const badgeEl = renderPlayerBadge(id, 'long');
+          if(badgeEl) badgeWrap.appendChild(badgeEl);
+        }
+        body.appendChild(badgeWrap);
+      }
 
             // Session list removed (redundant with chart and labels)
 
