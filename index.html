@@ -2672,8 +2672,10 @@
       sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
       ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Attended 6+ sessions in a row.' },
       rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
+      form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
+      mvp: { icon:'🏅', label:'MVP', short:'MVP', desc:'Highest Pts/Session with ≥60% attendance.' },
     };
-    const BADGE_PRIORITY = ['latestTop','hatTrick','sharpshooter','ironMan','rocket'];
+    const BADGE_PRIORITY = ['latestTop','mvp','hatTrick','sharpshooter','form','ironMan','rocket'];
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
       if(!wrap) return;
@@ -2924,6 +2926,7 @@
       if(!dates.length) return badgeMap;
       const players = Array.from(statsMap.keys());
       const perPlayer = new Map(players.map(p => [p, { goalStreak:0, bestGoalStreak:0, attendStreak:0, bestAttendStreak:0 }]));
+      const pointsHistory = new Map(players.map(p => [p, []]));
       for(const d of dates){
         const entries = byDate.get(d) || [];
         const entryMap = new Map(entries.map(e => [e.player, e]));
@@ -2939,6 +2942,8 @@
               stat.goalStreak = 0;
             }
             if(stat.goalStreak > stat.bestGoalStreak) stat.bestGoalStreak = stat.goalStreak;
+            const arr = pointsHistory.get(player);
+            if(arr){ arr.push(Number(entry.points) || 0); }
           } else {
             stat.attendStreak = 0;
             stat.goalStreak = 0;
@@ -2955,22 +2960,49 @@
           if(g > 0 && (maxGoals === null || g > maxGoals)){ maxGoals = g; }
         }
       }
+      let bestFormPlayer = null;
+      let bestFormDelta = 0;
+      let mvpPlayer = null;
+      let bestPPM = 0;
       for(const player of players){
         const stats = perPlayer.get(player) || { bestGoalStreak:0, bestAttendStreak:0 };
         const agg = statsMap.get(player) || {};
         const hasGoalData = agg.goalSessions && agg.goalSessions > 0;
+        const history = pointsHistory.get(player) || [];
+        const last3 = history.slice(-3);
+        const last3Avg = last3.length ? (last3.reduce((s,v)=> s+v, 0) / last3.length) : 0;
+        const career = agg.ppm || 0;
+        const deltaForm = last3Avg - career;
         const flags = {
           latestTop: false,
+          mvp: false,
           hatTrick: stats.bestGoalStreak >= 3,
           sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
           ironMan: stats.bestAttendStreak >= 6,
           rocket: false,
+          form: false,
         };
+        if(deltaForm > 0){
+          if(!bestFormPlayer || deltaForm > bestFormDelta){
+            bestFormPlayer = player;
+            bestFormDelta = deltaForm;
+          }
+        }
         if(preRanks && postRanks){
           const pre = preRanks.get(player);
           const post = postRanks.get(player);
           if(pre != null && post != null && (pre - post) >= 5){
             flags.rocket = true;
+          }
+        }
+        const totalSessions = dates.length;
+        if(totalSessions > 0){
+          const attendanceRate = (agg.matches || 0) / totalSessions;
+          if(attendanceRate >= 0.6){
+            if(!mvpPlayer || (agg.ppm || 0) > bestPPM){
+              mvpPlayer = player;
+              bestPPM = agg.ppm || 0;
+            }
           }
         }
         if(maxGoals != null && latestMap.size){
@@ -2982,6 +3014,14 @@
         }
         const badgeList = BADGE_PRIORITY.filter(id => flags[id]);
         badgeMap.set(player, badgeList);
+      }
+      if(bestFormPlayer && bestFormDelta > 0 && badgeMap.has(bestFormPlayer)){
+        const list = badgeMap.get(bestFormPlayer);
+        if(list && !list.includes('form')) list.unshift('form');
+      }
+      if(mvpPlayer && badgeMap.has(mvpPlayer)){
+        const list = badgeMap.get(mvpPlayer);
+        if(list && !list.includes('mvp')) list.unshift('mvp');
       }
       return badgeMap;
     }
