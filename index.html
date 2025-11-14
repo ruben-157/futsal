@@ -2668,6 +2668,7 @@
     const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
     const BADGE_CONFIG = {
       latestTop: { icon:'⭐', label:'Latest Top Scorer', short:'Top Scorer', desc:'Led the latest session in goals.' },
+      allTimeTop: { icon:'🥇', label:'All-Time Top Scorer', short:'All-Time Top', desc:'Most total goals across all sessions.' },
       hatTrick: { icon:'🔥', label:'Hat Trick Hero', short:'Hat Trick', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
       sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
       ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Attended 6+ sessions in a row.' },
@@ -2675,7 +2676,7 @@
       form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
       mvp: { icon:'🏅', label:'MVP', short:'MVP', desc:'Highest Pts/Session with ≥60% attendance.' },
     };
-    const BADGE_PRIORITY = ['latestTop','mvp','hatTrick','sharpshooter','form','ironMan','rocket'];
+    const BADGE_PRIORITY = ['latestTop','allTimeTop','mvp','hatTrick','sharpshooter','form','ironMan','rocket'];
     async function renderAllTime(force=false){
       const wrap = document.getElementById('allTimeContent');
       if(!wrap) return;
@@ -2964,6 +2965,8 @@
       let bestFormDelta = 0;
       let mvpPlayer = null;
       let bestPPM = 0;
+      let allTimeTopPlayer = null;
+      let maxTotalGoals = 0;
       for(const player of players){
         const stats = perPlayer.get(player) || { bestGoalStreak:0, bestAttendStreak:0 };
         const agg = statsMap.get(player) || {};
@@ -2975,6 +2978,7 @@
         const deltaForm = last3Avg - career;
         const flags = {
           latestTop: false,
+          allTimeTop: false,
           mvp: false,
           hatTrick: stats.bestGoalStreak >= 3,
           sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
@@ -3005,6 +3009,10 @@
             }
           }
         }
+        if((agg.goals || 0) > maxTotalGoals){
+          maxTotalGoals = agg.goals || 0;
+          allTimeTopPlayer = player;
+        }
         if(maxGoals != null && latestMap.size){
           const entry = latestMap.get(player);
           if(entry && entry.goals != null){
@@ -3022,6 +3030,10 @@
       if(mvpPlayer && badgeMap.has(mvpPlayer)){
         const list = badgeMap.get(mvpPlayer);
         if(list && !list.includes('mvp')) list.unshift('mvp');
+      }
+      if(allTimeTopPlayer && badgeMap.has(allTimeTopPlayer)){
+        const list = badgeMap.get(allTimeTopPlayer);
+        if(list && !list.includes('allTimeTop')) list.unshift('allTimeTop');
       }
       return badgeMap;
     }
