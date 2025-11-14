@@ -4098,13 +4098,22 @@
         badgeTitle.textContent = 'Badges';
         body.appendChild(badgeTitle);
         const badgeWrap = document.createElement('div');
-        badgeWrap.className = 'player-badges';
         badgeWrap.style.display = 'flex';
-        badgeWrap.style.flexWrap = 'wrap';
+        badgeWrap.style.flexDirection = 'column';
         badgeWrap.style.gap = '6px';
         for(const id of modalBadges){
           const badgeEl = renderPlayerBadge(id, 'long');
-          if(badgeEl) badgeWrap.appendChild(badgeEl);
+          if(!badgeEl) continue;
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.gap = '8px';
+          const desc = document.createElement('span');
+          desc.className = 'stat-sub';
+          desc.textContent = BADGE_CONFIG[id]?.desc || '';
+          row.appendChild(badgeEl);
+          row.appendChild(desc);
+          badgeWrap.appendChild(row);
         }
         body.appendChild(badgeWrap);
       }
