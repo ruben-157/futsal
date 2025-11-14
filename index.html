@@ -2671,7 +2671,7 @@
       hatTrick: { icon:'🔥', label:'Hat Trick Hero', short:'Hat Trick', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
       sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
       ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Attended 6+ sessions in a row.' },
-      rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 3+ positions since last session.' },
+      rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
     };
     const BADGE_PRIORITY = ['latestTop','hatTrick','sharpshooter','ironMan','rocket'];
     async function renderAllTime(force=false){
@@ -2969,7 +2969,7 @@
         if(preRanks && postRanks){
           const pre = preRanks.get(player);
           const post = postRanks.get(player);
-          if(pre != null && post != null && (pre - post) >= 3){
+          if(pre != null && post != null && (pre - post) >= 5){
             flags.rocket = true;
           }
         }
