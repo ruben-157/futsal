@@ -148,6 +148,7 @@
     .player-badges{ display:inline-flex; flex-wrap:wrap; gap:4px; margin-left:6px }
     .player-badge{ display:inline-flex; align-items:center; gap:4px; padding:1px 6px; border-radius:12px; font-size:11px; font-weight:600; border:1px solid var(--border); color:var(--muted); background:#f9fafb }
     .player-badge strong{ font-size:12px }
+    .player-name-line{ display:inline-flex; align-items:center; gap:6px }
     @media (max-width:600px){
       .player-row-name{ display:flex; flex-direction:column; gap:4px }
       .player-row-name > .player-badges{ margin-left:0 }
@@ -3842,7 +3843,9 @@
         else { tdPos.textContent = String(idx + 1); }
         const tdN = document.createElement('td');
         tdN.className = 'player-row-name';
-        tdN.textContent = r.player;
+        const nameLine = document.createElement('span');
+        nameLine.className = 'player-name-line';
+        nameLine.textContent = r.player;
         // Trend arrow: rank movement since last session
         if(podiumActive && preRanks && postRanks){
           const pre = preRanks.get(r.player);
@@ -3858,10 +3861,11 @@
               if(move > 0){ arrow.textContent = ` ▲ ${signed}`; arrow.style.color = 'var(--accent-2)'; }
               else { arrow.textContent = ` ▼ ${signed}`; arrow.style.color = 'var(--danger)'; }
               arrow.title = `Position: ${pre+1} → ${post+1} (${signed} since last session)`;
-              tdN.appendChild(arrow);
+              nameLine.appendChild(arrow);
             }
           }
         }
+        tdN.appendChild(nameLine);
         const badgeList = getPlayerBadges(r.player);
         if(badgeList && badgeList.length){
           const badgesWrap = document.createElement('span');
