@@ -2757,11 +2757,18 @@
         const pointsStr = (parts[2] || '').trim();
         const goalsStr = (parts[3] || '').trim();
         const points = Number(pointsStr);
-        let goals = goalsStr === '' ? null : Number(goalsStr);
+        let goals = null;
+        if(parts.length >= 4){
+          if(goalsStr === ''){
+            goals = 0;
+          } else {
+            const gNum = Number(goalsStr);
+            goals = Number.isFinite(gNum) ? gNum : 0;
+          }
+        }
         if(!player) continue;
         if(!Number.isFinite(points)) continue;
-        if(!Number.isFinite(goals)){ goals = parts.length >= 4 ? 0 : 0; }
-        out.push({ date, player, points, goals: Number.isFinite(goals) ? goals : 0 });
+        out.push({ date, player, points, goals });
       }
       return out;
     }
@@ -2769,16 +2776,19 @@
     function aggregateAllTime(rows){
       const map = new Map();
       for(const { player, points, goals } of rows){
-        const cur = map.get(player) || { player, matches:0, points:0, goals:0 };
+        const cur = map.get(player) || { player, matches:0, points:0, goals:0, goalSessions:0 };
         cur.matches += 1;
         cur.points += Number(points) || 0;
-        cur.goals += Number(goals) || 0;
+        if(goals != null){
+          cur.goals += Number(goals) || 0;
+          cur.goalSessions += 1;
+        }
         map.set(player, cur);
       }
       return Array.from(map.values()).map(x => ({
         ...x,
         ppm: x.matches ? x.points / x.matches : 0,
-        gpm: x.matches ? x.goals / x.matches : 0,
+        gpm: x.goalSessions ? x.goals / x.goalSessions : 0,
       }));
     }
 
@@ -2840,7 +2850,7 @@
       for(const r of rows){
         if(!r || !r.player || !r.date || !Number.isFinite(r.points)) continue;
         if(!byDate.has(r.date)) byDate.set(r.date, []);
-        byDate.get(r.date).push({ player: r.player, points: Number(r.points) || 0, goals: Number(r.goals)||0 });
+        byDate.get(r.date).push({ player: r.player, points: Number(r.points) || 0 });
       }
       const dates = Array.from(byDate.keys()).sort();
       for(const d of dates){
@@ -2860,12 +2870,14 @@
       for(const r of rows){
         if(!r || !r.player || !r.date) continue;
         if(!byDate.has(r.date)) byDate.set(r.date, []);
-        byDate.get(r.date).push({ player: r.player, goals: Number(r.goals)||0 });
+        const goalVal = (r.goals == null) ? null : (Number(r.goals) || 0);
+        byDate.get(r.date).push({ player: r.player, goals: goalVal });
       }
       const dates = Array.from(byDate.keys()).sort();
       for(const d of dates){
         const entries = byDate.get(d) || [];
         for(const e of entries){
+          if(e.goals == null) continue;
           const arr = byPlayer.get(e.player) || [];
           arr.push(e.goals);
           byPlayer.set(e.player, arr);
@@ -2879,7 +2891,8 @@
       for(const r of rows){
         if(!r || !r.player || !r.date || !Number.isFinite(r.points)) continue;
         if(!byDate.has(r.date)) byDate.set(r.date, []);
-        byDate.get(r.date).push({ player: r.player, points: Number(r.points)||0, goals: Number(r.goals)||0 });
+        const goalVal = (r.goals == null) ? null : (Number(r.goals)||0);
+        byDate.get(r.date).push({ player: r.player, points: Number(r.points)||0, goals: goalVal });
       }
       return byDate;
     }
@@ -3060,7 +3073,11 @@
         const arr = byDate.get(d) || [];
         const hit = arr.find(e => e.player === player);
         if(hit){
-          goals.push(Number(hit.goals) || 0);
+          if(hit.goals == null){
+            goals.push(null);
+          } else {
+            goals.push(Number(hit.goals) || 0);
+          }
           absent.push(false);
         } else {
           goals.push(null);
@@ -3114,9 +3131,11 @@
       const dot = (opts && opts.dotRadius) || 2;
       const labels = (opts && opts.labels) || null; // optional x labels (dates)
       const absences = (opts && opts.absences) || null; // optional boolean[] whether player was absent that session
-      const n = Array.isArray(points) ? points.length : 0;
-      if(!n){ return null; }
-      const maxVal = Math.max(0, ...points);
+      const arr = Array.isArray(points) ? points.map(v => (typeof v === 'number' && Number.isFinite(v)) ? v : null) : [];
+      const n = arr.length;
+      const numericVals = arr.filter(v => v !== null);
+      if(!n || numericVals.length === 0){ return null; }
+      const maxVal = Math.max(0, ...numericVals);
       const minVal = (opts && typeof opts.min === 'number') ? opts.min : 0; // allow custom baseline (e.g., rank starts at 1)
       const innerW = Math.max(1, width - padLeft - padRight);
       const innerH = Math.max(1, height - padTop - padBottom);
@@ -3131,8 +3150,9 @@
       let segmentOpen = false;
       for(let i=0;i<n;i++){
         const isAbsent = !!(absences && absences[i]);
-        if(isAbsent){ segmentOpen = false; continue; }
-        const x = xAt(i); const y = yAt(points[i]);
+        const val = arr[i];
+        if(isAbsent || val === null){ segmentOpen = false; continue; }
+        const x = xAt(i); const y = yAt(val);
         if(!segmentOpen){ d += 'M' + x + ' ' + y + ' '; segmentOpen = true; }
         else{ d += 'L' + x + ' ' + y + ' '; }
       }
@@ -3244,19 +3264,20 @@
       // Dots
       for(let i=0;i<n;i++){
         const x = xAt(i);
-        const y = yAt(points[i]);
+        const val = arr[i];
         const isAbsent = !!(absences && absences[i]);
         if(isAbsent){
           const t = document.createElementNS('http://www.w3.org/2000/svg','text');
           t.setAttribute('x', String(x));
-          t.setAttribute('y', String(y));
+          t.setAttribute('y', String(yAt(minVal)));
           t.setAttribute('text-anchor', 'middle');
           t.setAttribute('dominant-baseline', 'central');
           t.setAttribute('font-size', '12');
           t.setAttribute('fill', '#9ca3af');
           t.textContent = '×';
           svg.appendChild(t);
-        } else {
+        } else if(val !== null){
+          const y = yAt(val);
           const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
           c.setAttribute('cx', String(x)); c.setAttribute('cy', String(y));
           c.setAttribute('r', String(dot));
@@ -3612,8 +3633,17 @@
         if(k === 'matches') return (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
         if(k === 'points') return (a.points - b.points) * dir || (a.ppm - b.ppm) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
         if(k === 'ppm') return ((a.ppm - b.ppm) * dir) || (a.points - b.points) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
-        if(k === 'goals') return (a.goals - b.goals) * dir || (a.gpm - b.gpm) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
-        if(k === 'gpm') return ((a.gpm - b.gpm) * dir) || (a.goals - b.goals) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
+        if(k === 'goals') return (a.goals - b.goals) * dir || ((a.gpm || 0) - (b.gpm || 0)) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
+        if(k === 'gpm'){
+          const aHas = a.goalSessions && a.goalSessions > 0;
+          const bHas = b.goalSessions && b.goalSessions > 0;
+          if(aHas && !bHas) return -1;
+          if(!aHas && bHas) return 1;
+          if(!aHas && !bHas) return (a.points - b.points) * dir || a.player.localeCompare(b.player);
+          const cmp = (a.gpm - b.gpm) * dir;
+          if(cmp !== 0) return cmp;
+          return (a.goals - b.goals) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
+        }
         return 0;
       });
     }
@@ -3735,12 +3765,17 @@
         const tdGoals = document.createElement('td');
         tdGoals.textContent = String(r.goals || 0);
         const tdGpm = document.createElement('td');
-        const gpmBadge = document.createElement('span');
-        const gpm = r.gpm || 0;
-        gpmBadge.textContent = gpm.toFixed(2);
-        gpmBadge.className = 'badge badge-neutral';
-        gpmBadge.title = 'Goals per session';
-        tdGpm.appendChild(gpmBadge);
+        if(r.goalSessions && r.goalSessions > 0){
+          const gpmBadge = document.createElement('span');
+          const gpm = r.gpm || 0;
+          gpmBadge.textContent = gpm.toFixed(2);
+          gpmBadge.className = 'badge badge-neutral';
+          gpmBadge.title = `Goals per session (${r.goalSessions} tracked)`;
+          tdGpm.appendChild(gpmBadge);
+        } else {
+          tdGpm.textContent = '—';
+          tdGpm.style.color = 'var(--muted)';
+        }
         tr.appendChild(tdPos);
         tr.appendChild(tdN);
         tr.appendChild(tdM);
@@ -3860,13 +3895,12 @@
           const chartWrap = document.createElement('div');
           chartWrap.style.marginBottom = '8px';
           chartWrap.style.width = '100%';
-          const values = goalsSeries.goals.map(v => v == null ? 0 : v);
-          const svg = buildLineChart(values, { width: 360, height: 140, stroke: 'var(--accent-2)', strokeWidth: 2, dotRadius: 2.5, labels: goalsSeries.dates, absences: goalsSeries.absent });
+          const svg = buildLineChart(goalsSeries.goals, { width: 360, height: 140, stroke: 'var(--accent-2)', strokeWidth: 2, dotRadius: 2.5, labels: goalsSeries.dates, absences: goalsSeries.absent });
           if(svg){
             chartWrap.appendChild(svg);
             const legend = document.createElement('div');
             legend.className = 'stat-sub';
-            legend.textContent = 'Line breaks indicate sessions you did not attend.';
+            legend.textContent = 'Line breaks indicate sessions without recorded goal data (absence or pre-tracking).';
             legend.style.marginTop = '4px';
             chartWrap.appendChild(legend);
             body.appendChild(chartWrap);
@@ -3899,19 +3933,25 @@
       const ppm = matches ? (totalPts / matches) : 0;
       const series = (window.__allTimeSeries && window.__allTimeSeries.get(player)) || rows.map(r=> Number(r.points)||0);
       const last3 = avgLastN(series, 3);
-      const totalGoals = rows.reduce((s,r)=> s + (Number(r.goals)||0), 0);
-      const gpm = matches ? (totalGoals / matches) : 0;
-      const goalSeries = (window.__allTimeGoalSeries && window.__allTimeGoalSeries.get(player)) || rows.map(r=> Number(r.goals)||0);
+      const goalRows = rows.filter(r => r.goals != null);
+      const goalSessions = goalRows.length;
+      const totalGoals = goalRows.reduce((s,r)=> s + (Number(r.goals)||0), 0);
+      const gpm = goalSessions ? (totalGoals / goalSessions) : 0;
+      const goalSeries = (window.__allTimeGoalSeries && window.__allTimeGoalSeries.get(player)) || goalRows.map(r=> Number(r.goals)||0);
       const last3Goals = avgLastN(goalSeries, 3);
       const headerStats = document.createElement('div');
       headerStats.className = 'notice';
       headerStats.style.marginBottom = '8px';
       const delta = last3 - ppm;
       const arrow = Math.abs(delta) >= 0.5 ? (delta>0 ? ' ▲' : ' ▼') : '';
-      const goalDelta = last3Goals - gpm;
-      const goalArrow = Math.abs(goalDelta) >= 0.3 ? (goalDelta>0 ? ' ▲' : ' ▼') : '';
-      const goalSuffix = matches ? ` • Last 3 Goals: ${last3Goals.toFixed(2)}${goalArrow || ''}` : '';
-      headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Session: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''} • Goals: ${totalGoals} • Goals/Session: ${gpm.toFixed(2)}${goalSuffix}`;
+      let goalText = ' • Goals: —';
+      if(goalSessions){
+        const goalDelta = last3Goals - gpm;
+        const goalArrow = Math.abs(goalDelta) >= 0.3 ? (goalDelta>0 ? ' ▲' : ' ▼') : '';
+        const goalSuffix = goalArrow ? ` • Last 3 Goals: ${last3Goals.toFixed(2)}${goalArrow}` : '';
+        goalText = ` • Goals: ${totalGoals} • Goals/Session: ${gpm.toFixed(2)}${goalSuffix}`;
+      }
+      headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Session: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''}${goalText}`;
       body.appendChild(headerStats);
 
             // Session list removed (redundant with chart and labels)
