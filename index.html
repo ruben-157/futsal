@@ -1421,22 +1421,7 @@
       savePrevRanksFromRows(rows);
 
       // Top Scorers (only players with >=1 goal), with AVG (goals per match)
-      const scorerTotals = new Map();
-      const playedCounts = new Map();
-      const teamById = new Map(state.teams.map(t => [t.id, t]));
-      const isGuest = (name)=> String(name||'').trim().toLowerCase() === 'guest player';
-      for(const key of Object.keys(state.results || {})){
-        const r = state.results[key]; if(!r) continue;
-        const { a, b, ga, gb, gpa, gpb } = r || {};
-        if(gpa){ for(const [name, n] of Object.entries(gpa)){ if(n>0 && !isGuest(name)){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
-        if(gpb){ for(const [name, n] of Object.entries(gpb)){ if(n>0 && !isGuest(name)){ scorerTotals.set(name, (scorerTotals.get(name)||0)+n); } } }
-        const played = ga != null && gb != null;
-        if(played){
-          const teamA = teamById.get(a); const teamB = teamById.get(b);
-          if(teamA){ for(const name of teamA.members){ playedCounts.set(name, (playedCounts.get(name)||0)+1); } }
-          if(teamB){ for(const name of teamB.members){ playedCounts.set(name, (playedCounts.get(name)||0)+1); } }
-        }
-      }
+      const { totals: scorerTotals, playedCounts } = computeGoalStats();
       const scorers = Array.from(scorerTotals.entries())
         .filter(([_,n])=> n>0)
         .sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
@@ -1490,6 +1475,49 @@
         };
         emailBtn.onclick = ()=>{ emailSummary(); };
       }
+    }
+
+    // Aggregate per-player goal totals and appearance counts for the active tournament
+    function computeGoalStats(){
+      const totals = new Map();
+      const playedCounts = new Map();
+      if(!state.teams || state.teams.length === 0) return { totals, playedCounts };
+      const teamById = new Map(state.teams.map(t => [t.id, t]));
+      const isGuest = (name)=> String(name||'').trim().toLowerCase() === 'guest player';
+      for(const key of Object.keys(state.results || {})){
+        const r = state.results[key]; if(!r) continue;
+        const { a, b, ga, gb, gpa, gpb } = r || {};
+        if(gpa){
+          for(const [name, n] of Object.entries(gpa)){
+            if(n>0 && !isGuest(name)){
+              totals.set(name, (totals.get(name)||0) + n);
+            }
+          }
+        }
+        if(gpb){
+          for(const [name, n] of Object.entries(gpb)){
+            if(n>0 && !isGuest(name)){
+              totals.set(name, (totals.get(name)||0) + n);
+            }
+          }
+        }
+        const played = ga != null && gb != null;
+        if(played){
+          const teamA = teamById.get(a);
+          const teamB = teamById.get(b);
+          if(teamA){
+            for(const name of teamA.members){
+              playedCounts.set(name, (playedCounts.get(name)||0) + 1);
+            }
+          }
+          if(teamB){
+            for(const name of teamB.members){
+              playedCounts.set(name, (playedCounts.get(name)||0) + 1);
+            }
+          }
+        }
+      }
+      return { totals, playedCounts };
     }
 
     // Build a concise summary of what is shown on the Leaderboard
@@ -1552,7 +1580,7 @@
       return str;
     }
 
-    // Build per-player points summary as CSV: Date,Player,Points
+    // Build per-player points+goals summary as CSV: Date,Player,Points,Goals
     function buildEmailSummaryText(){
       const lines = [];
       const now = new Date();
@@ -1560,8 +1588,9 @@
       const mm = String(now.getMonth()+1).padStart(2,'0');
       const dd = String(now.getDate()).padStart(2,'0');
       const dateStr = `${yyyy}-${mm}-${dd}`;
+      const { totals: goalTotals } = computeGoalStats();
       if(!state.teams || state.teams.length < 2){
-        lines.push('Date,Player,Points');
+        lines.push('Date,Player,Points,Goals');
         return lines.join('\n');
       }
       const teamById = new Map(state.teams.map(t => [t.id, t]));
@@ -1577,8 +1606,11 @@
         else { for(const n of (ta.members||[])) points.set(n, (points.get(n)||0) + 1); for(const n of (tb.members||[])) points.set(n, (points.get(n)||0) + 1); }
       }
       const rows = Array.from(points.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
-      lines.push('Date,Player,Points');
-      for(const [name, pts] of rows){ lines.push(`${dateStr},${csvEscape(name)},${pts}`); }
+      lines.push('Date,Player,Points,Goals');
+      for(const [name, pts] of rows){
+        const goals = goalTotals.get(name) || 0;
+        lines.push(`${dateStr},${csvEscape(name)},${pts},${goals}`);
+      }
       return lines.join('\n');
     }
 
@@ -2647,8 +2679,10 @@
         }else{
           const totalSessions = countUniqueSessions(data);
           const series = buildAllTimeSeries(data);
+          const goalSeries = buildAllTimeGoalSeries(data);
           const byDate = buildAllTimeByDate(data);
           window.__allTimeSeries = series; // cache for modal
+          window.__allTimeGoalSeries = goalSeries;
           window.__allTimeByDate = byDate;
           window.__allTimeRows = data;
           const latestDate = data.map(r=>r.date).sort().slice(-1)[0];
@@ -2686,6 +2720,26 @@
       return rows;
     }
 
+    function splitCSVLine(line){
+      const out = [];
+      let cur = '';
+      let inQuotes = false;
+      for(let i=0;i<line.length;i++){
+        const ch = line[i];
+        if(ch === '"'){
+          if(inQuotes && line[i+1] === '"'){ cur += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        }else if(ch === ',' && !inQuotes){
+          out.push(cur.trim());
+          cur = '';
+        }else{
+          cur += ch;
+        }
+      }
+      out.push(cur.trim());
+      return out;
+    }
+
     function parseCSVSimple(text){
       // Handle BOM and normalize newlines
       const t = text.replace(/^\uFEFF/, '');
@@ -2694,29 +2748,38 @@
       for(let i=0;i<lines.length;i++){
         const line = lines[i];
         if(!line) continue;
-        if(i===0 && /^date,player,points$/i.test(line.replace(/\s+/g,''))) continue; // skip header
-        const parts = line.split(',');
+        const normalized = line.replace(/\s+/g,'').toLowerCase();
+        if(i===0 && (normalized === 'date,player,points' || normalized === 'date,player,points,goals')) continue; // skip header
+        const parts = splitCSVLine(line);
         if(parts.length < 3) continue;
-        const date = parts[0].trim();
-        const player = parts[1].trim();
-        const pointsStr = parts.slice(2).join(',').trim(); // tolerate commas in names (unlikely)
+        const date = (parts[0] || '').trim();
+        const player = (parts[1] || '').trim();
+        const pointsStr = (parts[2] || '').trim();
+        const goalsStr = (parts[3] || '').trim();
         const points = Number(pointsStr);
+        let goals = goalsStr === '' ? null : Number(goalsStr);
         if(!player) continue;
         if(!Number.isFinite(points)) continue;
-        out.push({ date, player, points });
+        if(!Number.isFinite(goals)){ goals = parts.length >= 4 ? 0 : 0; }
+        out.push({ date, player, points, goals: Number.isFinite(goals) ? goals : 0 });
       }
       return out;
     }
 
     function aggregateAllTime(rows){
       const map = new Map();
-      for(const { player, points } of rows){
-        const cur = map.get(player) || { player, matches:0, points:0 };
+      for(const { player, points, goals } of rows){
+        const cur = map.get(player) || { player, matches:0, points:0, goals:0 };
         cur.matches += 1;
-        cur.points += points;
+        cur.points += Number(points) || 0;
+        cur.goals += Number(goals) || 0;
         map.set(player, cur);
       }
-      return Array.from(map.values()).map(x => ({ ...x, ppm: x.matches ? x.points / x.matches : 0 }));
+      return Array.from(map.values()).map(x => ({
+        ...x,
+        ppm: x.matches ? x.points / x.matches : 0,
+        gpm: x.matches ? x.goals / x.matches : 0,
+      }));
     }
 
     function computeAllTimeThresholds(stats, totalSessions, alpha){
@@ -2771,13 +2834,13 @@
     }
 
     function buildAllTimeSeries(rows){
-      // Returns Map<Player, number[]> sorted by date ascending
+      // Returns Map<Player, number[]> sorted by date ascending (points)
       const byPlayer = new Map();
       const byDate = new Map();
       for(const r of rows){
         if(!r || !r.player || !r.date || !Number.isFinite(r.points)) continue;
         if(!byDate.has(r.date)) byDate.set(r.date, []);
-        byDate.get(r.date).push({ player: r.player, points: r.points });
+        byDate.get(r.date).push({ player: r.player, points: Number(r.points) || 0, goals: Number(r.goals)||0 });
       }
       const dates = Array.from(byDate.keys()).sort();
       for(const d of dates){
@@ -2791,12 +2854,32 @@
       return byPlayer;
     }
 
+    function buildAllTimeGoalSeries(rows){
+      const byPlayer = new Map();
+      const byDate = new Map();
+      for(const r of rows){
+        if(!r || !r.player || !r.date) continue;
+        if(!byDate.has(r.date)) byDate.set(r.date, []);
+        byDate.get(r.date).push({ player: r.player, goals: Number(r.goals)||0 });
+      }
+      const dates = Array.from(byDate.keys()).sort();
+      for(const d of dates){
+        const entries = byDate.get(d) || [];
+        for(const e of entries){
+          const arr = byPlayer.get(e.player) || [];
+          arr.push(e.goals);
+          byPlayer.set(e.player, arr);
+        }
+      }
+      return byPlayer;
+    }
+
     function buildAllTimeByDate(rows){
       const byDate = new Map();
       for(const r of rows){
         if(!r || !r.player || !r.date || !Number.isFinite(r.points)) continue;
         if(!byDate.has(r.date)) byDate.set(r.date, []);
-        byDate.get(r.date).push({ player: r.player, points: r.points });
+        byDate.get(r.date).push({ player: r.player, points: Number(r.points)||0, goals: Number(r.goals)||0 });
       }
       return byDate;
     }
@@ -2967,6 +3050,24 @@
         }
       }
       return { dates, points, absent };
+    }
+    function getPlayerGoalsAcrossDates(player){
+      const byDate = window.__allTimeByDate || new Map();
+      const dates = getAllDatesAsc();
+      const goals = [];
+      const absent = [];
+      for(const d of dates){
+        const arr = byDate.get(d) || [];
+        const hit = arr.find(e => e.player === player);
+        if(hit){
+          goals.push(Number(hit.goals) || 0);
+          absent.push(false);
+        } else {
+          goals.push(null);
+          absent.push(true);
+        }
+      }
+      return { dates, goals, absent };
     }
     function getAllPlayers(){
       const rows = window.__allTimeRows || [];
@@ -3511,6 +3612,8 @@
         if(k === 'matches') return (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
         if(k === 'points') return (a.points - b.points) * dir || (a.ppm - b.ppm) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
         if(k === 'ppm') return ((a.ppm - b.ppm) * dir) || (a.points - b.points) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
+        if(k === 'goals') return (a.goals - b.goals) * dir || (a.gpm - b.gpm) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
+        if(k === 'gpm') return ((a.gpm - b.gpm) * dir) || (a.goals - b.goals) * dir || (a.matches - b.matches) * dir || a.player.localeCompare(b.player);
         return 0;
       });
     }
@@ -3534,10 +3637,12 @@
       thRank.textContent = '#';
       trHead.appendChild(thRank);
       const cols = [
-        { key:'player', label:'Player', style:'width:50%' },
+        { key:'player', label:'Player', style:'width:40%' },
         { key:'matches', label:'Matches' },
         { key:'points', label:'Points' },
         { key:'ppm', label:'Pts/Session' },
+        { key:'goals', label:'Goals' },
+        { key:'gpm', label:'Goals/Session' },
       ];
       for(const col of cols){
         const th = document.createElement('th');
@@ -3559,8 +3664,9 @@
           sortAllTimeStats(stats2);
           const totalSessions = countUniqueSessions(allTimeCache.rows);
           const series = buildAllTimeSeries(allTimeCache.rows);
+          const goalSeries = buildAllTimeGoalSeries(allTimeCache.rows);
           const byDate = buildAllTimeByDate(allTimeCache.rows);
-          window.__allTimeSeries = series; window.__allTimeByDate = byDate; window.__allTimeRows = allTimeCache.rows;
+          window.__allTimeSeries = series; window.__allTimeGoalSeries = goalSeries; window.__allTimeByDate = byDate; window.__allTimeRows = allTimeCache.rows;
           const latestDate = allTimeCache.rows.map(r=>r.date).sort().slice(-1)[0];
           const preRows = allTimeCache.rows.filter(r => r.date !== latestDate);
           const preStats = aggregateAllTime(preRows);
@@ -3626,7 +3732,22 @@
         else if(ppm >= 4){ ppmBadge.className = 'badge badge-avg'; ppmBadge.title = 'Average: 4–6 pts/session'; }
         else { ppmBadge.className = 'badge badge-low'; ppmBadge.title = 'Low: < 4 pts/session'; }
         tdA.appendChild(ppmBadge);
-        tr.appendChild(tdPos); tr.appendChild(tdN); tr.appendChild(tdM); tr.appendChild(tdP); tr.appendChild(tdA);
+        const tdGoals = document.createElement('td');
+        tdGoals.textContent = String(r.goals || 0);
+        const tdGpm = document.createElement('td');
+        const gpmBadge = document.createElement('span');
+        const gpm = r.gpm || 0;
+        gpmBadge.textContent = gpm.toFixed(2);
+        gpmBadge.className = 'badge badge-neutral';
+        gpmBadge.title = 'Goals per session';
+        tdGpm.appendChild(gpmBadge);
+        tr.appendChild(tdPos);
+        tr.appendChild(tdN);
+        tr.appendChild(tdM);
+        tr.appendChild(tdP);
+        tr.appendChild(tdA);
+        tr.appendChild(tdGoals);
+        tr.appendChild(tdGpm);
         tr.style.cursor = 'pointer';
         tr.title = 'View player history';
         tr.addEventListener('click', ()=> openPlayerModal(r.player));
@@ -3727,6 +3848,32 @@
         }
       }catch(_){ /* best-effort chart */ }
 
+      // Chart: goals per session
+      try{
+        const goalsSeries = getPlayerGoalsAcrossDates(player);
+        if(goalsSeries && goalsSeries.goals && goalsSeries.goals.some(v => v !== null)){
+          const titleGoals = document.createElement('div');
+          titleGoals.className = 'stat-title';
+          titleGoals.style.margin = '4px 0';
+          titleGoals.textContent = 'Goals per Session';
+          body.appendChild(titleGoals);
+          const chartWrap = document.createElement('div');
+          chartWrap.style.marginBottom = '8px';
+          chartWrap.style.width = '100%';
+          const values = goalsSeries.goals.map(v => v == null ? 0 : v);
+          const svg = buildLineChart(values, { width: 360, height: 140, stroke: 'var(--accent-2)', strokeWidth: 2, dotRadius: 2.5, labels: goalsSeries.dates, absences: goalsSeries.absent });
+          if(svg){
+            chartWrap.appendChild(svg);
+            const legend = document.createElement('div');
+            legend.className = 'stat-sub';
+            legend.textContent = 'Line breaks indicate sessions you did not attend.';
+            legend.style.marginTop = '4px';
+            chartWrap.appendChild(legend);
+            body.appendChild(chartWrap);
+          }
+        }
+      }catch(_){ /* best-effort goals chart */ }
+
       // Rank chart (lower is better)
       try{
         const rankSeries = getPlayerRankAcrossDates(player);
@@ -3748,16 +3895,23 @@
       const rows = (window.__allTimeRows || []).filter(r => r.player === player);
       // Quick stats
       const matches = rows.length;
-      const totalPts = rows.reduce((s,r)=> s + r.points, 0);
+      const totalPts = rows.reduce((s,r)=> s + (Number(r.points)||0), 0);
       const ppm = matches ? (totalPts / matches) : 0;
-      const series = (window.__allTimeSeries && window.__allTimeSeries.get(player)) || rows.map(r=> r.points);
+      const series = (window.__allTimeSeries && window.__allTimeSeries.get(player)) || rows.map(r=> Number(r.points)||0);
       const last3 = avgLastN(series, 3);
+      const totalGoals = rows.reduce((s,r)=> s + (Number(r.goals)||0), 0);
+      const gpm = matches ? (totalGoals / matches) : 0;
+      const goalSeries = (window.__allTimeGoalSeries && window.__allTimeGoalSeries.get(player)) || rows.map(r=> Number(r.goals)||0);
+      const last3Goals = avgLastN(goalSeries, 3);
       const headerStats = document.createElement('div');
       headerStats.className = 'notice';
       headerStats.style.marginBottom = '8px';
       const delta = last3 - ppm;
       const arrow = Math.abs(delta) >= 0.5 ? (delta>0 ? ' ▲' : ' ▼') : '';
-      headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Session: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''}`;
+      const goalDelta = last3Goals - gpm;
+      const goalArrow = Math.abs(goalDelta) >= 0.3 ? (goalDelta>0 ? ' ▲' : ' ▼') : '';
+      const goalSuffix = matches ? ` • Last 3 Goals: ${last3Goals.toFixed(2)}${goalArrow || ''}` : '';
+      headerStats.textContent = `Matches: ${matches} • Points: ${totalPts} • Pts/Session: ${ppm.toFixed(2)}${arrow ? ` • Last 3: ${last3.toFixed(2)}${arrow}` : ''} • Goals: ${totalGoals} • Goals/Session: ${gpm.toFixed(2)}${goalSuffix}`;
       body.appendChild(headerStats);
 
             // Session list removed (redundant with chart and labels)
