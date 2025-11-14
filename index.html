@@ -2668,7 +2668,7 @@
     const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
     const BADGE_CONFIG = {
       latestTop: { icon:'⭐', label:'Latest Top Scorer', short:'Top Scorer', desc:'Led the latest session in goals.' },
-      allTimeTop: { icon:'🥇', label:'All-Time Topscorer', short:'All-Time Top', desc:'Most total goals across all sessions.' },
+      allTimeTop: { icon:'🥇', label:'All-Time Topscorer', short:'Topscorer', desc:'Most total goals across all sessions.' },
       clutch: { icon:'🏆', label:'Session Ace', short:'Session Ace', desc:'Most sessions finishing with the highest points.' },
       hatTrick: { icon:'🔥', label:'Hat Trick Hero', short:'Hat Trick', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
       sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
@@ -2933,9 +2933,22 @@
       for(const d of dates){
         const entries = byDate.get(d) || [];
         const entryMap = new Map(entries.map(e => [e.player, e]));
-       for(const player of players){
-         const stat = perPlayer.get(player);
-         const entry = entryMap.get(player);
+        let maxPoints = -Infinity;
+        for(const e of entries){
+          const pts = Number(e.points) || 0;
+          if(pts > maxPoints) maxPoints = pts;
+        }
+        if(entries.length && maxPoints > -Infinity){
+          for(const e of entries){
+            const pts = Number(e.points) || 0;
+            if(pts === maxPoints){
+              sessionAceCounts.set(e.player, (sessionAceCounts.get(e.player)||0) + 1);
+            }
+          }
+        }
+        for(const player of players){
+          const stat = perPlayer.get(player);
+          const entry = entryMap.get(player);
           if(entry){
             stat.attendStreak += 1;
             if(stat.attendStreak > stat.bestAttendStreak) stat.bestAttendStreak = stat.attendStreak;
@@ -3041,7 +3054,7 @@
         const list = badgeMap.get(mvpPlayer);
         if(list && !list.includes('mvp')) list.unshift('mvp');
       }
-      if(sessionAcePlayer && badgeMap.has(sessionAcePlayer)){
+      if(sessionAcePlayer && sessionAceMax > 0 && badgeMap.has(sessionAcePlayer)){
         const list = badgeMap.get(sessionAcePlayer);
         if(list && !list.includes('clutch')) list.unshift('clutch');
       }
