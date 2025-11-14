@@ -57,7 +57,7 @@
 
     /* Tabs */
     .tabs{
-      position:sticky; top:62px; z-index:2; /* under header */
+      position:sticky; top:var(--header-height, 62px); z-index:2; /* under header */
       display:flex; gap:8px; padding:8px 12px; border-bottom:1px solid var(--border);
       background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9));
       backdrop-filter: blur(6px);
@@ -2637,6 +2637,7 @@
       } else if(which === 'alltime'){
         renderAllTime(true);
       }
+      syncStickyOffsets();
       // Header has no explicit refresh button; All-Time reloads when opened
     }
     function updateTabsUI(){
@@ -3152,6 +3153,18 @@
       headerBar.appendChild(icon);
       headerBar.appendChild(label);
       return headerBar;
+    }
+
+    function syncStickyOffsets(){
+      try{
+        const headerEl = document.querySelector('header');
+        if(headerEl){
+          const h = headerEl.getBoundingClientRect().height;
+          if(h > 0){
+            document.documentElement.style.setProperty('--header-height', `${Math.round(h)}px`);
+          }
+        }
+      }catch(_){}
     }
 
     // ----- Simple Inline Line Chart (for Player Modal) -----
@@ -4167,6 +4180,8 @@ const closeBtn = document.getElementById('playerModalClose');
     updateTabsUI();
     updateTabsUI();
     switchTab('players');
+    syncStickyOffsets();
+    window.addEventListener('resize', ()=> syncStickyOffsets());
   </script>
 </body>
 </html>
