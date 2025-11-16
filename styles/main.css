@@ -140,7 +140,12 @@ tbody tr:last-child td{border-bottom:none}
 .badge-neutral{ background: #e5e7eb; color: var(--muted); border: 1px solid var(--border) }
 .player-badges{ display:inline-flex; flex-wrap:wrap; gap:4px; margin-left:6px }
 .player-badge{ display:inline-flex; align-items:center; gap:4px; padding:1px 6px; border-radius:12px; font-size:11px; font-weight:600; border:1px solid var(--border); color:var(--muted); background:#f9fafb }
-.player-badge-premium{ background: linear-gradient(120deg, #fef3c7, #facc15); border-color:#d97706; color:#7a2e0a }
+.player-badge-premium{
+  background: linear-gradient(130deg, #fef9c3, #fcd34d 35%, #f59e0b);
+  border-color:#b45309;
+  color:#7a2e0a;
+  box-shadow:0 0 0 1px rgba(250, 204, 21, 0.4), 0 2px 6px rgba(180, 83, 9, 0.25);
+}
 .player-badge strong{ font-size:12px }
 .player-name-line{ display:inline-flex; align-items:center; gap:6px }
 @media (max-width:600px){
