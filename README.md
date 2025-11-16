@@ -23,7 +23,7 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
 - Players: pick attendees from Available → Playing Today, then Generate Teams.
   - Limit: max 20 attendees, teams lock players after generation.
   - Start new match: a top button appears on the Players tab when a tournament exists (teams generated). It clears teams/results/rounds and unlocks Players (was labeled “Reset”).
-- Teams: shows team pill, members, size, average skill, and average stamina.
+- Teams: shows team pill, members, and size.
 - Matches: full schedule by rounds, “Next Match” heading + kickoff indicator.
   - Result entry via modal with large +/- steppers; score button toggles edit.
 - Leaderboard: Team badge, Played, Points, GD (colored), members (small).

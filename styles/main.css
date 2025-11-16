@@ -150,11 +150,6 @@ tbody tr:last-child td{border-bottom:none}
 /* Teams: vertically center cells */
 #teamsSection table th,
 #teamsSection table td{ vertical-align: middle }
-#teamsSection th:nth-child(4),
-#teamsSection th:nth-child(5),
-#teamsSection td:nth-child(4),
-#teamsSection td:nth-child(5){ display:none }
-
 /* Leaderboard: vertically center stats cells */
 #leaderboardSection table th,
 #leaderboardSection table td{ vertical-align: middle }

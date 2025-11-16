@@ -196,7 +196,23 @@ function createListItem(name, isSelected){
 function setupDnD(){ /* DnD disabled in single-list selection UI */ }
 
 function renderTeams(){
-  const section = document.getElementById('teamsSection');
+  const table = document.getElementById('teamsTable');
+  const headerRow = table ? table.querySelector('thead tr') : null;
+  const headerLabels = ['Team', 'Members', 'Size'];
+  if(headerRow){
+    headerLabels.forEach((label, idx)=>{
+      const cell = headerRow.children[idx];
+      if(cell){ cell.textContent = label; }
+      else{
+        const th = document.createElement('th');
+        th.textContent = label;
+        headerRow.appendChild(th);
+      }
+    });
+    while(headerRow.children.length > headerLabels.length){
+      headerRow.removeChild(headerRow.lastElementChild);
+    }
+  }
   const tbody = document.getElementById('teamsBody');
   tbody.innerHTML = '';
   if(!state.teams || state.teams.length === 0){
@@ -3185,7 +3201,6 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
         }
       }
     }
-    tdN.appendChild(nameLine);
     const badgeList = getPlayerBadges(r.player);
     if(badgeList && badgeList.length){
       const badgesWrap = document.createElement('span');
@@ -3196,8 +3211,9 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
           badgesWrap.appendChild(badgeEl);
         }
       }
-      if(badgesWrap.childNodes.length > 0){ tdN.appendChild(badgesWrap); }
+      if(badgesWrap.childNodes.length > 0){ nameLine.appendChild(badgesWrap); }
     }
+    tdN.appendChild(nameLine);
     const tdM = document.createElement('td');
     if(totalSessions && totalSessions > 0){
       tdM.textContent = `${r.matches}/${totalSessions}`;
