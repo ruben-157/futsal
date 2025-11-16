@@ -1908,7 +1908,7 @@ const BADGE_CONFIG = {
   ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Attended 6+ sessions in a row.' },
   rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
   form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
-  mvp: { icon:'🏅', label:'Most Valuable Player', short:'All-Time MVP', desc:'Highest Pts/Session with ≥60% attendance.' },
+  mvp: { icon:'🏅', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
 };
 const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','hatTrick','sharpshooter','form','ironMan','rocket'];
 async function renderAllTime(force=false){
@@ -2317,7 +2317,7 @@ function renderPlayerBadge(id, variant){
   const conf = BADGE_CONFIG[id];
   if(!conf) return null;
   const span = document.createElement('span');
-  span.className = 'player-badge';
+  span.className = 'player-badge' + (id === 'mvp' ? ' player-badge-premium' : '');
   span.title = conf.desc;
   const icon = document.createElement('strong');
   icon.textContent = conf.icon;
