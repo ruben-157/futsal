@@ -197,24 +197,22 @@ function setupDnD(){ /* DnD disabled in single-list selection UI */ }
 
 function renderTeams(){
   const table = document.getElementById('teamsTable');
-  const headerRow = table ? table.querySelector('thead tr') : null;
+  if(!table) return;
   const headerLabels = ['Team', 'Members', 'Size'];
-  if(headerRow){
-    headerLabels.forEach((label, idx)=>{
-      const cell = headerRow.children[idx];
-      if(cell){ cell.textContent = label; }
-      else{
-        const th = document.createElement('th');
-        th.textContent = label;
-        headerRow.appendChild(th);
-      }
-    });
-    while(headerRow.children.length > headerLabels.length){
-      headerRow.removeChild(headerRow.lastElementChild);
-    }
-  }
-  const tbody = document.getElementById('teamsBody');
-  tbody.innerHTML = '';
+  const thead = table.tHead || table.createTHead();
+  const headerRow = document.createElement('tr');
+  headerLabels.forEach(label => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    headerRow.appendChild(th);
+  });
+  thead.innerHTML = '';
+  thead.appendChild(headerRow);
+  const existingBody = document.getElementById('teamsBody') || table.tBodies[0];
+  const tbody = document.createElement('tbody');
+  tbody.id = 'teamsBody';
+  if(existingBody) existingBody.replaceWith(tbody);
+  else table.appendChild(tbody);
   if(!state.teams || state.teams.length === 0){
     // No teams yet: leave table empty
     return;
