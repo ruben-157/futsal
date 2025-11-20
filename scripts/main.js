@@ -3600,6 +3600,7 @@ function openPlayerModal(player){
       const card = document.createElement('div');
       card.style.display = 'flex';
       card.style.alignItems = 'center';
+      card.style.gap = '14px';
       card.style.padding = '10px 12px';
       card.style.border = '1px solid var(--border)';
       card.style.borderRadius = '12px';
