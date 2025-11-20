@@ -2225,6 +2225,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     allTimeTop: new Map(),
     playmaker: new Map(),
     ironMan: new Map(),
+    form: new Map(),
   };
   function addHistory(map, player, date){
     const cur = map.get(player) || { count:0, dates:[] };
@@ -2450,6 +2451,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   if(bestFormPlayer && bestFormDelta > 0 && badgeMap.has(bestFormPlayer)){
     const list = badgeMap.get(bestFormPlayer);
     if(list && !list.includes('form')) list.unshift('form');
+    addHistory(badgeHistory.form, bestFormPlayer, latestDate);
   }
   // Cold Streak: lowest delta (largest form dip). Only award if someone dips below career average.
   let coldStreakPlayer = null;
@@ -2505,7 +2507,8 @@ function getPlayerBadgeHistory(player){
     latestTop: 'Latest Top Scorer',
     allTimeTop: 'All-Time Topscorer',
     playmaker: 'Playmaker',
-    ironMan: 'Iron Man'
+    ironMan: 'Iron Man',
+    form: 'On Fire'
   };
   const out = [];
   for(const key of Object.keys(labels)){
@@ -3633,7 +3636,7 @@ function openPlayerModal(player){
       titleEl.textContent = entry.label;
       const desc = document.createElement('div');
       desc.className = 'stat-sub';
-      desc.textContent = 'Times earned';
+      desc.textContent = BADGE_CONFIG[entry.key]?.desc || 'Badge earned';
       meta.appendChild(titleEl);
       meta.appendChild(desc);
       const count = document.createElement('div');
