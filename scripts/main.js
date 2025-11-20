@@ -2265,8 +2265,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   }
   let bestFormPlayer = null;
   let bestFormDelta = 0;
-  let worstFormPlayer = null;
-  let worstFormDelta = null; // track lowest delta among players with history
+  const formDeltas = new Map(); // track all deltas to pick lowest (cold streak)
   let mvpPlayer = null;
   let bestPPM = 0;
   let allTimeTopPlayer = null;
@@ -2315,17 +2314,11 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     const bestGoalStreak = stats.bestGoalStreak || 0;
     const earnedStreak = streakTiers.find(t => bestGoalStreak >= t.min);
     if(earnedStreak){ flags[earnedStreak.key] = true; }
+    formDeltas.set(player, deltaForm);
     if(deltaForm > 0){
       if(!bestFormPlayer || deltaForm > bestFormDelta){
         bestFormPlayer = player;
         bestFormDelta = deltaForm;
-      }
-    }
-    // Track lowest delta (including zero/positive) to ensure badge is awarded to the biggest dip
-    if(history.length > 0){
-      if(worstFormDelta === null || deltaForm < worstFormDelta){
-        worstFormPlayer = player;
-        worstFormDelta = deltaForm;
       }
     }
     if(preRanks && postRanks){
@@ -2368,7 +2361,16 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     const list = badgeMap.get(bestFormPlayer);
     if(list && !list.includes('form')) list.unshift('form');
   }
-  if(worstFormPlayer && Number.isFinite(worstFormDelta) && badgeMap.has(worstFormPlayer)){
+  // Cold Streak: lowest delta (most negative or least positive), among players with history
+  let worstFormPlayer = null;
+  let worstFormDelta = null;
+  for(const [player, delta] of formDeltas.entries()){
+    if(worstFormDelta === null || delta < worstFormDelta){
+      worstFormDelta = delta;
+      worstFormPlayer = player;
+    }
+  }
+  if(worstFormPlayer != null && badgeMap.has(worstFormPlayer)){
     const list = badgeMap.get(worstFormPlayer);
     if(list && !list.includes('coldStreak')) list.unshift('coldStreak');
   }
