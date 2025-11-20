@@ -3624,8 +3624,13 @@ function openPlayerModal(player){
       meta.appendChild(desc);
       const count = document.createElement('div');
       count.style.fontWeight = '800';
-      count.style.fontSize = '18px';
-      count.style.color = 'var(--accent)';
+      count.style.fontSize = '16px';
+      count.style.color = '#0f172a';
+      count.style.padding = '6px 12px';
+      count.style.borderRadius = '999px';
+      count.style.background = 'linear-gradient(135deg, #fde68a, #a855f7, #38bdf8)';
+      count.style.border = '1px solid rgba(255,255,255,0.7)';
+      count.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
       count.textContent = String(entry.count || 0);
       card.appendChild(icon);
       card.appendChild(meta);
