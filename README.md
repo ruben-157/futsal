@@ -102,7 +102,7 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
 - Matches card: teams stack vertically (each with members under the pill). Score area is right‑aligned, shows a button for unplayed/played states.
 
 ## Changing Skills / Behavior
-- Skills: edit `SKILLS` map and `DEFAULT_SKILL` in `scripts/data/config.js`. Values can be any decimal within 1–5; `normalizeRating` only clamps (no rounding) so 3.2 stays 3.2. Use `snapToRatingStep` if you need to quantize to 0.5.
+- Skills: edit `SKILLS` map and `DEFAULT_SKILL` in `scripts/data/config.js`. Values can be any decimal within 1–5; `normalizeRating` only clamps (no rounding) so 3.20 stays 3.20. Use `snapToRatingStep` if you need to quantize to 0.5.
 - Stamina: edit `STAMINA` map and `DEFAULT_STAMINA` in `scripts/data/config.js`. Same rules as skills — call `normalizeRating` to clamp, `snapToRatingStep` for a 0.5 grid.
 - Stability window: adjust `STABLE_WINDOW_MS` inside `scripts/utils/random.js`.
 - Schedule constraint: see `orderRoundPairings()` function.

@@ -266,8 +266,10 @@ function renderTeams(){
     if(count > 0){
       const totalSkill = team.members.reduce((s,name)=> s + getSkill(name), 0);
       const totalStamina = team.members.reduce((s,name)=> s + getStamina(name), 0);
-      tdAvgSkill.textContent = (totalSkill / count).toFixed(2);
-      tdAvgStamina.textContent = (totalStamina / count).toFixed(2);
+      const avgSkill = totalSkill / count;
+      const avgStam = totalStamina / count;
+      tdAvgSkill.textContent = avgSkill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      tdAvgStamina.textContent = avgStam.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     } else {
       tdAvgSkill.textContent = '—';
       tdAvgStamina.textContent = '—';
