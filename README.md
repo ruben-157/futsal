@@ -45,7 +45,7 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
   - Points per Session bar chart (attendance-aware, 0 when present but scoreless).
   - Goals per Session bar chart (same styling; “×” marks sessions with no goal data yet).
   - Rank by Total Points line chart (1 is best; no zero ranks) plus quick stats for matches, total points/goals, PPM/GPM, and last‑3 deltas.
-  - Badge history for MVP, Latest Top Scorer, All-Time Topscorer, and Playmaker (counts and recent dates; shown only if earned).
+  - Trophy Room (counts for MVP, Latest Top Scorer, All-Time Topscorer, Playmaker; shown only if earned).
 - Manual CSV workflow: when a tournament ends, use the Leaderboard “Email summary” button to copy/paste freshly generated `Date,Player,Points,Goals` rows into `ecgfutsal2025-26.txt`. Players who skip a session simply don’t get a row, so their goal count stays null instead of zero.
 
 ## Team Generation

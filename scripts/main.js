@@ -1964,6 +1964,7 @@ const BADGE_CONFIG = {
   coldStreak: { icon:'🥶', label:'Cold Streak', short:'Cold Streak', desc:'Largest negative form swing (last 3 vs career PPM).' },
   mvp: { icon:'👑', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
 };
+const PLAYMAKER_CUTOFF_DATE = '2024-11-12'; // Only award Playmaker from this date onward (goal tracking available)
 const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','rocket'];
 async function renderAllTime(force=false){
   const wrap = document.getElementById('allTimeContent');
@@ -2288,7 +2289,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
         if(gVal === sessionMaxGoals){ addHistory(badgeHistory.latestTop, e.player, d); }
       }
     }
-    if(entries.length && sessionMaxContribution > -Infinity){
+    if(entries.length && sessionMaxContribution > -Infinity && d >= PLAYMAKER_CUTOFF_DATE){
       for(const e of entries){
         const contrib = (Number(e.points) || 0) + ((e.goals != null) ? (Number(e.goals) || 0) : 0);
         if(contrib === sessionMaxContribution){ addHistory(badgeHistory.playmaker, e.player, d); }
@@ -2446,7 +2447,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       badgeMap.set(coldStreakPlayer, ['coldStreak', ...existing]);
     }
   }
-  if(playmakerPlayer && bestContribution > -Infinity && badgeMap.has(playmakerPlayer)){
+  if(playmakerPlayer && bestContribution > -Infinity && latestDate >= PLAYMAKER_CUTOFF_DATE && badgeMap.has(playmakerPlayer)){
     const list = badgeMap.get(playmakerPlayer);
     if(list && !list.includes('playmaker')) list.unshift('playmaker');
   }
@@ -3535,7 +3536,7 @@ function openPlayerModal(player){
     const badgeTitle = document.createElement('div');
     badgeTitle.className = 'stat-title';
     badgeTitle.style.margin = '0 0 4px 0';
-    badgeTitle.textContent = 'Badges';
+    badgeTitle.textContent = 'Current Badges';
     body.appendChild(badgeTitle);
     const badgeWrap = document.createElement('div');
     badgeWrap.style.display = 'flex';
@@ -3578,7 +3579,7 @@ function openPlayerModal(player){
     const histTitle = document.createElement('div');
     histTitle.className = 'stat-title';
     histTitle.style.margin = '8px 0 4px 0';
-    histTitle.textContent = 'Badge history';
+    histTitle.textContent = 'Trophy Room';
     body.appendChild(histTitle);
     const histWrap = document.createElement('div');
     histWrap.style.display = 'flex';
@@ -3588,7 +3589,6 @@ function openPlayerModal(player){
       const card = document.createElement('div');
       card.style.display = 'flex';
       card.style.alignItems = 'center';
-      card.style.gap = '12px';
       card.style.padding = '10px 12px';
       card.style.border = '1px solid var(--border)';
       card.style.borderRadius = '12px';
@@ -3601,20 +3601,23 @@ function openPlayerModal(player){
       meta.style.display = 'flex';
       meta.style.flexDirection = 'column';
       meta.style.gap = '2px';
+      meta.style.flex = '1';
       const titleEl = document.createElement('div');
       titleEl.style.fontWeight = '700';
       titleEl.textContent = entry.label;
       const desc = document.createElement('div');
       desc.className = 'stat-sub';
-      const dates = entry.dates || [];
-      const recent = dates.slice(-5).reverse().map(formatDateShort);
-      const more = Math.max(0, (entry.count || 0) - recent.length);
-      const recentText = recent.length ? recent.join(', ') : '—';
-      desc.textContent = `${entry.count || 0} session${(entry.count||0) === 1 ? '' : 's'} — ${recentText}${more > 0 ? ` (+${more} more)` : ''}`;
+      desc.textContent = 'Times earned';
       meta.appendChild(titleEl);
       meta.appendChild(desc);
+      const count = document.createElement('div');
+      count.style.fontWeight = '800';
+      count.style.fontSize = '18px';
+      count.style.color = 'var(--accent)';
+      count.textContent = String(entry.count || 0);
       card.appendChild(icon);
       card.appendChild(meta);
+      card.appendChild(count);
       histWrap.appendChild(card);
     }
     body.appendChild(histWrap);
