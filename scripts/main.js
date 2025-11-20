@@ -1946,7 +1946,7 @@ let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
 const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
 const BADGE_CONFIG = {
   latestTop: { icon:'⭐', label:'Latest Top Scorer', short:'Latest Top Scorer', desc:'Led the latest session in goals.' },
-  playmaker: { icon:'🎖️', label:'Playmaker', short:'Playmaker', desc:'Highest contribution (points + goals) in the latest session.' },
+  playmaker: { icon:'🎖️', label:'Playmaker', short:'Playmaker', desc:'Highest points+goals contribution in the latest session.' },
   allTimeTop: { icon:'🥇', label:'All-Time Topscorer', short:'All-Time Topscorer', desc:'Most total goals across all sessions.' },
   clutch: { icon:'🏆', label:'Session Ace', short:'Session Ace', desc:'Most sessions finishing with the highest points.' },
   hatTrick: { icon:'⚽', label:'Three In A Row', short:'Three In A Row', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
@@ -1963,6 +1963,26 @@ const BADGE_CONFIG = {
   form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
   coldStreak: { icon:'🥶', label:'Cold Streak', short:'Cold Streak', desc:'Largest negative form swing (last 3 vs career PPM).' },
   mvp: { icon:'👑', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
+};
+const TROPHY_DESC = {
+  latestTop: 'Led a session in goals.',
+  playmaker: 'Owned a session with top points+goals contribution.',
+  allTimeTop: 'Held the career goals lead.',
+  mvp: 'Held season-best Pts/Session with solid attendance.',
+  form: 'Led a session with the best positive form swing (last 3 vs career).',
+  ironMan: 'Completed a 6+ session attendance streak.',
+  clutch: 'Most sessions finishing with the highest points.',
+  hatTrick: 'Scored in 3+ consecutive goal-tracked sessions.',
+  fourRow: 'Scored in 4+ consecutive goal-tracked sessions.',
+  fiveRow: 'Scored in 5+ consecutive goal-tracked sessions.',
+  sixRow: 'Scored in 6+ consecutive goal-tracked sessions.',
+  sevenRow: 'Scored in 7+ consecutive goal-tracked sessions.',
+  eightRow: 'Scored in 8+ consecutive goal-tracked sessions.',
+  nineRow: 'Scored in 9+ consecutive goal-tracked sessions.',
+  tenRow: 'Scored in 10+ consecutive goal-tracked sessions.',
+  sharpshooter: 'Averages 2+ goals per tracked session.',
+  rocket: 'Improved rank by 5+ positions since last session.',
+  coldStreak: 'Largest negative form swing (last 3 vs career PPM).'
 };
 const PLAYMAKER_CUTOFF_DATE = '2025-11-12'; // Only award Playmaker from this date onward (goal tracking available)
 const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','rocket'];
@@ -3655,7 +3675,7 @@ function openPlayerModal(player){
       titleEl.textContent = entry.label;
       const desc = document.createElement('div');
       desc.className = 'stat-sub';
-      desc.textContent = BADGE_CONFIG[entry.key]?.desc || 'Badge earned';
+      desc.textContent = TROPHY_DESC[entry.key] || BADGE_CONFIG[entry.key]?.desc || 'Badge earned';
       meta.appendChild(titleEl);
       meta.appendChild(desc);
       const count = document.createElement('div');
