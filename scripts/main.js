@@ -3198,6 +3198,44 @@ function makeRankMap(sortedStats){
 }
 
 function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, latestDate){
+  // Ensure cold streak target available even if prior computation failed to persist
+  function getColdStreakPlayer(){
+    if(window.__coldStreakPlayer) return window.__coldStreakPlayer;
+    const rows = window.__allTimeRows || [];
+    const byDate = window.__allTimeByDate || new Map();
+    const dates = Array.from(byDate.keys()).sort();
+    const players = new Set(rows.map(r => r.player));
+    const pointsHistory = new Map(Array.from(players).map(p => [p, []]));
+    for(const d of dates){
+      const entries = byDate.get(d) || [];
+      const entryMap = new Map(entries.map(e => [e.player, e]));
+      for(const p of players){
+        const entry = entryMap.get(p);
+        if(entry){
+          const arr = pointsHistory.get(p);
+          if(arr) arr.push(Number(entry.points) || 0);
+        }
+      }
+    }
+    const statsMap = new Map(stats.map(s => [s.player, s]));
+    let coldPlayer = null;
+    let coldDelta = null;
+    for(const p of players){
+      const hist = pointsHistory.get(p) || [];
+      const last3 = hist.slice(-3);
+      const last3Avg = last3.length ? last3.reduce((s,v)=> s+v,0) / last3.length : 0;
+      const career = statsMap.get(p)?.ppm || 0;
+      const delta = last3Avg - career;
+      if(delta < 0 && (coldDelta === null || delta < coldDelta)){
+        coldDelta = delta;
+        coldPlayer = p;
+      }
+    }
+    if(coldPlayer) window.__coldStreakPlayer = coldPlayer;
+    return coldPlayer;
+  }
+  const coldStreakPlayer = getColdStreakPlayer();
+
   const wrap = document.createElement('div');
   wrap.style.overflow = 'auto';
   const table = document.createElement('table');
@@ -3295,7 +3333,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     }
     let badgeList = getPlayerBadges(r.player);
     // Fallback: ensure Cold Streak shows even if badge map failed earlier
-    if((!badgeList || badgeList.length === 0) && window.__coldStreakPlayer === r.player){
+    if((!badgeList || badgeList.length === 0) && coldStreakPlayer === r.player){
       badgeList = ['coldStreak'];
     }
     if(badgeList && badgeList.length){
