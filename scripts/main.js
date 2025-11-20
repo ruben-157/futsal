@@ -2223,7 +2223,8 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     mvp: new Map(),
     latestTop: new Map(),
     allTimeTop: new Map(),
-    playmaker: new Map()
+    playmaker: new Map(),
+    ironMan: new Map(),
   };
   function addHistory(map, player, date){
     const cur = map.get(player) || { count:0, dates:[] };
@@ -2280,6 +2281,13 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       } else {
         // Absence breaks attendance streaks but does not break scoring streaks
         stat.attendStreak = 0;
+      }
+    }
+    // Iron Man history: count sessions where current streak is 6+
+    for(const player of players){
+      const stat = perPlayer.get(player);
+      if(stat && stat.attendStreak >= 6){
+        addHistory(badgeHistory.ironMan, player, d);
       }
     }
     // Session-specific histories
@@ -2491,7 +2499,8 @@ function getPlayerBadgeHistory(player){
     mvp: 'Most Valuable Player',
     latestTop: 'Latest Top Scorer',
     allTimeTop: 'All-Time Topscorer',
-    playmaker: 'Playmaker'
+    playmaker: 'Playmaker',
+    ironMan: 'Iron Man'
   };
   const out = [];
   for(const key of Object.keys(labels)){
@@ -3625,7 +3634,7 @@ function openPlayerModal(player){
       const count = document.createElement('div');
       count.style.fontWeight = '800';
       count.style.fontSize = '16px';
-      count.style.color = '#0f172a';
+      count.style.color = '#ffffff';
       count.style.padding = '6px 12px';
       count.style.borderRadius = '999px';
       count.style.background = 'linear-gradient(135deg, #fde68a, #a855f7, #38bdf8)';
