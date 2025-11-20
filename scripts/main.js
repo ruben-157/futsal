@@ -2266,7 +2266,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   let bestFormPlayer = null;
   let bestFormDelta = 0;
   let worstFormPlayer = null;
-  let worstFormDelta = Infinity; // track lowest (most negative) delta
+  let worstFormDelta = null; // track lowest delta among players with history
   let mvpPlayer = null;
   let bestPPM = 0;
   let allTimeTopPlayer = null;
@@ -2320,9 +2320,10 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
         bestFormPlayer = player;
         bestFormDelta = deltaForm;
       }
-    } else {
-      // Track most negative delta to award Cold Streak
-      if(deltaForm < worstFormDelta){
+    }
+    // Track lowest delta (including zero/positive) to ensure badge is awarded to the biggest dip
+    if(history.length > 0){
+      if(worstFormDelta === null || deltaForm < worstFormDelta){
         worstFormPlayer = player;
         worstFormDelta = deltaForm;
       }
@@ -2367,7 +2368,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     const list = badgeMap.get(bestFormPlayer);
     if(list && !list.includes('form')) list.unshift('form');
   }
-  if(worstFormPlayer && Number.isFinite(worstFormDelta) && worstFormDelta < 0 && badgeMap.has(worstFormPlayer)){
+  if(worstFormPlayer && Number.isFinite(worstFormDelta) && badgeMap.has(worstFormPlayer)){
     const list = badgeMap.get(worstFormPlayer);
     if(list && !list.includes('coldStreak')) list.unshift('coldStreak');
   }
