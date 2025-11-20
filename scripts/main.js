@@ -2370,9 +2370,11 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       coldStreakPlayer = player;
     }
   }
-  if(coldStreakPlayer != null && badgeMap.has(coldStreakPlayer)){
-    const list = badgeMap.get(coldStreakPlayer);
-    if(list && !list.includes('coldStreak')) list.unshift('coldStreak');
+  if(coldStreakPlayer != null){
+    const existing = badgeMap.get(coldStreakPlayer) || [];
+    if(!existing.includes('coldStreak')){
+      badgeMap.set(coldStreakPlayer, ['coldStreak', ...existing]);
+    }
   }
   if(playmakerPlayer && bestContribution > -Infinity && badgeMap.has(playmakerPlayer)){
     const list = badgeMap.get(playmakerPlayer);
