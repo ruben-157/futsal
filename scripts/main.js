@@ -2232,6 +2232,10 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     cur.dates.push(date);
     map.set(player, cur);
   }
+  function addHistoryOnce(map, player, date){
+    if(map.has(player)) return;
+    map.set(player, { count: 1, dates: [date] });
+  }
   for(let di=0; di<dates.length; di++){
     const d = dates[di];
     const entries = byDate.get(d) || [];
@@ -2286,8 +2290,9 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     // Iron Man history: count sessions where current streak is 6+
     for(const player of players){
       const stat = perPlayer.get(player);
-      if(stat && stat.attendStreak >= 6){
-        addHistory(badgeHistory.ironMan, player, d);
+      if(stat && stat.attendStreak === 6){
+        // Iron Man can be earned once per season when streak first hits 6
+        addHistoryOnce(badgeHistory.ironMan, player, d);
       }
     }
     // Session-specific histories
