@@ -2290,9 +2290,17 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       }
     }
     if(entries.length && sessionMaxContribution > -Infinity && d >= PLAYMAKER_CUTOFF_DATE){
-      for(const e of entries){
-        const contrib = (Number(e.points) || 0) + ((e.goals != null) ? (Number(e.goals) || 0) : 0);
-        if(contrib === sessionMaxContribution){ addHistory(badgeHistory.playmaker, e.player, d); }
+      const contribList = entries.map(e => ({
+        player: e.player,
+        contrib: (Number(e.points) || 0) + ((e.goals != null) ? (Number(e.goals) || 0) : 0),
+        goals: (e.goals != null) ? (Number(e.goals) || 0) : 0,
+        points: Number(e.points) || 0
+      }));
+      contribList.sort((a,b)=> b.contrib - a.contrib || b.goals - a.goals || b.points - a.points || a.player.localeCompare(b.player));
+      const topTwo = contribList.slice(0, 2);
+      const topScore = topTwo.length ? topTwo[0].contrib : -Infinity;
+      for(const entry of topTwo){
+        if(entry.contrib === topScore){ addHistory(badgeHistory.playmaker, entry.player, d); }
       }
     }
     // Cumulative leaders for All-Time Top at this point
@@ -3584,7 +3592,11 @@ function openPlayerModal(player){
     const histWrap = document.createElement('div');
     histWrap.style.display = 'flex';
     histWrap.style.flexDirection = 'column';
-    histWrap.style.gap = '8px';
+    histWrap.style.gap = '10px';
+    histWrap.style.padding = '10px';
+    histWrap.style.borderRadius = '14px';
+    histWrap.style.background = 'linear-gradient(135deg, #fef3c7 0%, #f5f3ff 50%, #e0f2fe 100%)';
+    histWrap.style.border = '1px solid var(--border)';
     for(const entry of badgeHistory){
       const card = document.createElement('div');
       card.style.display = 'flex';
