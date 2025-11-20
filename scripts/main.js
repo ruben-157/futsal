@@ -1951,7 +1951,7 @@ const BADGE_CONFIG = {
   clutch: { icon:'🏆', label:'Session Ace', short:'Session Ace', desc:'Most sessions finishing with the highest points.' },
   hatTrick: { icon:'🔥', label:'Hat Trick Hero', short:'Hat Trick', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
   sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
-  ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Attended 6+ sessions in a row.' },
+  ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Current streak of 6+ consecutive sessions.' },
   rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
   form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
   mvp: { icon:'👑', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
@@ -2279,7 +2279,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       mvp: false,
       hatTrick: stats.bestGoalStreak >= 3,
       sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
-      ironMan: stats.bestAttendStreak >= 6,
+      ironMan: stats.attendStreak >= 6,
       rocket: false,
       form: false,
     };
