@@ -2215,15 +2215,35 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   if(!dates.length) return badgeMap;
   const players = Array.from(statsMap.keys());
   const perPlayer = new Map(players.map(p => [p, { goalStreak:0, bestGoalStreak:0, attendStreak:0, bestAttendStreak:0 }]));
+  const cumulative = new Map(players.map(p => [p, { matches:0, points:0, goals:0, goalSessions:0 }]));
   const pointsHistory = new Map(players.map(p => [p, []]));
   const sessionAceCounts = new Map(players.map(p => [p, 0]));
-  for(const d of dates){
+  const badgeHistory = {
+    mvp: new Map(),
+    latestTop: new Map(),
+    allTimeTop: new Map(),
+    playmaker: new Map()
+  };
+  function addHistory(map, player, date){
+    const cur = map.get(player) || { count:0, dates:[] };
+    cur.count += 1;
+    cur.dates.push(date);
+    map.set(player, cur);
+  }
+  for(let di=0; di<dates.length; di++){
+    const d = dates[di];
     const entries = byDate.get(d) || [];
     const entryMap = new Map(entries.map(e => [e.player, e]));
     let maxPoints = -Infinity;
+    let sessionMaxGoals = null;
+    let sessionMaxContribution = -Infinity;
     for(const e of entries){
       const pts = Number(e.points) || 0;
       if(pts > maxPoints) maxPoints = pts;
+      const gVal = (e.goals != null) ? (Number(e.goals) || 0) : 0;
+      if(gVal > 0 && (sessionMaxGoals === null || gVal > sessionMaxGoals)){ sessionMaxGoals = gVal; }
+      const contrib = pts + gVal;
+      if(contrib > sessionMaxContribution){ sessionMaxContribution = contrib; }
     }
     if(entries.length && maxPoints > -Infinity){
       for(const e of entries){
@@ -2247,10 +2267,59 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
         if(stat.goalStreak > stat.bestGoalStreak) stat.bestGoalStreak = stat.goalStreak;
         const arr = pointsHistory.get(player);
         if(arr){ arr.push(Number(entry.points) || 0); }
+        const agg = cumulative.get(player);
+        if(agg){
+          agg.matches += 1;
+          agg.points += Number(entry.points) || 0;
+          if(entry.goals != null){
+            agg.goals += Number(entry.goals) || 0;
+            agg.goalSessions += 1;
+          }
+        }
       } else {
         // Absence breaks attendance streaks but does not break scoring streaks
         stat.attendStreak = 0;
       }
+    }
+    // Session-specific histories
+    if(sessionMaxGoals != null && sessionMaxGoals > 0){
+      for(const e of entries){
+        const gVal = (e.goals != null) ? (Number(e.goals) || 0) : 0;
+        if(gVal === sessionMaxGoals){ addHistory(badgeHistory.latestTop, e.player, d); }
+      }
+    }
+    if(entries.length && sessionMaxContribution > -Infinity){
+      for(const e of entries){
+        const contrib = (Number(e.points) || 0) + ((e.goals != null) ? (Number(e.goals) || 0) : 0);
+        if(contrib === sessionMaxContribution){ addHistory(badgeHistory.playmaker, e.player, d); }
+      }
+    }
+    // Cumulative leaders for All-Time Top at this point
+    let maxGoalTotal = 0;
+    for(const agg of cumulative.values()){
+      if(agg.goals > maxGoalTotal) maxGoalTotal = agg.goals;
+    }
+    if(maxGoalTotal > 0){
+      for(const [player, agg] of cumulative.entries()){
+        if(agg.goals === maxGoalTotal){ addHistory(badgeHistory.allTimeTop, player, d); }
+      }
+    }
+    // MVP per session (based on cumulative stats up to this date)
+    const totalSessionsSoFar = di + 1;
+    let mvpPlayerSession = null;
+    let bestPPMSession = 0;
+    for(const [player, agg] of cumulative.entries()){
+      if(agg.matches <= 0) continue;
+      const attendanceRate = agg.matches / totalSessionsSoFar;
+      if(attendanceRate < 0.6) continue;
+      const ppmVal = agg.points / agg.matches;
+      if(ppmVal > bestPPMSession){
+        bestPPMSession = ppmVal;
+        mvpPlayerSession = player;
+      }
+    }
+    if(mvpPlayerSession && bestPPMSession > 0){
+      addHistory(badgeHistory.mvp, mvpPlayerSession, d);
     }
   }
   const latestDate = dates[dates.length-1];
@@ -2398,6 +2467,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     const list = badgeMap.get(allTimeTopPlayer);
     if(list && !list.includes('allTimeTop')) list.unshift('allTimeTop');
   }
+  window.__badgeHistory = badgeHistory;
   return badgeMap;
 }
 
@@ -2405,6 +2475,25 @@ function getPlayerBadges(player){
   const map = window.__allTimeBadges;
   if(!map) return [];
   return map.get(player) || [];
+}
+
+function getPlayerBadgeHistory(player){
+  const hist = window.__badgeHistory || {};
+  const labels = {
+    mvp: 'Most Valuable Player',
+    latestTop: 'Latest Top Scorer',
+    allTimeTop: 'All-Time Topscorer',
+    playmaker: 'Playmaker'
+  };
+  const out = [];
+  for(const key of Object.keys(labels)){
+    const map = hist[key];
+    if(map && map.has(player)){
+      const entry = map.get(player) || { count:0, dates:[] };
+      out.push({ key, label: labels[key], count: entry.count || 0, dates: entry.dates || [] });
+    }
+  }
+  return out;
 }
 
 function renderPlayerBadge(id, variant){
@@ -3482,6 +3571,53 @@ function openPlayerModal(player){
       badgeWrap.appendChild(card);
     }
     body.appendChild(badgeWrap);
+  }
+
+  const badgeHistory = getPlayerBadgeHistory(player).filter(h => (h.count || 0) > 0);
+  if(badgeHistory.length){
+    const histTitle = document.createElement('div');
+    histTitle.className = 'stat-title';
+    histTitle.style.margin = '8px 0 4px 0';
+    histTitle.textContent = 'Badge history';
+    body.appendChild(histTitle);
+    const histWrap = document.createElement('div');
+    histWrap.style.display = 'flex';
+    histWrap.style.flexDirection = 'column';
+    histWrap.style.gap = '8px';
+    for(const entry of badgeHistory){
+      const card = document.createElement('div');
+      card.style.display = 'flex';
+      card.style.alignItems = 'center';
+      card.style.gap = '12px';
+      card.style.padding = '10px 12px';
+      card.style.border = '1px solid var(--border)';
+      card.style.borderRadius = '12px';
+      card.style.background = '#fff';
+      card.style.boxShadow = '0 1px 2px rgba(15,23,42,0.05)';
+      const icon = document.createElement('div');
+      icon.style.fontSize = '24px';
+      icon.textContent = BADGE_CONFIG[entry.key]?.icon || '🏅';
+      const meta = document.createElement('div');
+      meta.style.display = 'flex';
+      meta.style.flexDirection = 'column';
+      meta.style.gap = '2px';
+      const titleEl = document.createElement('div');
+      titleEl.style.fontWeight = '700';
+      titleEl.textContent = entry.label;
+      const desc = document.createElement('div');
+      desc.className = 'stat-sub';
+      const dates = entry.dates || [];
+      const recent = dates.slice(-5).reverse().map(formatDateShort);
+      const more = Math.max(0, (entry.count || 0) - recent.length);
+      const recentText = recent.length ? recent.join(', ') : '—';
+      desc.textContent = `${entry.count || 0} session${(entry.count||0) === 1 ? '' : 's'} — ${recentText}${more > 0 ? ` (+${more} more)` : ''}`;
+      meta.appendChild(titleEl);
+      meta.appendChild(desc);
+      card.appendChild(icon);
+      card.appendChild(meta);
+      histWrap.appendChild(card);
+    }
+    body.appendChild(histWrap);
   }
 
   // Insight cards
