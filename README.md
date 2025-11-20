@@ -55,8 +55,8 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
     - 2 teams: 6‑5; 3 teams: 4‑4‑3.
   - 15 players → default is 3 teams (5‑5‑5) without a modal; 4 teams when there are 16–20 players (e.g., 16→4‑4‑4‑4; 17–19→5‑5‑5‑4; 20→5‑5‑5‑5).
   - For overrides (11‑player case), capacities are evenly distributed across the chosen number of teams (as shown in the modal), then the same seeded skill‑balanced assignment is used.
-- Skill model: `SKILLS` constant (0–5). Incidental players default to 3.
-- Stamina model: `STAMINA` constant (1–5). Incidental players default to 3.
+- Skill model: `SKILLS` constant (1–5, accepts arbitrary decimals). Incidental players default to 3 unless overridden in the modal, which steps in 0.5 increments.
+- Stamina model: `STAMINA` constant (1–5, accepts arbitrary decimals). Incidental players default to 3 unless overridden in the modal, which steps in 0.5 increments.
 - Algorithm (skill‑first with post‑passes):
   1) Deterministic seeded order for tie‑breaks (see Seeding below).
   2) Sort players by skill desc, tie‑break by seeded order.
@@ -102,8 +102,8 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
 - Matches card: teams stack vertically (each with members under the pill). Score area is right‑aligned, shows a button for unplayed/played states.
 
 ## Changing Skills / Behavior
-- Skills: edit `SKILLS` map and `DEFAULT_SKILL` in `scripts/data/config.js`.
-- Stamina: edit `STAMINA` map and `DEFAULT_STAMINA` in `scripts/data/config.js`.
+- Skills: edit `SKILLS` map and `DEFAULT_SKILL` in `scripts/data/config.js`. Values can be any decimal within 1–5; `normalizeRating` only clamps (no rounding) so 3.2 stays 3.2. Use `snapToRatingStep` if you need to quantize to 0.5.
+- Stamina: edit `STAMINA` map and `DEFAULT_STAMINA` in `scripts/data/config.js`. Same rules as skills — call `normalizeRating` to clamp, `snapToRatingStep` for a 0.5 grid.
 - Stability window: adjust `STABLE_WINDOW_MS` inside `scripts/utils/random.js`.
 - Schedule constraint: see `orderRoundPairings()` function.
 - Kickoff fairness: logic sits in `renderSchedule()` using `startCounts` and stable RNG.

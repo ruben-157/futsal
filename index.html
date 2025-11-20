@@ -152,11 +152,19 @@
           <input id="addPlayerName" class="search" type="text" placeholder="Full name" aria-label="Player name" />
         </label>
         <label style="display:flex; align-items:center; justify-content:space-between; gap:12px">
-          <span style="font-size:14px">Skill (1–5)</span>
+          <span style="font-size:14px">Skill (1–5, 0.5 steps)</span>
           <div class="score-stepper">
             <button id="addPlayerSkillMinus" class="btn mini-step" type="button" aria-label="Decrease skill">−</button>
-            <input id="addPlayerSkill" class="scorer-input" type="number" inputmode="numeric" min="1" max="5" step="1" value="3" aria-label="Skill level" />
+            <input id="addPlayerSkill" class="scorer-input" type="number" inputmode="numeric" min="1" max="5" step="0.5" value="3" aria-label="Skill level" />
             <button id="addPlayerSkillPlus" class="btn mini-step" type="button" aria-label="Increase skill">+</button>
+          </div>
+        </label>
+        <label style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+          <span style="font-size:14px">Stamina (1–5, 0.5 steps)</span>
+          <div class="score-stepper">
+            <button id="addPlayerStaminaMinus" class="btn mini-step" type="button" aria-label="Decrease stamina">−</button>
+            <input id="addPlayerStamina" class="scorer-input" type="number" inputmode="numeric" min="1" max="5" step="0.5" value="3" aria-label="Stamina level" />
+            <button id="addPlayerStaminaPlus" class="btn mini-step" type="button" aria-label="Increase stamina">+</button>
           </div>
         </label>
         <div id="addPlayerError" class="notice error" style="display:none"></div>

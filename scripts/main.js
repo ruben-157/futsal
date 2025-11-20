@@ -1,4 +1,16 @@
-import { COLORS, MAX_ATTENDEES, getSkill, getStamina, STAMINA, DEFAULT_STAMINA, SKILLS } from './data/config.js';
+import {
+  COLORS,
+  MAX_ATTENDEES,
+  getSkill,
+  getStamina,
+  STAMINA,
+  DEFAULT_STAMINA,
+  SKILLS,
+  DEFAULT_SKILL,
+  RATING_STEP,
+  normalizeRating,
+  snapToRatingStep
+} from './data/config.js';
 import {
   state,
   loadState,
@@ -1115,6 +1127,9 @@ function openAddPlayerModal(){
   const skillInput = document.getElementById('addPlayerSkill');
   const skillMinus = document.getElementById('addPlayerSkillMinus');
   const skillPlus = document.getElementById('addPlayerSkillPlus');
+  const staminaInput = document.getElementById('addPlayerStamina');
+  const staminaMinus = document.getElementById('addPlayerStaminaMinus');
+  const staminaPlus = document.getElementById('addPlayerStaminaPlus');
   const err = document.getElementById('addPlayerError');
   const save = document.getElementById('addPlayerSave');
   const cancel = document.getElementById('addPlayerCancel');
@@ -1122,18 +1137,33 @@ function openAddPlayerModal(){
   err.style.display = 'none';
   err.textContent = '';
   input.value = '';
-  skillInput.value = '3';
+  const formatRating = (val)=>{
+    const num = Number(val);
+    if(Number.isNaN(num)) return '';
+    return Number.isInteger(num) ? String(Math.trunc(num)) : num.toFixed(1);
+  };
+  const clampInputValue = (el, fallback)=>{
+    const v = snapToRatingStep(el.value, fallback);
+    el.value = formatRating(v);
+    return v;
+  };
+  const adjustInput = (el, fallback, delta)=> {
+    const current = snapToRatingStep(el.value, fallback);
+    const next = snapToRatingStep(current + delta, fallback);
+    el.value = formatRating(next);
+  };
+  skillInput.value = formatRating(snapToRatingStep(DEFAULT_SKILL, DEFAULT_SKILL));
+  staminaInput.value = formatRating(snapToRatingStep(DEFAULT_STAMINA, DEFAULT_STAMINA));
   save.disabled = true;
 
   function update(){ save.disabled = input.value.trim().length === 0; }
   input.oninput = update;
-  function clampSkill(v){
-    const n = Math.max(1, Math.min(5, parseInt(v||'3',10)));
-    return Number.isFinite(n) ? n : 3;
-  }
-  skillMinus.onclick = ()=>{ skillInput.value = String(clampSkill((parseInt(skillInput.value||'3',10) - 1))); };
-  skillPlus.onclick = ()=>{ skillInput.value = String(clampSkill((parseInt(skillInput.value||'3',10) + 1))); };
-  skillInput.oninput = ()=>{ skillInput.value = String(clampSkill(skillInput.value)); };
+  skillMinus.onclick = ()=> adjustInput(skillInput, DEFAULT_SKILL, -RATING_STEP);
+  skillPlus.onclick = ()=> adjustInput(skillInput, DEFAULT_SKILL, RATING_STEP);
+  skillInput.oninput = ()=>{ clampInputValue(skillInput, DEFAULT_SKILL); };
+  staminaMinus.onclick = ()=> adjustInput(staminaInput, DEFAULT_STAMINA, -RATING_STEP);
+  staminaPlus.onclick = ()=> adjustInput(staminaInput, DEFAULT_STAMINA, RATING_STEP);
+  staminaInput.oninput = ()=>{ clampInputValue(staminaInput, DEFAULT_STAMINA); };
 
   overlay.hidden = false; modal.hidden = false; setTimeout(()=> input.focus(), 0);
   overlay.onclick = closeAddPlayerModal;
@@ -1157,9 +1187,8 @@ function openAddPlayerModal(){
       finalName = name + ' ('+i+')';
     }
     // Assign provided skill for this incidental entry name (won't affect default roster player)
-    SKILLS[finalName] = clampSkill(skillInput.value);
-    // Default stamina for incidental player names
-    if(typeof STAMINA[finalName] !== 'number') STAMINA[finalName] = DEFAULT_STAMINA;
+    SKILLS[finalName] = normalizeRating(skillInput.value, DEFAULT_SKILL);
+    STAMINA[finalName] = normalizeRating(staminaInput.value, DEFAULT_STAMINA);
     // Ensure the incidental player becomes part of the available roster list
     if(!state.players.some(p => p.toLowerCase() === finalName.toLowerCase())){
       state.players.push(finalName);

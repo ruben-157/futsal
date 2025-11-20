@@ -60,11 +60,16 @@ export function balanceSkillToTargets(teams, attendees, getSkill){
 export function balanceStaminaEqualSkill(teams, getSkill, getStamina){
   if(!teams || teams.length < 2) return;
   const eps = 1e-9;
+  const skillTolerance = 0.1 + eps; // allow near-equal skill swaps
   const maxPasses = 8;
   for(let pass=0; pass<maxPasses; pass++){
     const sizes = teams.map(t => (t.members || []).length);
     const sums = teams.map(t => (t.members || []).reduce((s,n)=> s + getStamina(n), 0));
     const avgs = sums.map((s,i)=> sizes[i] ? (s / sizes[i]) : 0);
+    const skillSums = teams.map(t => (t.members || []).reduce((s,n)=> s + getSkill(n), 0));
+    const totalSkill = skillSums.reduce((a,b)=> a+b, 0);
+    const totalPlayers = sizes.reduce((a,b)=> a+b, 0);
+    const avgSkill = totalPlayers > 0 ? (totalSkill / totalPlayers) : 0;
     let bestGain = 0;
     let bestI = -1, bestJ = -1, bestA = null, bestB = null;
     for(let i=0;i<teams.length;i++){
@@ -76,7 +81,8 @@ export function balanceStaminaEqualSkill(teams, getSkill, getStamina){
         const beforeDiff = Math.abs(avgs[i] - avgs[j]);
         for(const a of mi){
           for(const b of mj){
-            if(getSkill(a) !== getSkill(b)) continue;
+            const skillGapExact = Math.abs(getSkill(a) - getSkill(b));
+            if(skillGapExact > skillTolerance) continue;
             const sa = getStamina(a), sb = getStamina(b);
             let gain = 0;
             if(si < sj){
@@ -95,6 +101,14 @@ export function balanceStaminaEqualSkill(teams, getSkill, getStamina){
               const afterDiff = Math.abs(after_i - after_j);
               gain = beforeDiff - afterDiff;
             }
+            // Guardrail: do not worsen total skill deviation from overall average
+            const target_i = sizes[i] * avgSkill;
+            const target_j = sizes[j] * avgSkill;
+            const beforeErrSkill = Math.abs(skillSums[i] - target_i) + Math.abs(skillSums[j] - target_j);
+            const afterSkill_i = skillSums[i] - getSkill(a) + getSkill(b);
+            const afterSkill_j = skillSums[j] - getSkill(b) + getSkill(a);
+            const afterErrSkill = Math.abs(afterSkill_i - target_i) + Math.abs(afterSkill_j - target_j);
+            if(afterErrSkill > beforeErrSkill + eps) continue;
             const improves = gain > bestGain + eps;
             const ties = !improves && Math.abs(gain - bestGain) <= eps && gain > eps;
             if(improves || (ties && betterSwapCandidate(i, j, a, b, bestI, bestJ, bestA, bestB))){
