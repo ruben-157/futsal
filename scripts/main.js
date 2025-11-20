@@ -1961,9 +1961,10 @@ const BADGE_CONFIG = {
   ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Current streak of 6+ consecutive sessions.' },
   rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
   form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
+  coldStreak: { icon:'🥶', label:'Cold Streak', short:'Cold Streak', desc:'Largest negative form swing (last 3 vs career PPM).' },
   mvp: { icon:'👑', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
 };
-const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','ironMan','rocket'];
+const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','rocket'];
 async function renderAllTime(force=false){
   const wrap = document.getElementById('allTimeContent');
   if(!wrap) return;
@@ -2264,6 +2265,8 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   }
   let bestFormPlayer = null;
   let bestFormDelta = 0;
+  let worstFormPlayer = null;
+  let worstFormDelta = 0;
   let mvpPlayer = null;
   let bestPPM = 0;
   let allTimeTopPlayer = null;
@@ -2279,42 +2282,48 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     const last3Avg = last3.length ? (last3.reduce((s,v)=> s+v, 0) / last3.length) : 0;
     const career = agg.ppm || 0;
     const deltaForm = last3Avg - career;
-      const flags = {
-        latestTop: false,
-        allTimeTop: false,
-        clutch: false,
-        mvp: false,
-        hatTrick: false,
-        fourRow: false,
-        fiveRow: false,
-        sixRow: false,
-        sevenRow: false,
-        eightRow: false,
-        nineRow: false,
-        tenRow: false,
-        sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
-        ironMan: stats.attendStreak >= 6,
-        rocket: false,
-        form: false,
-      };
-      // Award the highest streak badge achieved (3–10 consecutive scoring sessions)
-      const streakTiers = [
-        { key:'tenRow', min:10 },
-        { key:'nineRow', min:9 },
-        { key:'eightRow', min:8 },
-        { key:'sevenRow', min:7 },
-        { key:'sixRow', min:6 },
-        { key:'fiveRow', min:5 },
-        { key:'fourRow', min:4 },
-        { key:'hatTrick', min:3 },
-      ];
-      const bestGoalStreak = stats.bestGoalStreak || 0;
-      const earnedStreak = streakTiers.find(t => bestGoalStreak >= t.min);
-      if(earnedStreak){ flags[earnedStreak.key] = true; }
+    const flags = {
+      latestTop: false,
+      allTimeTop: false,
+      clutch: false,
+      mvp: false,
+      hatTrick: false,
+      fourRow: false,
+      fiveRow: false,
+      sixRow: false,
+      sevenRow: false,
+      eightRow: false,
+      nineRow: false,
+      tenRow: false,
+      sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
+      ironMan: stats.attendStreak >= 6,
+      rocket: false,
+      form: false,
+      coldStreak: false,
+    };
+    // Award the highest streak badge achieved (3–10 consecutive scoring sessions)
+    const streakTiers = [
+      { key:'tenRow', min:10 },
+      { key:'nineRow', min:9 },
+      { key:'eightRow', min:8 },
+      { key:'sevenRow', min:7 },
+      { key:'sixRow', min:6 },
+      { key:'fiveRow', min:5 },
+      { key:'fourRow', min:4 },
+      { key:'hatTrick', min:3 },
+    ];
+    const bestGoalStreak = stats.bestGoalStreak || 0;
+    const earnedStreak = streakTiers.find(t => bestGoalStreak >= t.min);
+    if(earnedStreak){ flags[earnedStreak.key] = true; }
     if(deltaForm > 0){
       if(!bestFormPlayer || deltaForm > bestFormDelta){
         bestFormPlayer = player;
         bestFormDelta = deltaForm;
+      }
+    } else if(deltaForm < 0){
+      if(!worstFormPlayer || deltaForm < worstFormDelta){
+        worstFormPlayer = player;
+        worstFormDelta = deltaForm;
       }
     }
     if(preRanks && postRanks){
@@ -2356,6 +2365,10 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   if(bestFormPlayer && bestFormDelta > 0 && badgeMap.has(bestFormPlayer)){
     const list = badgeMap.get(bestFormPlayer);
     if(list && !list.includes('form')) list.unshift('form');
+  }
+  if(worstFormPlayer && worstFormDelta < 0 && badgeMap.has(worstFormPlayer)){
+    const list = badgeMap.get(worstFormPlayer);
+    if(list && !list.includes('coldStreak')) list.unshift('coldStreak');
   }
   if(playmakerPlayer && bestContribution > -Infinity && badgeMap.has(playmakerPlayer)){
     const list = badgeMap.get(playmakerPlayer);
