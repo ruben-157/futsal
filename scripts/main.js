@@ -1964,7 +1964,7 @@ const BADGE_CONFIG = {
   coldStreak: { icon:'🥶', label:'Cold Streak', short:'Cold Streak', desc:'Largest negative form swing (last 3 vs career PPM).' },
   mvp: { icon:'👑', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
 };
-const PLAYMAKER_CUTOFF_DATE = '2024-11-12'; // Only award Playmaker from this date onward (goal tracking available)
+const PLAYMAKER_CUTOFF_DATE = '2025-11-12'; // Only award Playmaker from this date onward (goal tracking available)
 const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','rocket'];
 async function renderAllTime(force=false){
   const wrap = document.getElementById('allTimeContent');
@@ -2297,10 +2297,9 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
         points: Number(e.points) || 0
       }));
       contribList.sort((a,b)=> b.contrib - a.contrib || b.goals - a.goals || b.points - a.points || a.player.localeCompare(b.player));
-      const topTwo = contribList.slice(0, 2);
-      const topScore = topTwo.length ? topTwo[0].contrib : -Infinity;
-      for(const entry of topTwo){
-        if(entry.contrib === topScore){ addHistory(badgeHistory.playmaker, entry.player, d); }
+      const top = contribList[0];
+      if(top && top.contrib === sessionMaxContribution){
+        addHistory(badgeHistory.playmaker, top.player, d);
       }
     }
     // Cumulative leaders for All-Time Top at this point
