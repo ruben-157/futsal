@@ -2370,6 +2370,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       coldStreakPlayer = player;
     }
   }
+  window.__coldStreakPlayer = coldStreakPlayer;
   if(coldStreakPlayer != null){
     const existing = badgeMap.get(coldStreakPlayer) || [];
     if(!existing.includes('coldStreak')){
@@ -3277,11 +3278,11 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     if(podiumActive && preRanks && postRanks){
       const pre = preRanks.get(r.player);
       const post = postRanks.get(r.player);
-      if(pre !== undefined && post !== undefined){
-        const move = pre - post; // positive means moved up
-        if(move !== 0){
-          const arrow = document.createElement('span');
-          arrow.style.marginLeft = '6px';
+    if(pre !== undefined && post !== undefined){
+      const move = pre - post; // positive means moved up
+      if(move !== 0){
+        const arrow = document.createElement('span');
+        arrow.style.marginLeft = '6px';
           arrow.style.fontWeight = '700';
           arrow.style.fontSize = '14px';
           const signed = move > 0 ? `+${move}` : `${move}`;
@@ -3292,7 +3293,11 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
         }
       }
     }
-    const badgeList = getPlayerBadges(r.player);
+    let badgeList = getPlayerBadges(r.player);
+    // Fallback: ensure Cold Streak shows even if badge map failed earlier
+    if((!badgeList || badgeList.length === 0) && window.__coldStreakPlayer === r.player){
+      badgeList = ['coldStreak'];
+    }
     if(badgeList && badgeList.length){
       const badgesWrap = document.createElement('span');
       badgesWrap.className = 'player-badges';
