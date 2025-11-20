@@ -210,7 +210,7 @@ function setupDnD(){ /* DnD disabled in single-list selection UI */ }
 function renderTeams(){
   const table = document.getElementById('teamsTable');
   if(!table) return;
-  const headerLabels = ['Team', 'Members', 'Size'];
+  const headerLabels = ['Team', 'Members', 'Size', 'Avg Skill', 'Avg Stamina'];
   const thead = table.tHead || table.createTHead();
   const headerRow = document.createElement('tr');
   headerLabels.forEach(label => {
@@ -260,9 +260,24 @@ function renderTeams(){
     const tdSize = document.createElement('td');
     tdSize.textContent = String(team.members.length);
 
+    const tdAvgSkill = document.createElement('td');
+    const tdAvgStamina = document.createElement('td');
+    const count = team.members.length;
+    if(count > 0){
+      const totalSkill = team.members.reduce((s,name)=> s + getSkill(name), 0);
+      const totalStamina = team.members.reduce((s,name)=> s + getStamina(name), 0);
+      tdAvgSkill.textContent = (totalSkill / count).toFixed(2);
+      tdAvgStamina.textContent = (totalStamina / count).toFixed(2);
+    } else {
+      tdAvgSkill.textContent = '—';
+      tdAvgStamina.textContent = '—';
+    }
+
     tr.appendChild(tdTeam);
     tr.appendChild(tdMembers);
     tr.appendChild(tdSize);
+    tr.appendChild(tdAvgSkill);
+    tr.appendChild(tdAvgStamina);
     tbody.appendChild(tr);
   }
   renderSchedule();
