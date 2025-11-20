@@ -2343,6 +2343,25 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     if(mvpPlayerSession && bestPPMSession > 0){
       addHistory(badgeHistory.mvp, mvpPlayerSession, d);
     }
+    // On Fire per session (best positive delta last3 vs career among players who appeared)
+    let sessionBestFormPlayer = null;
+    let sessionBestFormDelta = 0;
+    for(const player of players){
+      if(!entryMap.has(player)) continue;
+      const historyPts = pointsHistory.get(player) || [];
+      const last3 = historyPts.slice(-3);
+      const last3Avg = last3.length ? (last3.reduce((s,v)=> s+v, 0) / last3.length) : 0;
+      const agg = cumulative.get(player) || {};
+      const career = agg.matches ? (agg.points / agg.matches) : 0;
+      const delta = last3Avg - career;
+      if(delta > 0 && (sessionBestFormPlayer === null || delta > sessionBestFormDelta)){
+        sessionBestFormPlayer = player;
+        sessionBestFormDelta = delta;
+      }
+    }
+    if(sessionBestFormPlayer){
+      addHistory(badgeHistory.form, sessionBestFormPlayer, d);
+    }
   }
   const latestDate = dates[dates.length-1];
   const latestEntries = byDate.get(latestDate) || [];
@@ -2356,7 +2375,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   }
   let bestFormPlayer = null;
   let bestFormDelta = 0;
-  const formDeltas = new Map(); // track every player's recent vs career delta
+  const formDeltas = new Map(); // track every player's recent vs career delta (latest snapshot)
   let mvpPlayer = null;
   let bestPPM = 0;
   let allTimeTopPlayer = null;
