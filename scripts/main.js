@@ -2265,7 +2265,8 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   }
   let bestFormPlayer = null;
   let bestFormDelta = 0;
-  const formDeltas = new Map(); // track all deltas to pick lowest (cold streak)
+  let coldStreakPlayer = null;
+  let coldStreakDelta = null;
   let mvpPlayer = null;
   let bestPPM = 0;
   let allTimeTopPlayer = null;
@@ -2314,12 +2315,15 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     const bestGoalStreak = stats.bestGoalStreak || 0;
     const earnedStreak = streakTiers.find(t => bestGoalStreak >= t.min);
     if(earnedStreak){ flags[earnedStreak.key] = true; }
-    formDeltas.set(player, deltaForm);
     if(deltaForm > 0){
       if(!bestFormPlayer || deltaForm > bestFormDelta){
         bestFormPlayer = player;
         bestFormDelta = deltaForm;
       }
+    }
+    if(coldStreakDelta === null || deltaForm < coldStreakDelta){
+      coldStreakPlayer = player;
+      coldStreakDelta = deltaForm;
     }
     if(preRanks && postRanks){
       const pre = preRanks.get(player);
@@ -2361,17 +2365,9 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     const list = badgeMap.get(bestFormPlayer);
     if(list && !list.includes('form')) list.unshift('form');
   }
-  // Cold Streak: lowest delta (most negative or least positive), among players with history
-  let worstFormPlayer = null;
-  let worstFormDelta = null;
-  for(const [player, delta] of formDeltas.entries()){
-    if(worstFormDelta === null || delta < worstFormDelta){
-      worstFormDelta = delta;
-      worstFormPlayer = player;
-    }
-  }
-  if(worstFormPlayer != null && badgeMap.has(worstFormPlayer)){
-    const list = badgeMap.get(worstFormPlayer);
+  // Cold Streak: lowest delta (most negative or least positive)
+  if(coldStreakPlayer != null && badgeMap.has(coldStreakPlayer)){
+    const list = badgeMap.get(coldStreakPlayer);
     if(list && !list.includes('coldStreak')) list.unshift('coldStreak');
   }
   if(playmakerPlayer && bestContribution > -Infinity && badgeMap.has(playmakerPlayer)){
