@@ -1959,6 +1959,8 @@ const BADGE_CONFIG = {
   tenRow: { icon:'⚽', label:'Ten In A Row', short:'Ten In A Row', desc:'Scored in 10+ consecutive goal-tracked sessions.' },
   sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
   ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Current streak of 6+ consecutive sessions.' },
+  marathon: { icon:'🏃‍♂️', label:'Marathon Man', short:'Marathon Man', desc:'Current streak of 15 consecutive sessions.' },
+  addict: { icon:'🔥', label:'Addict', short:'Addict', desc:'90%+ attendance this season.' },
   rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
   form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
   coldStreak: { icon:'🥶', label:'Cold Streak', short:'Cold Streak', desc:'Largest negative form swing (last 3 vs career PPM).' },
@@ -1971,6 +1973,7 @@ const TROPHY_DESC = {
   mvp: 'Held season-best Pts/Session with solid attendance.',
   form: 'Led a session with the best positive form swing (last 3 vs career).',
   ironMan: 'Completed a 6+ session attendance streak.',
+  marathon: 'Completed a 15-session attendance streak.',
   clutch: 'Most sessions finishing with the highest points.',
   hatTrick: 'Scored in 3+ consecutive goal-tracked sessions.',
   fourRow: 'Scored in 4+ consecutive goal-tracked sessions.',
@@ -1985,7 +1988,7 @@ const TROPHY_DESC = {
   coldStreak: 'Largest negative form swing (last 3 vs career PPM).'
 };
 const PLAYMAKER_CUTOFF_DATE = '2025-11-12'; // Only award Playmaker from this date onward (goal tracking available)
-const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','rocket'];
+const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','marathon','addict','rocket'];
 async function renderAllTime(force=false){
   const wrap = document.getElementById('allTimeContent');
   if(!wrap) return;
@@ -2245,6 +2248,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     allTimeTop: new Map(),
     playmaker: new Map(),
     ironMan: new Map(),
+    marathon: new Map(),
     form: new Map(),
   };
   function addHistory(map, player, date){
@@ -2314,6 +2318,9 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       if(stat && stat.attendStreak === 6){
         // Iron Man can be earned once per season when streak first hits 6
         addHistoryOnce(badgeHistory.ironMan, player, d);
+      }
+      if(stat && stat.attendStreak === 15){
+        addHistoryOnce(badgeHistory.marathon, player, d);
       }
     }
     // Session-specific histories
@@ -2426,6 +2433,8 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       tenRow: false,
       sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
       ironMan: stats.attendStreak >= 6,
+      marathon: stats.attendStreak >= 15,
+      addict: false,
       rocket: false,
       form: false,
       coldStreak: false,
@@ -2466,6 +2475,9 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
           mvpPlayer = player;
           bestPPM = agg.ppm || 0;
         }
+      }
+      if(attendanceRate > 0.9){
+        flags.addict = true;
       }
     }
     if((agg.goals || 0) > maxTotalGoals){
@@ -2547,6 +2559,7 @@ function getPlayerBadgeHistory(player){
     allTimeTop: 'All-Time Topscorer',
     playmaker: 'Playmaker',
     ironMan: 'Iron Man',
+    marathon: 'Marathon Man',
     form: 'On Fire'
   };
   const out = [];
