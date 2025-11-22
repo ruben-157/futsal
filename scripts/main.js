@@ -2058,7 +2058,10 @@ async function loadAllTimeCSV(force=false){
   if(allTimeCache.rows && !force){ return allTimeCache.rows; }
   const url = 'ecgfutsal2025-26.txt?ts=' + Date.now();
   const res = await fetch(url, { cache: 'no-store' });
-  if(!res.ok){ throw new Error('HTTP ' + res.status); }
+  if(!res.ok){
+    console.warn('All-Time fetch failed', res.status, res.statusText);
+    throw new Error('HTTP ' + res.status);
+  }
   const text = await res.text();
   const rows = parseCSVSimple(text);
   allTimeCache.rows = rows; allTimeCache.ts = Date.now();
@@ -2090,6 +2093,7 @@ function parseCSVSimple(text){
   const t = text.replace(/^\uFEFF/, '');
   const lines = t.split(/\r?\n/).map(l => l.trimEnd());
   const out = [];
+  let skipped = 0;
   for(let i=0;i<lines.length;i++){
     const line = lines[i];
     if(!line) continue;
@@ -2111,9 +2115,14 @@ function parseCSVSimple(text){
         goals = Number.isFinite(gNum) ? gNum : 0;
       }
     }
-    if(!player) continue;
-    if(!Number.isFinite(points)) continue;
+    if(!date || !player || !Number.isFinite(points)){
+      skipped++;
+      continue;
+    }
     out.push({ date, player, points, goals });
+  }
+  if(skipped > 0){
+    console.warn(`All-Time CSV: skipped ${skipped} invalid row(s)`);
   }
   return out;
 }

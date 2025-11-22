@@ -36,10 +36,16 @@ export function loadState(){
   }
 
   try{ state.attendees = JSON.parse(localStorage.getItem(KEYS.attendees) || '[]'); }catch{ state.attendees = []; }
+  if(!Array.isArray(state.attendees)){ state.attendees = []; }
+
   try{ state.teams = JSON.parse(localStorage.getItem(KEYS.teams) || '[]'); }catch{ state.teams = []; }
+  if(!Array.isArray(state.teams)){ state.teams = []; }
+
   const ts = localStorage.getItem(KEYS.timestamp);
   state.timestamp = ts ? Number(ts) : null;
   try{ state.results = JSON.parse(localStorage.getItem(KEYS.results) || '{}'); }catch{ state.results = {}; }
+  if(state.results === null || typeof state.results !== 'object'){ state.results = {}; }
+
   const rd = localStorage.getItem(KEYS.rounds);
   state.rounds = rd ? Math.max(1, parseInt(rd, 10) || 2) : 2;
   state.prevRanks = getPrevRanks();

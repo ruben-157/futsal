@@ -126,5 +126,17 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
   - Actions: `resetAll`, `generateTeams`, `addAdditionalRound`.
   - Utils: `mulberry32`, `shuffleSeeded`, `computeStableSeedFromAttendees`, `orderRoundPairings`.
 
-
 If you’re an LLM agent continuing work: keep the HTML/CSS/JS separation intact and respect the stability rules above to avoid surprising users.
+
+## Roadmap (Robustness & Code Quality)
+Planned only — no implementation yet. Risk is relative to current structure.
+
+- **Modularize `main.js`** (med-high): Gradually split into modules (rendering, data/aggregation, badge logic, modals). Benefit: smaller blast radius, testability. Risk: wiring/exports mistakes; mitigate with staged moves.
+- **Input/data validation** (low): Centralize CSV/localStorage schema checks with clear warnings/skips. Benefit: prevents silent skew from bad rows/state; low UX risk.
+- **Unit tests for pure logic** (med-low): Add lightweight tests (team generation, badge aggregation, CSV aggregation) using a tiny runner. Benefit: catches regressions; risk: minimal if kept dev-only.
+- **Render guards & lazy work** (med): Avoid full rebuilds when only sort changes; lazy-load player modal series. Benefit: smoother mobile Safari with ~50 sessions; risk: small logic misses if not careful.
+- **Error messaging/logging** (low): Broader fetch/parse errors with user-visible hints and console context; avoid silent catches. Benefit: debuggability.
+- **State versioning/migration** (med): Add a `futsal.version` key; migrate/reset incompatible shapes safely. Benefit: resilience to future schema tweaks; risk: accidental resets if misapplied.
+- **CSS robustness** (low): Normalize table layouts/overflow across breakpoints (badge column, sticky headers). Benefit: fewer layout regressions.
+- **Accessibility pass** (med-low): Re-check ARIA roles/labels on tabs, modals, tables; ensure keyboard flow. Benefit: consistent a11y; low risk.
+- **Perf checklist** (low): Document a quick perf check (All-Time load, modal open/close on iOS Safari) to rerun after UI changes.
