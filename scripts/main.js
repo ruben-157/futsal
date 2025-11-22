@@ -2263,6 +2263,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     elite: new Map(),
     master: new Map(),
     legend: new Map(),
+    form: new Map(),
   };
   function addHistory(map, player, date){
     const cur = map.get(player) || { count:0, dates:[] };
