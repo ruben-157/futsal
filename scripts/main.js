@@ -2263,7 +2263,6 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     elite: new Map(),
     master: new Map(),
     legend: new Map(),
-    form: new Map(),
   };
   function addHistory(map, player, date){
     const cur = map.get(player) || { count:0, dates:[] };
@@ -2552,7 +2551,6 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   if(bestFormPlayer && bestFormDelta > 0 && badgeMap.has(bestFormPlayer)){
     const list = badgeMap.get(bestFormPlayer);
     if(list && !list.includes('form')) list.unshift('form');
-    addHistory(badgeHistory.form, bestFormPlayer, latestDate);
   }
   // Cold Streak: lowest delta (largest form dip). Only award if someone dips below career average.
   let coldStreakPlayer = null;
@@ -2613,8 +2611,7 @@ function getPlayerBadgeHistory(player){
     clinical: 'Clinical Finisher',
     elite: 'Elite',
     master: 'Master',
-    legend: 'Legend',
-    form: 'On Fire'
+    legend: 'Legend'
   };
   const out = [];
   for(const key of Object.keys(labels)){
