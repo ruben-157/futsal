@@ -185,6 +185,7 @@ tbody tr:last-child{ border-bottom:none; }
   display:inline-flex;
   align-items:center;
   gap:6px;
+  max-width:100%;
 }
 .alltime-table th,
 .alltime-table td{
@@ -200,6 +201,8 @@ tbody tr:last-child{ border-bottom:none; }
   justify-content: flex-end;
   flex-wrap: nowrap;
   gap:6px;
+  max-width:100%;
+  overflow:hidden;
 }
 
 .schedule{margin-top:0}

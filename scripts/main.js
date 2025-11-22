@@ -3574,6 +3574,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     tdB.style.minWidth = '200px';
     tdB.style.textAlign = 'right';
     tdB.style.whiteSpace = 'nowrap';
+    tdB.style.paddingRight = '12px';
     if(badgeList && badgeList.length){
       const badgesWrap = document.createElement('span');
       badgesWrap.className = 'player-badges';
