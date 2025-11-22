@@ -3431,7 +3431,10 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     const sortable = col.sortable !== false && col.key !== 'badges';
     th.textContent = col.label + (sortable && allTimeSort.key === col.key ? (allTimeSort.dir === 'asc' ? ' ▲' : ' ▼') : '');
     th.className = sortable ? 'sortable' : '';
-    if(col.key === 'badges'){ th.style.textAlign = 'right'; }
+    if(col.key === 'badges'){
+      th.style.textAlign = 'right';
+      th.classList.add('badges-col');
+    }
     if(sortable){
       th.style.cursor = 'pointer';
       th.title = 'Sort by ' + col.label;
@@ -3516,6 +3519,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     }
     tdN.appendChild(nameLine);
     const tdB = document.createElement('td');
+    tdB.className = 'badges-cell';
     tdB.style.minWidth = '200px';
     tdB.style.textAlign = 'right';
     tdB.style.whiteSpace = 'nowrap';
