@@ -1947,7 +1947,7 @@ let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
 let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
 const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
 const BADGE_CONFIG = {
-  latestTop: { icon:'⭐', label:'Latest Top Scorer', short:'Latest Top Scorer', desc:'Led the latest session in goals.' },
+  latestTop: { icon:'⭐', label:'Session Top Scorer', short:'Session Top Scorer', desc:'Led the latest session in goals.' },
   playmaker: { icon:'🎖️', label:'Playmaker', short:'Playmaker', desc:'Highest points+goals contribution in the latest session.' },
   allTimeTop: { icon:'🥇', label:'All-Time Topscorer', short:'All-Time Topscorer', desc:'Most total goals across all sessions.' },
   clutch: { icon:'🏆', label:'Session Ace', short:'Session Ace', desc:'Most sessions finishing with the highest points.' },
@@ -1973,14 +1973,14 @@ const BADGE_CONFIG = {
   mvp: { icon:'👑', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
 };
 const TROPHY_DESC = {
-  latestTop: 'Led a session in goals.',
-  playmaker: 'Owned a session with top points+goals contribution.',
+  latestTop: 'Held the Session Top Scorer badge for {N} sessions.',
+  playmaker: 'Held the Playmaker badge for {N} sessions.',
   allTimeTop: 'Held the All-Time Topscorer badge for {N} sessions.',
   mvp: 'Held the Most Valuable Player badge for {N} sessions.',
-  form: 'Led a session with the best positive form swing (last 3 vs career).',
+  form: 'Held the On Fire badge for {N} sessions.',
   ironMan: 'Completed a 6+ session attendance streak.',
   marathon: 'Completed a 15-session attendance streak.',
-  clinical: 'Scored 5+ goals in a single session.',
+  clinical: 'Held the Clinical Finisher badge for {N} sessions.',
   elite: 'On the winning team in 3 consecutive sessions.',
   master: 'On the winning team in 4 consecutive sessions.',
   legend: 'On the winning team in 5 consecutive sessions.',
