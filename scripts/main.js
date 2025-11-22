@@ -3515,10 +3515,13 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     tdN.appendChild(nameLine);
     const tdB = document.createElement('td');
     tdB.style.minWidth = '140px';
-    tdB.style.textAlign = 'left';
+    tdB.style.textAlign = 'right';
     if(badgeList && badgeList.length){
       const badgesWrap = document.createElement('span');
       badgesWrap.className = 'player-badges';
+      badgesWrap.style.flexWrap = 'nowrap';
+      badgesWrap.style.whiteSpace = 'nowrap';
+      badgesWrap.style.justifyContent = 'flex-end';
       for(const id of badgeList){
         const badgeEl = renderPlayerBadge(id, 'short');
         if(badgeEl){
