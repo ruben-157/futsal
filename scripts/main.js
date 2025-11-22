@@ -30,6 +30,7 @@ import { computeStableSeedFromAttendees, shuffleSeeded, mulberry32 } from './uti
 import { balanceSkillToTargets, balanceStaminaEqualSkill } from './logic/balance.js';
 import { reportWarning } from './utils/validation.js';
 import { buildAllTimeCSVWarningNotice } from './utils/accessibility.js';
+import { logError } from './utils/logging.js';
 
 const HARMONY_TOKENS = ['UnViZW58UmFtdGlu'];
 function decodeHarmonyToken(token){
@@ -1070,7 +1071,13 @@ function openResultModal({ matchId, a, b, round }){
       delete state.results[matchId].gpaDraft;
       delete state.results[matchId].gpbDraft;
     }catch(_){ }
-    saveResults();
+    const ok = saveResults();
+    if(!ok){
+      saveError.textContent = 'Could not save results. Storage may be full or blocked. Retry or clear storage.';
+      saveError.style.display = '';
+      logError('ERR_SAVE_RESULTS', 'Failed to persist results', { matchId });
+      return;
+    }
     const completedNow = areAllMatchesScored() && !state.celebrated;
     if(completedNow){
       // Hide only the result modal; keep overlay visible for confirmation modal

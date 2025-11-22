@@ -11,6 +11,8 @@ import {
   sanitizeTimestamp,
   sanitizeBoolean
 } from '../utils/validation.js';
+import { logError } from '../utils/logging.js';
+import { migrateState, CURRENT_VERSION, persistVersion } from './migrations.js';
 
 export const KEYS = {
   players: 'futsal.players',
@@ -20,7 +22,8 @@ export const KEYS = {
   results: 'futsal.match.results',
   rounds: 'futsal.match.rounds',
   prefTrackScorers: 'futsal.pref.trackScorers',
-  prevRanks: 'futsal.leaderboard.prevRanks'
+  prevRanks: 'futsal.leaderboard.prevRanks',
+  version: 'futsal.version'
 };
 
 export const state = {
@@ -35,6 +38,8 @@ export const state = {
 };
 
 export function loadState(){
+  const versionRaw = localStorage.getItem(KEYS.version);
+  const storedVersion = versionRaw ? parseInt(versionRaw, 10) : null;
   const rawPlayers = localStorage.getItem(KEYS.players);
   const parsedPlayers = safeJSONParse(rawPlayers, null, 'VAL001', 'Failed to parse players from storage');
   const players = sanitizePlayerList(parsedPlayers, DEFAULT_PLAYERS);
@@ -93,14 +98,43 @@ export function loadState(){
     localStorage.setItem(KEYS.prevRanks, JSON.stringify(state.prevRanks));
     reportWarning('VAL108', prevRanks.reason || 'Cleaned prev ranks cache');
   }
+
+  // Run migration if needed
+  const { state: migrated, reset, notice } = migrateState(state, storedVersion);
+  Object.assign(state, migrated);
+  const persisted = persistVersion();
+  if(!persisted){
+    logError('ERR_STORE_VERSION', 'Failed to persist version flag');
+  }
+  if(reset && notice){
+    localStorage.setItem(KEYS.version, String(CURRENT_VERSION));
+    localStorage.setItem(KEYS.players, JSON.stringify(state.players));
+    localStorage.setItem(KEYS.attendees, JSON.stringify(state.attendees));
+    localStorage.setItem(KEYS.teams, JSON.stringify(state.teams));
+    localStorage.setItem(KEYS.results, JSON.stringify(state.results));
+    localStorage.setItem(KEYS.rounds, String(state.rounds));
+    if(state.timestamp) localStorage.setItem(KEYS.timestamp, String(state.timestamp));
+    localStorage.setItem(KEYS.prevRanks, JSON.stringify(state.prevRanks));
+    reportWarning('MIGRATION', notice);
+  }
 }
 
-export const saveAttendees = () => localStorage.setItem(KEYS.attendees, JSON.stringify(state.attendees));
-export const savePlayers = () => localStorage.setItem(KEYS.players, JSON.stringify(state.players));
-export const saveTeams = () => localStorage.setItem(KEYS.teams, JSON.stringify(state.teams));
-export const saveTimestamp = () => { if(state.timestamp) localStorage.setItem(KEYS.timestamp, String(state.timestamp)); };
-export const saveResults = () => localStorage.setItem(KEYS.results, JSON.stringify(state.results));
-export const saveRounds = () => localStorage.setItem(KEYS.rounds, String(state.rounds));
+function safeSetItem(key, value, code, context){
+  try{
+    localStorage.setItem(key, value);
+    return true;
+  }catch(err){
+    logError(code, context || `Failed to save ${key}`, err);
+    return false;
+  }
+}
+
+export const saveAttendees = () => safeSetItem(KEYS.attendees, JSON.stringify(state.attendees), 'ERR_STORE_ATTENDEES', 'Failed to save attendees');
+export const savePlayers = () => safeSetItem(KEYS.players, JSON.stringify(state.players), 'ERR_STORE_PLAYERS', 'Failed to save players');
+export const saveTeams = () => safeSetItem(KEYS.teams, JSON.stringify(state.teams), 'ERR_STORE_TEAMS', 'Failed to save teams');
+export const saveTimestamp = () => { if(state.timestamp) safeSetItem(KEYS.timestamp, String(state.timestamp), 'ERR_STORE_TS', 'Failed to save timestamp'); };
+export const saveResults = () => safeSetItem(KEYS.results, JSON.stringify(state.results), 'ERR_STORE_RESULTS', 'Failed to save results');
+export const saveRounds = () => safeSetItem(KEYS.rounds, String(state.rounds), 'ERR_STORE_ROUNDS', 'Failed to save rounds');
 
 export function getTrackScorersPref(){
   const pref = sanitizeBoolean(localStorage.getItem(KEYS.prefTrackScorers));

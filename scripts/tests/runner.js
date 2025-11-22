@@ -49,6 +49,8 @@ Promise.resolve()
   .then(()=>import('./validation.test.js'))
   .then(()=>import('./accessibility.test.js'))
   .then(()=>import('./team-balance.test.js'))
+  .then(()=>import('./logging.test.js'))
+  .then(()=>import('./migration.test.js'))
   .then(report)
   .catch((err)=>{
     console.error('Failed to load tests', err);
