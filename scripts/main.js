@@ -2604,7 +2604,7 @@ function getPlayerBadgeHistory(player){
   const hist = window.__badgeHistory || {};
   const labels = {
     mvp: 'Most Valuable Player',
-    latestTop: 'Latest Top Scorer',
+    latestTop: 'Session Top Scorer',
     allTimeTop: 'All-Time Topscorer',
     playmaker: 'Playmaker',
     ironMan: 'Iron Man',
@@ -2612,7 +2612,8 @@ function getPlayerBadgeHistory(player){
     clinical: 'Clinical Finisher',
     elite: 'Elite',
     master: 'Master',
-    legend: 'Legend'
+    legend: 'Legend',
+    form: 'On Fire'
   };
   const out = [];
   for(const key of Object.keys(labels)){
