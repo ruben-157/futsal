@@ -28,6 +28,8 @@ import {
 } from './state/storage.js';
 import { computeStableSeedFromAttendees, shuffleSeeded, mulberry32 } from './utils/random.js';
 import { balanceSkillToTargets, balanceStaminaEqualSkill } from './logic/balance.js';
+import { reportWarning } from './utils/validation.js';
+import { buildAllTimeCSVWarningNotice } from './utils/accessibility.js';
 
 const HARMONY_TOKENS = ['UnViZW58UmFtdGlu'];
 function decodeHarmonyToken(token){
@@ -617,10 +619,10 @@ function renderLeaderboard(){
   }
 
   const wrap = document.createElement('div');
-  wrap.style.overflow = 'auto';
+  wrap.className = 'table-wrap';
   const table = document.createElement('table');
-  table.className = 'alltime-table';
-  table.style.minWidth = '900px';
+  table.className = 'alltime-table wide-table';
+  table.setAttribute('aria-label','Tournament leaderboard');
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th style="width:50%">Team</th><th>Played</th><th>Points</th><th>GS</th><th>GA</th><th>GD</th></tr>';
   const tbody = document.createElement('tbody');
@@ -1941,7 +1943,7 @@ const btnAllTimeRefresh = document.getElementById('btnAllTimeRefresh');
 if(btnAllTimeRefresh){ btnAllTimeRefresh.addEventListener('click', ()=> renderAllTime(true)); }
 
 // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
-let allTimeCache = { rows: null, ts: 0 };
+let allTimeCache = { rows: null, warnings: [], skipped: 0, ts: 0 };
 let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
 // Basis for header insight cards' rank comparisons (only changes when user selects Points or Pts/Session)
 let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
@@ -2002,20 +2004,26 @@ const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','cli
 async function renderAllTime(force=false){
   const wrap = document.getElementById('allTimeContent');
   if(!wrap) return;
+  wrap.setAttribute('aria-busy','true');
   wrap.innerHTML = '';
   const loading = document.createElement('div');
   loading.className = 'notice';
   loading.textContent = 'Loading all-time stats…';
+  loading.setAttribute('role','status');
+  loading.setAttribute('aria-live','polite');
   wrap.appendChild(loading);
 
   try{
-    const data = await loadAllTimeCSV(force);
+    const { rows, warnings, skipped } = await loadAllTimeCSV(force);
+    const data = rows || [];
     window.__allTimeBadges = new Map();
     const stats = aggregateAllTime(data);
     const statsMap = new Map(stats.map(s => [s.player, s]));
     sortAllTimeStats(stats);
     wrap.innerHTML = '';
     if(stats.length === 0){
+      const warnNotice = buildAllTimeCSVWarningNotice(warnings, skipped);
+      if(warnNotice) wrap.appendChild(warnNotice);
       const empty = document.createElement('div');
       empty.className = 'notice';
       empty.textContent = 'No data found.';
@@ -2036,6 +2044,8 @@ async function renderAllTime(force=false){
       const preRanks = makeRankMap(preStats);
       const postRanks = makeRankMap(stats);
       window.__allTimeBadges = computeAllTimeBadges(data, byDate, statsMap, preRanks, postRanks);
+      const warnNotice = buildAllTimeCSVWarningNotice(warnings, skipped);
+      if(warnNotice) wrap.appendChild(warnNotice);
       // Latest sync pill (top-right) then header stat cards
       const pillBar = buildLatestSyncPill(latestDate);
       if(pillBar) wrap.appendChild(pillBar);
@@ -2044,28 +2054,35 @@ async function renderAllTime(force=false){
       wrap.appendChild(buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, latestDate));
     }
     // no updated timestamp shown
+    wrap.setAttribute('aria-busy','false');
   }catch(err){
     wrap.innerHTML = '';
     const msg = document.createElement('div');
     msg.className = 'notice error';
     msg.textContent = 'Failed to load all-time data. Ensure the file exists and is accessible.';
+    msg.setAttribute('role','alert');
+    msg.setAttribute('aria-live','assertive');
     wrap.appendChild(msg);
+    wrap.setAttribute('aria-busy','false');
   }
 }
 
 async function loadAllTimeCSV(force=false){
   // Simple cache to avoid re-fetching on tab toggles unless forced
-  if(allTimeCache.rows && !force){ return allTimeCache.rows; }
+  if(allTimeCache.rows && !force){ return allTimeCache; }
   const url = 'ecgfutsal2025-26.txt?ts=' + Date.now();
   const res = await fetch(url, { cache: 'no-store' });
   if(!res.ok){
-    console.warn('All-Time fetch failed', res.status, res.statusText);
+    reportWarning('AT001', 'All-Time fetch failed', { status: res.status, statusText: res.statusText });
     throw new Error('HTTP ' + res.status);
   }
   const text = await res.text();
-  const rows = parseCSVSimple(text);
-  allTimeCache.rows = rows; allTimeCache.ts = Date.now();
-  return rows;
+  const parsed = parseCSVSimple(text);
+  allTimeCache = { rows: parsed.rows, warnings: parsed.warnings, skipped: parsed.skipped, ts: Date.now() };
+  if(parsed.skipped > 0 || (parsed.warnings && parsed.warnings.length)){
+    reportWarning('AT201', `All-Time CSV skipped ${parsed.skipped} row(s)`, parsed.warnings);
+  }
+  return allTimeCache;
 }
 
 function splitCSVLine(line){
@@ -2093,6 +2110,7 @@ function parseCSVSimple(text){
   const t = text.replace(/^\uFEFF/, '');
   const lines = t.split(/\r?\n/).map(l => l.trimEnd());
   const out = [];
+  const warnings = [];
   let skipped = 0;
   for(let i=0;i<lines.length;i++){
     const line = lines[i];
@@ -2100,7 +2118,10 @@ function parseCSVSimple(text){
     const normalized = line.replace(/\s+/g,'').toLowerCase();
     if(i===0 && (normalized === 'date,player,points' || normalized === 'date,player,points,goals')) continue; // skip header
     const parts = splitCSVLine(line);
-    if(parts.length < 3) continue;
+    if(parts.length < 3){
+      skipped++; warnings.push({ line: i+1, reason: 'Too few columns' });
+      continue;
+    }
     const date = (parts[0] || '').trim();
     const player = (parts[1] || '').trim();
     const pointsStr = (parts[2] || '').trim();
@@ -2108,23 +2129,21 @@ function parseCSVSimple(text){
     const points = Number(pointsStr);
     let goals = null;
     if(parts.length >= 4){
-      if(goalsStr === ''){
-        goals = 0;
-      } else {
+      if(goalsStr === ''){ goals = 0; }
+      else {
         const gNum = Number(goalsStr);
-        goals = Number.isFinite(gNum) ? gNum : 0;
+        if(Number.isFinite(gNum)){ goals = gNum; }
+        else { goals = 0; warnings.push({ line: i+1, reason: 'Goals not a number; defaulted to 0' }); }
       }
     }
     if(!date || !player || !Number.isFinite(points)){
       skipped++;
+      warnings.push({ line: i+1, reason: 'Missing date/player/points' });
       continue;
     }
     out.push({ date, player, points, goals });
   }
-  if(skipped > 0){
-    console.warn(`All-Time CSV: skipped ${skipped} invalid row(s)`);
-  }
-  return out;
+  return { rows: out, warnings, skipped };
 }
 
 function aggregateAllTime(rows){
@@ -3471,13 +3490,16 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
   const coldStreakPlayer = getColdStreakPlayer();
 
   const wrap = document.createElement('div');
-  wrap.style.overflow = 'auto';
+  wrap.className = 'table-wrap';
   const table = document.createElement('table');
+  table.className = 'wide-table';
+  table.setAttribute('aria-label','All-Time leaderboard');
   const thead = document.createElement('thead');
   const trHead = document.createElement('tr');
   // Rank column (not sortable)
   const thRank = document.createElement('th');
   thRank.textContent = '#';
+  thRank.setAttribute('scope','col');
   trHead.appendChild(thRank);
   const cols = [
     { key:'player', label:'Player', style:'width:36%' },
@@ -3494,6 +3516,10 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     const sortable = col.sortable !== false && col.key !== 'badges';
     th.textContent = col.label + (sortable && allTimeSort.key === col.key ? (allTimeSort.dir === 'asc' ? ' ▲' : ' ▼') : '');
     th.className = sortable ? 'sortable' : '';
+    th.setAttribute('scope','col');
+    if(sortable){
+      th.setAttribute('aria-sort', allTimeSort.key === col.key ? (allTimeSort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
+    }
     if(col.key === 'badges'){
       th.style.textAlign = 'right';
       th.classList.add('badges-col');
@@ -3532,6 +3558,8 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
         allTimeInsightBasis = col.key;
       }
       container.innerHTML = '';
+      const warnNotice = buildAllTimeCSVWarningNotice(allTimeCache.warnings, allTimeCache.skipped);
+      if(warnNotice) container.appendChild(warnNotice);
       const pillBar = buildLatestSyncPill(latestDate);
       if(pillBar) container.appendChild(pillBar);
       const headerCards = buildAllTimeHeaderCards(preRows, allTimeCache.rows, byDate, latestDate, allTimeInsightBasis);

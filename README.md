@@ -8,6 +8,9 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
 - Roster: Predefined players seeded into `futsal.players` once.
 - Accessibility: keyboardable lists and visible focus.
 - Mobile: large touch targets, sticky actions, compact cards.
+- Accessibility updates: All-Time content uses live regions/`aria-busy` during load, tables use sticky headers and `aria-sort` on sortable columns.
+- Validation: localStorage shapes are sanitized on load and reset to safe defaults with console warnings if corrupted.
+- Tables: scrolling containers with sticky headers and badge wrapping to avoid overflow on small screens.
 
 ## Data Model (localStorage keys)
 - `futsal.players`: master roster (array of names).
@@ -29,11 +32,19 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
 - Leaderboard: Team badge, Played, Points, GD (colored), members (small).
 
 ## All‑Time Leaderboard (CSV‑driven)
-- Access: header button “All‑Time Leaderboard” (not a tab).
+- Access: header button “All-Time Leaderboard” (not a tab).
 - Data source: `ecgfutsal2025-26.txt` (CSV) in the project root.
   - Format: `YYYY‑MM‑DD,Player,Points,Goals` (header optional; case-insensitive `Date,Player,Points,Goals` is accepted). Older rows that only have three columns are still supported and treated as `Goals = 0` until backfilled.
   - Name matching is exact; typos create separate entries.
-- Refresh behavior: Always fetches fresh data when you open the All‑Time view (cache busts with a timestamp). A Refresh button is shown in the header while the All‑Time view is active to force a re‑fetch without leaving the view.
+- Refresh behavior: Always fetches fresh data when you open the All-Time view (cache busts with a timestamp). A Refresh button is shown in the header while the All-Time view is active to force a re‑fetch without leaving the view.
+- Validation: rows missing date/player/points are skipped, and non-numeric goals default to 0. Skips surface as a notice on the All-Time view with console context under code `AT201`.
+
+## Dev - Tests
+- Minimal dev-only runner (no deps): `node scripts/tests/runner.js`.
+- Currently covers validation helpers (storage sanitization and CSV parsing logic). Extend by adding more `*.test.js` files and importing them in `scripts/tests/runner.js`.
+
+## Dev - Performance Checklist
+- See `docs/perf-checklist.md` for a quick manual perf pass (All-Time load/sort, modal open/close, roster interactions) with suggested thresholds and devices.
 - Latest match label: top-right muted label shows the most recent session date.
 - Header insight cards (clickable):
   - Largest Rank Gain / Largest Rank Loss (vs previous session ranks; based on Points with stable tie‑breakers).
