@@ -2432,7 +2432,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       nineRow: false,
       tenRow: false,
       sharpshooter: hasGoalData && (agg.gpm || 0) >= 2,
-      ironMan: stats.attendStreak >= 6,
+      ironMan: stats.attendStreak >= 6 && stats.attendStreak < 15,
       marathon: stats.attendStreak >= 15,
       addict: false,
       rocket: false,
@@ -3416,7 +3416,8 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
   thRank.textContent = '#';
   trHead.appendChild(thRank);
   const cols = [
-    { key:'player', label:'Player', style:'width:40%' },
+    { key:'player', label:'Player', style:'width:36%' },
+    { key:'badges', label:'Badges', sortable:false },
     { key:'matches', label:'Matches' },
     { key:'points', label:'Points' },
     { key:'ppm', label:'Pts/Session' },
@@ -3426,11 +3427,15 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
   for(const col of cols){
     const th = document.createElement('th');
     if(col.style) th.setAttribute('style', col.style);
-    th.textContent = col.label + (allTimeSort.key === col.key ? (allTimeSort.dir === 'asc' ? ' ▲' : ' ▼') : '');
-    th.className = 'sortable';
-    th.style.cursor = 'pointer';
-    th.title = 'Sort by ' + col.label;
-    th.addEventListener('click', ()=>{
+    const sortable = col.sortable !== false && col.key !== 'badges';
+    th.textContent = col.label + (sortable && allTimeSort.key === col.key ? (allTimeSort.dir === 'asc' ? ' ▲' : ' ▼') : '');
+    th.className = sortable ? 'sortable' : '';
+    if(sortable){
+      th.style.cursor = 'pointer';
+      th.title = 'Sort by ' + col.label;
+    }
+    if(sortable){
+      th.addEventListener('click', ()=>{
       if(allTimeSort.key === col.key){
         allTimeSort.dir = (allTimeSort.dir === 'asc') ? 'desc' : 'asc';
       }else{
@@ -3464,7 +3469,8 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
       const headerCards = buildAllTimeHeaderCards(preRows, allTimeCache.rows, byDate, latestDate, allTimeInsightBasis);
       if(headerCards) container.appendChild(headerCards);
       container.appendChild(buildAllTimeTable(stats2, totalSessions, series, preRanks, postRanks, latestDate));
-    });
+      });
+    }
     trHead.appendChild(th);
   }
   thead.appendChild(trHead);
@@ -3506,6 +3512,9 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     if((!badgeList || badgeList.length === 0) && coldStreakPlayer === r.player){
       badgeList = ['coldStreak'];
     }
+    tdN.appendChild(nameLine);
+    const tdB = document.createElement('td');
+    tdB.style.minWidth = '90px';
     if(badgeList && badgeList.length){
       const badgesWrap = document.createElement('span');
       badgesWrap.className = 'player-badges';
@@ -3515,9 +3524,11 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
           badgesWrap.appendChild(badgeEl);
         }
       }
-      if(badgesWrap.childNodes.length > 0){ nameLine.appendChild(badgesWrap); }
+      if(badgesWrap.childNodes.length > 0){ tdB.appendChild(badgesWrap); }
+    } else {
+      tdB.textContent = '—';
+      tdB.style.color = 'var(--muted)';
     }
-    tdN.appendChild(nameLine);
     const tdM = document.createElement('td');
     if(totalSessions && totalSessions > 0){
       tdM.textContent = `${r.matches}/${totalSessions}`;
@@ -3551,6 +3562,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     }
     tr.appendChild(tdPos);
     tr.appendChild(tdN);
+    tr.appendChild(tdB);
     tr.appendChild(tdM);
     tr.appendChild(tdP);
     tr.appendChild(tdA);
