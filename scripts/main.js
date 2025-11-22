@@ -619,6 +619,7 @@ function renderLeaderboard(){
   const wrap = document.createElement('div');
   wrap.style.overflow = 'auto';
   const table = document.createElement('table');
+  table.style.minWidth = '900px';
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th style="width:50%">Team</th><th>Played</th><th>Points</th><th>GS</th><th>GA</th><th>GD</th></tr>';
   const tbody = document.createElement('tbody');
@@ -3430,6 +3431,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     const sortable = col.sortable !== false && col.key !== 'badges';
     th.textContent = col.label + (sortable && allTimeSort.key === col.key ? (allTimeSort.dir === 'asc' ? ' ▲' : ' ▼') : '');
     th.className = sortable ? 'sortable' : '';
+    if(col.key === 'badges'){ th.style.textAlign = 'right'; }
     if(sortable){
       th.style.cursor = 'pointer';
       th.title = 'Sort by ' + col.label;
@@ -3516,12 +3518,16 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     const tdB = document.createElement('td');
     tdB.style.minWidth = '200px';
     tdB.style.textAlign = 'right';
+    tdB.style.whiteSpace = 'nowrap';
     if(badgeList && badgeList.length){
       const badgesWrap = document.createElement('span');
       badgesWrap.className = 'player-badges';
       badgesWrap.style.flexWrap = 'nowrap';
       badgesWrap.style.whiteSpace = 'nowrap';
       badgesWrap.style.justifyContent = 'flex-end';
+      badgesWrap.style.marginLeft = '0';
+      badgesWrap.style.display = 'inline-flex';
+      badgesWrap.style.alignItems = 'center';
       for(const id of badgeList){
         const badgeEl = renderPlayerBadge(id, 'short');
         if(badgeEl){
