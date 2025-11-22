@@ -184,7 +184,22 @@ tbody tr:last-child{ border-bottom:none; }
   justify-content:flex-end;
   display:inline-flex;
   align-items:center;
-  gap:4px;
+  gap:6px;
+}
+.alltime-table th,
+.alltime-table td{
+  vertical-align: middle;
+}
+.alltime-table .badges-cell{
+  text-align: right;
+  white-space: nowrap;
+}
+.alltime-table .player-badges{
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap:6px;
 }
 
 .schedule{margin-top:0}

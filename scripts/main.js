@@ -619,6 +619,7 @@ function renderLeaderboard(){
   const wrap = document.createElement('div');
   wrap.style.overflow = 'auto';
   const table = document.createElement('table');
+  table.className = 'alltime-table';
   table.style.minWidth = '900px';
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th style="width:50%">Team</th><th>Played</th><th>Points</th><th>GS</th><th>GA</th><th>GD</th></tr>';
