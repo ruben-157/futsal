@@ -163,12 +163,6 @@ tbody tr:last-child td{border-bottom:none}
 .badges-cell{
   text-align:right;
   white-space:nowrap;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:4px;
-  padding-top:10px;
-  padding-bottom:10px;
 }
 .badges-cell .player-badges{
   margin-left:0;
@@ -176,6 +170,7 @@ tbody tr:last-child td{border-bottom:none}
   justify-content:flex-end;
   display:inline-flex;
   align-items:center;
+  gap:4px;
 }
 
 .schedule{margin-top:0}
