@@ -2641,10 +2641,12 @@ function renderPlayerBadge(id, variant){
     text.textContent = conf.label;
     span.appendChild(text);
   } else {
-    // text labels intentionally hidden for badge batches to keep the list compact.
-    // To restore short labels later, uncomment below two lines:
-    // const text = document.createElement('span');
-    // text.textContent = conf.short || conf.label; span.appendChild(text);
+    if(id === 'mvp'){
+      const text = document.createElement('span');
+      text.textContent = conf.short || conf.label;
+      span.appendChild(text);
+    }
+    // All other badges omit text to keep rows compact.
   }
   return span;
 }
