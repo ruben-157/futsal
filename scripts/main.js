@@ -3514,7 +3514,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     }
     tdN.appendChild(nameLine);
     const tdB = document.createElement('td');
-    tdB.style.minWidth = '140px';
+    tdB.style.minWidth = '200px';
     tdB.style.textAlign = 'right';
     if(badgeList && badgeList.length){
       const badgesWrap = document.createElement('span');
