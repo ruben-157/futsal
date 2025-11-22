@@ -2578,17 +2578,21 @@ function renderPlayerBadge(id, variant){
   if(!conf) return null;
   const span = document.createElement('span');
   span.className = 'player-badge' + (id === 'mvp' ? ' player-badge-premium' : '');
+  span.setAttribute('aria-label', conf.label);
   span.title = conf.desc;
   const icon = document.createElement('strong');
   icon.textContent = conf.icon;
   span.appendChild(icon);
-  const text = document.createElement('span');
   if(variant === 'long'){
+    const text = document.createElement('span');
     text.textContent = conf.label;
+    span.appendChild(text);
   } else {
-    text.textContent = conf.short || conf.label;
+    // text labels intentionally hidden for badge batches to keep the list compact.
+    // To restore short labels later, uncomment below two lines:
+    // const text = document.createElement('span');
+    // text.textContent = conf.short || conf.label; span.appendChild(text);
   }
-  span.appendChild(text);
   return span;
 }
 
