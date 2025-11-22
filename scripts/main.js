@@ -1962,6 +1962,10 @@ const BADGE_CONFIG = {
   ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Current streak of 6+ consecutive sessions.' },
   marathon: { icon:'🏃‍♂️', label:'Marathon Man', short:'Marathon Man', desc:'Current streak of 15 consecutive sessions.' },
   addict: { icon:'🔥', label:'Addict', short:'Addict', desc:'90%+ attendance this season.' },
+  clinical: { icon:'🥾', label:'Clinical Finisher', short:'Clinical Finisher', desc:'Scored 5+ goals in a single session.' },
+  elite: { icon:'🧠', label:'Elite', short:'Elite', desc:'On the winning team in 3 consecutive sessions.' },
+  master: { icon:'🥋', label:'Master', short:'Master', desc:'On the winning team in 4 consecutive sessions.' },
+  legend: { icon:'🦁', label:'Legend', short:'Legend', desc:'On the winning team in 5 consecutive sessions.' },
   rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
   form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
   coldStreak: { icon:'🥶', label:'Cold Streak', short:'Cold Streak', desc:'Largest negative form swing (last 3 vs career PPM).' },
@@ -1975,6 +1979,10 @@ const TROPHY_DESC = {
   form: 'Led a session with the best positive form swing (last 3 vs career).',
   ironMan: 'Completed a 6+ session attendance streak.',
   marathon: 'Completed a 15-session attendance streak.',
+  clinical: 'Scored 5+ goals in a single session.',
+  elite: 'On the winning team in 3 consecutive sessions.',
+  master: 'On the winning team in 4 consecutive sessions.',
+  legend: 'On the winning team in 5 consecutive sessions.',
   clutch: 'Most sessions finishing with the highest points.',
   hatTrick: 'Scored in 3+ consecutive goal-tracked sessions.',
   fourRow: 'Scored in 4+ consecutive goal-tracked sessions.',
@@ -1989,7 +1997,7 @@ const TROPHY_DESC = {
   coldStreak: 'Largest negative form swing (last 3 vs career PPM).'
 };
 const PLAYMAKER_CUTOFF_DATE = '2025-11-12'; // Only award Playmaker from this date onward (goal tracking available)
-const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','marathon','addict','rocket'];
+const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','clinical','legend','master','elite','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','marathon','addict','rocket'];
 async function renderAllTime(force=false){
   const wrap = document.getElementById('allTimeContent');
   if(!wrap) return;
@@ -2239,7 +2247,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
   const dates = Array.from(byDate.keys()).sort();
   if(!dates.length) return badgeMap;
   const players = Array.from(statsMap.keys());
-  const perPlayer = new Map(players.map(p => [p, { goalStreak:0, bestGoalStreak:0, attendStreak:0, bestAttendStreak:0 }]));
+  const perPlayer = new Map(players.map(p => [p, { goalStreak:0, bestGoalStreak:0, attendStreak:0, bestAttendStreak:0, winStreak:0, bestWinStreak:0 }]));
   const cumulative = new Map(players.map(p => [p, { matches:0, points:0, goals:0, goalSessions:0 }]));
   const pointsHistory = new Map(players.map(p => [p, []]));
   const sessionAceCounts = new Map(players.map(p => [p, 0]));
@@ -2250,6 +2258,10 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     playmaker: new Map(),
     ironMan: new Map(),
     marathon: new Map(),
+    clinical: new Map(),
+    elite: new Map(),
+    master: new Map(),
+    legend: new Map(),
     form: new Map(),
   };
   function addHistory(map, player, date){
@@ -2267,15 +2279,25 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     const entries = byDate.get(d) || [];
     const entryMap = new Map(entries.map(e => [e.player, e]));
     let maxPoints = -Infinity;
+    let minPoints = Infinity;
     let sessionMaxGoals = null;
     let sessionMaxContribution = -Infinity;
     for(const e of entries){
       const pts = Number(e.points) || 0;
       if(pts > maxPoints) maxPoints = pts;
+      if(pts < minPoints) minPoints = pts;
       const gVal = (e.goals != null) ? (Number(e.goals) || 0) : 0;
       if(gVal > 0 && (sessionMaxGoals === null || gVal > sessionMaxGoals)){ sessionMaxGoals = gVal; }
       const contrib = pts + gVal;
       if(contrib > sessionMaxContribution){ sessionMaxContribution = contrib; }
+    }
+    const hasWin = (entries.length > 0) && (maxPoints > minPoints);
+    const winners = new Set();
+    if(hasWin){
+      for(const e of entries){
+        const pts = Number(e.points) || 0;
+        if(pts === maxPoints) winners.add(e.player);
+      }
     }
     if(entries.length && maxPoints > -Infinity){
       for(const e of entries){
@@ -2297,6 +2319,21 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
           stat.goalStreak = 0;
         }
         if(stat.goalStreak > stat.bestGoalStreak) stat.bestGoalStreak = stat.goalStreak;
+        if(hasWin && winners.has(player)){
+          stat.winStreak += 1;
+          if(stat.winStreak > stat.bestWinStreak) stat.bestWinStreak = stat.winStreak;
+          if(stat.winStreak === 3){
+            addHistoryOnce(badgeHistory.elite, player, d);
+          }
+          if(stat.winStreak === 4){
+            addHistoryOnce(badgeHistory.master, player, d);
+          }
+          if(stat.winStreak === 5){
+            addHistoryOnce(badgeHistory.legend, player, d);
+          }
+        } else {
+          stat.winStreak = 0;
+        }
         const arr = pointsHistory.get(player);
         if(arr){ arr.push(Number(entry.points) || 0); }
         const agg = cumulative.get(player);
@@ -2311,6 +2348,7 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       } else {
         // Absence breaks attendance streaks but does not break scoring streaks
         stat.attendStreak = 0;
+        stat.winStreak = 0;
       }
     }
     // Iron Man history: count sessions where current streak is 6+
@@ -2328,7 +2366,10 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
     if(sessionMaxGoals != null && sessionMaxGoals > 0){
       for(const e of entries){
         const gVal = (e.goals != null) ? (Number(e.goals) || 0) : 0;
-        if(gVal === sessionMaxGoals){ addHistory(badgeHistory.latestTop, e.player, d); }
+        if(gVal === sessionMaxGoals){
+          addHistory(badgeHistory.latestTop, e.player, d);
+          if(gVal >= 5){ addHistoryOnce(badgeHistory.clinical, e.player, d); }
+        }
       }
     }
     if(entries.length && sessionMaxContribution > -Infinity && d >= PLAYMAKER_CUTOFF_DATE){
@@ -2436,6 +2477,10 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       ironMan: stats.attendStreak >= 6 && stats.attendStreak < 15,
       marathon: stats.attendStreak >= 15,
       addict: false,
+      clinical: false,
+      elite: stats.winStreak >= 3 && stats.winStreak < 4,
+      master: stats.winStreak >= 4 && stats.winStreak < 5,
+      legend: stats.winStreak >= 5,
       rocket: false,
       form: false,
       coldStreak: false,
@@ -2490,6 +2535,9 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       const goalsVal = latestEntry.goals != null ? Number(latestEntry.goals) || 0 : 0;
       if(maxGoals != null && goalsVal > 0 && goalsVal === maxGoals){
         flags.latestTop = true;
+        if(goalsVal >= 5){
+          flags.clinical = true;
+        }
       }
       const contribution = (Number(latestEntry.points) || 0) + goalsVal;
       if(contribution > bestContribution){
@@ -2561,6 +2609,10 @@ function getPlayerBadgeHistory(player){
     playmaker: 'Playmaker',
     ironMan: 'Iron Man',
     marathon: 'Marathon Man',
+    clinical: 'Clinical Finisher',
+    elite: 'Elite',
+    master: 'Master',
+    legend: 'Legend',
     form: 'On Fire'
   };
   const out = [];
