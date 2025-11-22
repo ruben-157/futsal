@@ -1975,8 +1975,8 @@ const BADGE_CONFIG = {
 const TROPHY_DESC = {
   latestTop: 'Led a session in goals.',
   playmaker: 'Owned a session with top points+goals contribution.',
-  allTimeTop: 'Held the career goals lead.',
-  mvp: 'Held season-best Pts/Session with solid attendance.',
+  allTimeTop: 'Held the All-Time Topscorer badge for {N} sessions.',
+  mvp: 'Held the Most Valuable Player badge for {N} sessions.',
   form: 'Led a session with the best positive form swing (last 3 vs career).',
   ironMan: 'Completed a 6+ session attendance streak.',
   marathon: 'Completed a 15-session attendance streak.',
@@ -3770,7 +3770,11 @@ function openPlayerModal(player){
       titleEl.textContent = entry.label;
       const desc = document.createElement('div');
       desc.className = 'stat-sub';
-      desc.textContent = TROPHY_DESC[entry.key] || BADGE_CONFIG[entry.key]?.desc || 'Badge earned';
+      const baseDesc = TROPHY_DESC[entry.key] || BADGE_CONFIG[entry.key]?.desc || 'Badge earned';
+      const descText = baseDesc && baseDesc.includes('{N}')
+        ? baseDesc.replace('{N}', String(entry.count || 0))
+        : baseDesc;
+      desc.textContent = descText;
       meta.appendChild(titleEl);
       meta.appendChild(desc);
       const count = document.createElement('div');
