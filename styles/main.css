@@ -158,6 +158,19 @@ tbody tr:last-child{ border-bottom:none; }
   box-shadow:0 1px 2px rgba(15,23,42,0.06) inset;
   white-space:pre-line;
 }
+.live-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.3px;
+  color:#0f172a;
+  background:rgba(37,99,235,0.12);
+  border:1px solid rgba(37,99,235,0.26);
+}
 .live-report-line strong{ font-weight:800; }
 .team-pill{ display:inline-flex; align-items:center; gap:8px; padding:4px 8px; border-radius:999px; border:1px solid #e5e7eb; background:#fff; align-self:flex-start }
 .team-pill .pill-swatch{ width:14px; height:14px; border-radius:50%; border:1px solid rgba(0,0,0,.15); display:inline-block }

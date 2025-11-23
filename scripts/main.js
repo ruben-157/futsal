@@ -1023,22 +1023,19 @@ let modalCtx = null; // { matchId, aId, bId, round }
         return n + (s[(v-20)%10] || s[v] || s[0]);
       }
       function formatLine(team, outcome){
-        if(!outcome || !outcome.rows || !outcome.rows.length) return `ℹ️ If ${team.name} wins: standings will update.`;
+        if(!outcome || !outcome.rows || !outcome.rows.length) return { text: `If ${team.name} wins: standings will update.`, color: team.color, name: team.name };
         const leader = outcome.rows[0];
         const leaderName = leader?.team?.name || 'the leader';
         const rank = outcome.rank || (outcome.rows.findIndex(r => r.team.id === team.id) + 1) || null;
         const pts = outcome.pts;
-        let emoji = '📈';
         let detail = '';
         if(rank === 1){
-          emoji = '🏆';
           const runner = outcome.rows[1];
           if(runner){
             const gap = pts - runner.pts;
             detail = gap > 0 ? ` (+${gap} on ${runner.team.name})` : ` (level with ${runner.team.name}, ahead on GD)`;
           }
         } else if(rank === 2){
-          emoji = '🥈';
           const gap = Math.max(0, leader.pts - pts);
           detail = gap === 0 ? ` • level with ${leaderName} (GD tiebreak)` : ` • ${gap} off ${leaderName}`;
         } else {
@@ -1046,7 +1043,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
           detail = gap === 0 ? ` • level with ${leaderName} (GD tiebreak)` : ` • ${gap} off ${leaderName}`;
         }
         const rankLabel = rank ? ordinal(rank) : 'higher';
-        return `${emoji} If ${team.name} wins: ${rankLabel} on ${pts} pts${detail}`;
+        return { text: `If ${team.name} wins: ${rankLabel} on ${pts} pts${detail}`, color: team.color, name: team.name };
       }
 
       msgA = formatLine(a, aOutcome);
@@ -1054,7 +1051,14 @@ let modalCtx = null; // { matchId, aId, bId, round }
 
       if((msgA || msgB) && liveReportText){
         liveReport.style.display = '';
-        liveReportText.textContent = [msgA, msgB].filter(Boolean).join('\n');
+        const parts = [];
+        [msgA, msgB].forEach((item)=>{
+          if(!item || !item.text) return;
+          const color = item.color || '#2563eb';
+          const line = `<span class="live-badge" style="background:${color}1a; border-color:${color}33">${item.name}</span> ${item.text}`;
+          parts.push(line);
+        });
+        liveReportText.innerHTML = parts.join('<br>');
       }
     }
 
