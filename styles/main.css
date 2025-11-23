@@ -133,7 +133,7 @@ tbody tr:last-child{ border-bottom:none; }
   box-shadow:0 10px 30px rgba(15,23,42,0.08);
 }
 .live-report::before{
-  content:'Live Report';
+  content:'🗞️ Live Report';
   position:absolute;
   top:-12px;
   left:16px;
