@@ -1043,11 +1043,12 @@ let modalCtx = null; // { matchId, aId, bId, round }
         // Gap-closing message
         const gapA = Math.max(0, leaderPts - currentPtsA);
         const gapB = Math.max(0, leaderPts - currentPtsB);
+        const leaderName = baseRows.length ? baseRows[0].team.name : 'the leader';
         if(gapA > 0 && aOutcome.pts >= leaderPts){
-          msg = `Live Report: ${a.name} win would draw level with the leader on ${aOutcome.pts} pts.`;
+          msg = `Live Report: ${a.name} win would draw level with ${leaderName} on ${aOutcome.pts} pts.`;
           accent = a.color;
         } else if(gapB > 0 && bOutcome.pts >= leaderPts){
-          msg = `Live Report: ${b.name} win would draw level with the leader on ${bOutcome.pts} pts.`;
+          msg = `Live Report: ${b.name} win would draw level with ${leaderName} on ${bOutcome.pts} pts.`;
           accent = b.color;
         } else if(gapA > 0){
           msg = `Live Report: Win trims ${a.name}'s gap to the leader to ${Math.max(0, gapA - 3)} pts.`;
