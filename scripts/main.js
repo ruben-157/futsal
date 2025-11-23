@@ -1056,9 +1056,6 @@ let modalCtx = null; // { matchId, aId, bId, round }
       const tdGS = document.createElement('td'); tdGS.textContent = String(r.gf);
       const tdGA = document.createElement('td'); tdGA.textContent = String(r.ga || 0);
       const tdGD = document.createElement('td'); tdGD.textContent = String(gd);
-      if(r.team.id === a.id || r.team.id === b.id || rows[0].team.id === r.team.id){
-        [tdRank, tdTeam, tdPlayed, tdPts, tdGS, tdGA, tdGD].forEach(td=> td.classList.add('live-score-highlight'));
-      }
       tr.appendChild(tdRank); tr.appendChild(tdTeam); tr.appendChild(tdPlayed); tr.appendChild(tdPts); tr.appendChild(tdGS); tr.appendChild(tdGA); tr.appendChild(tdGD);
       tbody.appendChild(tr);
     });

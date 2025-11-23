@@ -215,10 +215,6 @@ tbody tr:last-child{ border-bottom:none; }
   text-transform:uppercase;
   letter-spacing:.3px;
 }
-.live-score-highlight{
-  font-weight:800;
-  color:#0f172a;
-}
 .live-score-pos-up{
   color: var(--accent-2);
   font-weight: 800;
