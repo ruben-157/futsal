@@ -1023,8 +1023,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
         return n + (s[(v-20)%10] || s[v] || s[0]);
       }
       function formatLine(team, outcome){
-        const badge = `<span class="live-badge" style="background:${team.color}; color:#fff; border-color:${team.color}">${team.name}</span>`;
-        if(!outcome || !outcome.rows || !outcome.rows.length) return `If ${badge} wins: standings will update.`;
+        if(!outcome || !outcome.rows || !outcome.rows.length) return `If ${team.name} wins: standings will update.`;
         const leader = outcome.rows[0];
         const leaderName = leader?.team?.name || 'the leader';
         const rank = outcome.rank || (outcome.rows.findIndex(r => r.team.id === team.id) + 1) || null;
@@ -1044,7 +1043,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
           detail = gap === 0 ? ` • level with ${leaderName} (GD tiebreak)` : ` • ${gap} off ${leaderName}`;
         }
         const rankLabel = rank ? ordinal(rank) : 'higher';
-        return `If ${badge} wins: ${rankLabel} on ${pts} pts${detail}`;
+        return `If ${team.name} wins: ${rankLabel} on ${pts} pts${detail}`;
       }
 
       msgA = formatLine(a, aOutcome);
