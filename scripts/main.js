@@ -1003,24 +1003,24 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const map = new Map(Array.from(baseMap.entries()).map(([id, rec])=> [id, { ...rec }]));
     const aTeam = map.get(a.id); const bTeam = map.get(b.id);
     if(!aTeam || !bTeam){ liveScoreBody.style.display='none'; return; }
-    let ga = parseInt(aInput.value || '0', 10);
-    let gb = parseInt(bInput.value || '0', 10);
-    if(!Number.isFinite(ga)) ga = 0;
-    if(!Number.isFinite(gb)) gb = 0;
-    ga = Math.max(0, ga); gb = Math.max(0, gb);
-    // Capture base points before live delta
-    const basePtsA = aTeam.pts;
-    const basePtsB = bTeam.pts;
-    let deltaA = 0, deltaB = 0;
-    if(ga > gb){ deltaA = 3; }
-    else if(gb > ga){ deltaB = 3; }
-    else { deltaA = 1; deltaB = 1; }
-    // Apply current in-modal score as if finalized
-    aTeam.played++; bTeam.played++;
-    aTeam.gf += ga; aTeam.ga += gb;
-    bTeam.gf += gb; bTeam.ga += ga;
-    aTeam.pts += deltaA;
-    bTeam.pts += deltaB;
+    const hasScores = (aInput.value !== '' && bInput.value !== '');
+    if(hasScores){
+      let ga = parseInt(aInput.value || '0', 10);
+      let gb = parseInt(bInput.value || '0', 10);
+      if(!Number.isFinite(ga)) ga = 0;
+      if(!Number.isFinite(gb)) gb = 0;
+      ga = Math.max(0, ga); gb = Math.max(0, gb);
+      let deltaA = 0, deltaB = 0;
+      if(ga > gb){ deltaA = 3; }
+      else if(gb > ga){ deltaB = 3; }
+      else { deltaA = 1; deltaB = 1; }
+      // Apply current in-modal score as if finalized
+      aTeam.played++; bTeam.played++;
+      aTeam.gf += ga; aTeam.ga += gb;
+      bTeam.gf += gb; bTeam.ga += ga;
+      aTeam.pts += deltaA;
+      bTeam.pts += deltaB;
+    }
 
     const rows = sortRows(map);
     liveScoreBody.innerHTML = '';
@@ -1050,8 +1050,6 @@ let modalCtx = null; // { matchId, aId, bId, round }
       }
       const tdPlayed = document.createElement('td'); tdPlayed.textContent = String(r.played);
       const tdPts = document.createElement('td');
-      const isA = r.team.id === a.id;
-      const isB = r.team.id === b.id;
       tdPts.textContent = String(r.pts);
       const tdGS = document.createElement('td'); tdGS.textContent = String(r.gf);
       const tdGA = document.createElement('td'); tdGA.textContent = String(r.ga || 0);
