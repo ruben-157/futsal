@@ -1021,7 +1021,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
       aTeam.gf += g; aTeam.ga += g;
       bTeam.gf += g; bTeam.ga += g;
       aTeam.pts += 1; bTeam.pts += 1;
-    } // outcome 'current' means no change
+    } // 'current' or null: no adjustments
 
     const rows = sortRows(map);
     whatIfBody.innerHTML = '';
@@ -1080,18 +1080,19 @@ let modalCtx = null; // { matchId, aId, bId, round }
     // What-if tabs
     if(whatIf && whatIfBody && tabCurrent && tabA && tabB && tabDraw){
       whatIf.style.display = '';
-      tabA.textContent = `If ${a.name} wins`;
-      tabB.textContent = `If ${b.name} wins`;
-      tabDraw.textContent = 'If draw';
-      tabCurrent.textContent = 'Current standings';
-      function setActive(which){
-        activeWhatIf = which;
-        [tabCurrent, tabA, tabB, tabDraw].forEach(btn=>{
-          const on = (btn === tabCurrent && which==='current') || (btn === tabA && which==='a') || (btn===tabB && which==='b') || (btn===tabDraw && which==='draw');
-          btn.setAttribute('aria-selected', on ? 'true' : 'false');
-        });
-        if(which){ renderWhatIf(which === 'current' ? null : which); } else { whatIfBody.style.display='none'; whatIfBody.innerHTML=''; }
-      }
+       tabA.textContent = `If ${a.name} wins`;
+       tabB.textContent = `If ${b.name} wins`;
+       tabDraw.textContent = 'If draw';
+       tabCurrent.textContent = 'Current standings';
+       function setActive(which){
+         activeWhatIf = which;
+         [tabCurrent, tabA, tabB, tabDraw].forEach(btn=>{
+           const on = (btn === tabCurrent && which==='current') || (btn === tabA && which==='a') || (btn===tabB && which==='b') || (btn===tabDraw && which==='draw');
+           btn.setAttribute('aria-selected', on ? 'true' : 'false');
+          btn.classList.toggle('active', on);
+         });
+        if(which){ renderWhatIf(which === 'current' ? 'current' : which); } else { whatIfBody.style.display='none'; whatIfBody.innerHTML=''; }
+       }
       tabCurrent.onclick = ()=> setActive('current');
       tabA.onclick = ()=> setActive('a');
       tabB.onclick = ()=> setActive('b');
