@@ -11,7 +11,6 @@ import {
   normalizeRating,
   snapToRatingStep
 } from './data/config.js';
-import { clampPlayLimit } from './ui/roster.js';
 import {
   state,
   loadState,
@@ -69,6 +68,23 @@ function computeHarmonyBias(members=[], candidate){
     }
   }
   return bias;
+}
+
+function clampPlayLimit(){
+  const over = state.attendees.length > MAX_ATTENDEES;
+  if(over){
+    state.attendees = state.attendees.slice(0, MAX_ATTENDEES);
+    saveAttendees();
+  }
+  const notice = document.getElementById('limitNotice');
+  if(notice){
+    notice.textContent = `Limit reached: maximum ${MAX_ATTENDEES} players.`;
+    if(state.attendees.length >= MAX_ATTENDEES){
+      notice.style.display = '';
+    } else {
+      notice.style.display = 'none';
+    }
+  }
 }
 function applyRosterHarmonyFinal(teams){
   if(!Array.isArray(teams) || teams.length < 2 || harmonyPairs.length === 0) return;
