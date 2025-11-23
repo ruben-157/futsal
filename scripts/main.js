@@ -1058,10 +1058,9 @@ let modalCtx = null; // { matchId, aId, bId, round }
 
     function canSave(){ return aInput.value !== '' && bInput.value !== ''; }
     saveBtn.disabled = !canSave();
-    let activeWhatIf = null;
     const onInput = ()=>{
       saveBtn.disabled = !canSave();
-      if(activeWhatIf){ renderWhatIf(activeWhatIf); }
+      renderLiveScore();
     };
     aInput.oninput = onInput; bInput.oninput = onInput;
 
