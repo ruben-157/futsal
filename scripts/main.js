@@ -986,6 +986,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
     return Array.from(map.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
   }
 
+  const LS_TOGGLE_KEY = 'virtualScoreOpen';
+
   function renderLiveScore(){
     if(!liveScore || !liveScoreBody) return;
     liveScore.style.display = '';
@@ -1098,11 +1100,17 @@ let modalCtx = null; // { matchId, aId, bId, round }
         liveScoreBody.style.display = expanded ? '' : 'none';
         liveScoreBody.dataset.state = expanded ? 'expanded' : 'collapsed';
         liveScoreToggle.firstElementChild.textContent = expanded ? '▼' : '►';
+        try{ localStorage.setItem(LS_TOGGLE_KEY, expanded ? '1' : '0'); }catch(_){}
         if(expanded){ renderLiveScore(); }
       };
       liveScoreToggle.onclick = ()=> setBody(liveScoreBody.dataset.state !== 'expanded');
-      // default collapsed
-      setBody(false);
+      // restore saved state (default collapsed)
+      let startOpen = false;
+      try{
+        const saved = localStorage.getItem(LS_TOGGLE_KEY);
+        startOpen = saved === '1';
+      }catch(_){}
+      setBody(startOpen);
     }
     // Live Score
     renderLiveScore();
