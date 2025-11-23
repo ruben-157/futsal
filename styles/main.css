@@ -374,11 +374,12 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   #leaderboardSection th:nth-child(4),
   #leaderboardSection th:nth-child(5),
   #leaderboardSection th:nth-child(6){ width:88px; text-align:right }
-  #leaderboardSection td:nth-child(2),
-  #leaderboardSection td:nth-child(3),
-  #leaderboardSection td:nth-child(4),
-  #leaderboardSection td:nth-child(5),
-  #leaderboardSection td:nth-child(6){ text-align:right }
+#leaderboardSection td:nth-child(2),
+#leaderboardSection td:nth-child(3),
+#leaderboardSection td:nth-child(4),
+#leaderboardSection td:nth-child(5),
+#leaderboardSection td:nth-child(6){ text-align:right }
+  #leaderboardSection .table-wrap{ overflow:visible; }
 
   /* All-Time: fixed layout, numeric columns right-aligned */
   #allTimeSection table{ table-layout:fixed }
