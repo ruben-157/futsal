@@ -111,6 +111,14 @@ main > section{ margin-top: 8px }
 .error{color:var(--danger)}
 
 .actions{display:flex; gap:8px; align-items:center; justify-content:flex-end; margin:12px 0; box-sizing:border-box}
+.actions#playersActions{
+  position:sticky;
+  bottom:0;
+  background:var(--bg);
+  padding:12px 0;
+  margin:16px 0 0 0;
+  z-index:1;
+}
 .picker .actions{ margin-top:auto; padding-top:12px }
 
 .teams{margin-top:0}
