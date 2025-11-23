@@ -940,12 +940,13 @@ let modalCtx = null; // { matchId, aId, bId, round }
   subA.className = 'team-sub';
   subA.textContent = (a.members || []).join(', ');
   aName.appendChild(subA);
-  bName.appendChild(pillB);
-  const subB = document.createElement('div');
-  subB.className = 'team-sub';
-  subB.textContent = (b.members || []).join(', ');
-  bName.appendChild(subB);
-  label.textContent = `${a.name} vs ${b.name} • Round ${round}`;
+    bName.appendChild(pillB);
+    const subB = document.createElement('div');
+    subB.className = 'team-sub';
+    subB.textContent = (b.members || []).join(', ');
+    bName.appendChild(subB);
+    label.textContent = '';
+    label.style.display = 'none';
 
   const existing = state.results[matchId];
   // Prefill totals from draft if present, else from final, else 0
@@ -986,7 +987,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
       const map = buildStandingsMap();
       const win = map.get(winnerId);
       const lose = map.get(loserId);
-      if(!win || !lose) return { wouldLead:false, pts:0 };
+      if(!win || !lose) return { wouldLead:false, pts:0, rank:null, rows:[] };
       const parsedWin = parseInt(rawWinGoals, 10);
       const parsedLose = parseInt(rawLoseGoals, 10);
       let gWin = Number.isFinite(parsedWin) ? parsedWin : 1;
@@ -999,7 +1000,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
       win.pts += 3;
       const rows = sortRows(map);
       const leaderId = rows.length ? rows[0].team.id : null;
-      return { wouldLead: leaderId === winnerId, pts: win.pts };
+      const rank = rows.findIndex(r => r.team.id === winnerId);
+      return { wouldLead: leaderId === winnerId, pts: win.pts, rank: rank >=0 ? rank+1 : null, rows };
     }
     function updateLiveReport(){
       if(!liveReport) return;
@@ -1014,6 +1016,13 @@ let modalCtx = null; // { matchId, aId, bId, round }
       const bOutcome = simulateWin(b.id, a.id, gbDraft, gaDraft);
       let msg = '';
       let accent = null;
+      const currentRankA = baseRows.findIndex(r => r.team.id === a.id);
+      const currentRankB = baseRows.findIndex(r => r.team.id === b.id);
+      const currentPtsA = currentRankA >=0 ? baseRows[currentRankA].pts : 0;
+      const currentPtsB = currentRankB >=0 ? baseRows[currentRankB].pts : 0;
+      const leaderPts = baseRows.length ? baseRows[0].pts : 0;
+
+      // Priority: take lead > winner takes lead > jump to 2nd/podium > close gap > hold lead
       if(aOutcome.wouldLead && currentLeaderId !== a.id && (!bOutcome.wouldLead || currentLeaderId === b.id)){
         msg = `Live Report: If ${a.name} wins, it will take the lead with ${aOutcome.pts} points.`;
         accent = a.color;
@@ -1024,6 +1033,38 @@ let modalCtx = null; // { matchId, aId, bId, round }
         const ptsText = (aOutcome.pts === bOutcome.pts) ? `${aOutcome.pts} points` : `${Math.min(aOutcome.pts,bOutcome.pts)}–${Math.max(aOutcome.pts,bOutcome.pts)} points`;
         msg = `Live Report: Winner takes the lead with ${ptsText}.`;
         accent = '#0f172a';
+      } else if(aOutcome.rank === 2 && (currentRankA < 0 || currentRankA > 2)){
+        msg = `Live Report: ${a.name} can reach 2nd with a win (${aOutcome.pts} pts).`;
+        accent = a.color;
+      } else if(bOutcome.rank === 2 && (currentRankB < 0 || currentRankB > 2)){
+        msg = `Live Report: ${b.name} can reach 2nd with a win (${bOutcome.pts} pts).`;
+        accent = b.color;
+      } else {
+        // Gap-closing message
+        const gapA = Math.max(0, leaderPts - currentPtsA);
+        const gapB = Math.max(0, leaderPts - currentPtsB);
+        if(gapA > 0 && aOutcome.pts >= leaderPts){
+          msg = `Live Report: ${a.name} win would draw level with the leader on ${aOutcome.pts} pts.`;
+          accent = a.color;
+        } else if(gapB > 0 && bOutcome.pts >= leaderPts){
+          msg = `Live Report: ${b.name} win would draw level with the leader on ${bOutcome.pts} pts.`;
+          accent = b.color;
+        } else if(gapA > 0){
+          msg = `Live Report: Win trims ${a.name}'s gap to the leader to ${Math.max(0, gapA - 3)} pts.`;
+          accent = a.color;
+        } else if(gapB > 0){
+          msg = `Live Report: Win trims ${b.name}'s gap to the leader to ${Math.max(0, gapB - 3)} pts.`;
+          accent = b.color;
+        } else if(currentLeaderId === a.id){
+          msg = `Live Report: ${a.name} win would keep the lead on ${aOutcome.pts} pts.`;
+          accent = a.color;
+        } else if(currentLeaderId === b.id){
+          msg = `Live Report: ${b.name} win would keep the lead on ${bOutcome.pts} pts.`;
+          accent = b.color;
+        } else if(baseRows.length){
+          msg = `Live Report: Leader is ${baseRows[0].team.name} on ${leaderPts} pts; result reshuffles the pack.`;
+          accent = '#0f172a';
+        }
       }
       if(msg){
         liveReport.textContent = msg;
@@ -1035,7 +1076,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
 
     function canSave(){ return aInput.value !== '' && bInput.value !== ''; }
     saveBtn.disabled = !canSave();
-    const onInput = ()=>{ saveBtn.disabled = !canSave(); updateLiveReport(); };
+    const onInput = ()=>{ saveBtn.disabled = !canSave(); };
     aInput.oninput = onInput; bInput.oninput = onInput;
 
     overlay.hidden = false; modal.hidden = false;
@@ -1046,12 +1087,12 @@ let modalCtx = null; // { matchId, aId, bId, round }
 
   document.getElementById('modalCancel').onclick = closeResultModal;
   overlay.onclick = closeResultModal;
-  function step(input, delta){
-    const cur = parseInt(input.value || '0', 10);
-    let v = Number.isFinite(cur) ? cur : 0;
-    v = Math.max(0, v + delta);
-    input.value = String(v);
-    onInput();
+    function step(input, delta){
+      const cur = parseInt(input.value || '0', 10);
+      let v = Number.isFinite(cur) ? cur : 0;
+      v = Math.max(0, v + delta);
+      input.value = String(v);
+      onInput();
   }
     aMinus.onclick = ()=> step(aInput, -1);
     aPlus.onclick = ()=> step(aInput, +1);
