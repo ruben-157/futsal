@@ -923,8 +923,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const label = document.getElementById('modalMatchLabel');
     const saveBtn = document.getElementById('modalSave');
     const liveReport = document.getElementById('modalLiveReport');
-    const liveReportA = document.getElementById('modalLiveReportA');
-    const liveReportB = document.getElementById('modalLiveReportB');
+    const liveReportText = document.getElementById('modalLiveReportText');
 
     // Render team pills in modal
     aName.textContent = '';
@@ -1008,8 +1007,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
     function updateLiveReport(){
       if(!liveReport) return;
       liveReport.style.display = 'none';
-      if(liveReportA) liveReportA.textContent = '';
-      if(liveReportB) liveReportB.textContent = '';
+      if(liveReportText) liveReportText.textContent = '';
       if(playedMatchesCountExcludingCurrent() === 0) return; // hide on first match
       const baseRows = sortRows(buildStandingsMap());
       const gaDraft = parseInt(aInput.value || '0', 10);
@@ -1054,18 +1052,10 @@ let modalCtx = null; // { matchId, aId, bId, round }
       msgA = formatLine(a, aOutcome);
       msgB = formatLine(b, bOutcome);
 
-      if(msgA || msgB){
+      if((msgA || msgB) && liveReportText){
         liveReport.style.display = '';
-        if(liveReportA){
-          liveReportA.textContent = msgA;
-          liveReportA.style.borderColor = `${a.color}1a`;
-          liveReportA.style.boxShadow = `inset 0 0 0 1px ${a.color}14`;
-        }
-        if(liveReportB){
-          liveReportB.textContent = msgB;
-          liveReportB.style.borderColor = `${b.color}1a`;
-          liveReportB.style.boxShadow = `inset 0 0 0 1px ${b.color}14`;
-        }
+        const spacer = '   •   ';
+        liveReportText.textContent = [msgA, msgB].filter(Boolean).join(spacer);
       }
     }
 
