@@ -955,6 +955,14 @@ let modalCtx = null; // { matchId, aId, bId, round }
     bInput.value = String(initialB);
 
     // Build mini-standings for Live Report (excludes this match to avoid double counting)
+    function playedMatchesCountExcludingCurrent(){
+      let count = 0;
+      for(const [id, rec] of Object.entries(state.results || {})){
+        if(id === matchId) continue;
+        if(rec && rec.ga != null && rec.gb != null) count++;
+      }
+      return count;
+    }
     function buildStandingsMap(){
       const map = new Map(state.teams.map(t => [t.id, { team: t, pts: 0, gf: 0, ga: 0, played: 0 }]));
       for(const [id, rec] of Object.entries(state.results || {})){
@@ -997,6 +1005,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
       if(!liveReport) return;
       liveReport.style.display = 'none';
       liveReport.textContent = '';
+      if(playedMatchesCountExcludingCurrent() === 0) return; // hide on first match
       const baseRows = sortRows(buildStandingsMap());
       const currentLeaderId = baseRows.length ? baseRows[0].team.id : null;
       const gaDraft = parseInt(aInput.value || '0', 10);
