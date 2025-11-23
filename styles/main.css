@@ -177,15 +177,15 @@ tbody tr:last-child{ border-bottom:none; }
 /* Leaderboard: vertically center stats cells */
 #leaderboardSection table th,
 #leaderboardSection table td{ vertical-align: middle }
-.badges-col{ text-align: right; padding-right:12px }
+.badges-col{ text-align: left; padding-right:12px }
 .badges-cell{
-  text-align:right;
+  text-align:left;
   white-space:normal;
 }
 .badges-cell .player-badges{
   margin-left:0;
   flex-wrap:wrap;
-  justify-content:flex-end;
+  justify-content:flex-start;
   display:inline-flex;
   align-items:center;
   gap:6px;
@@ -196,13 +196,13 @@ tbody tr:last-child{ border-bottom:none; }
   vertical-align: middle;
 }
 .alltime-table .badges-cell{
-  text-align: right;
+  text-align: left;
   white-space: normal;
 }
 .alltime-table .player-badges{
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap:4px;
   max-width:100%;
@@ -299,18 +299,20 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   /* All-Time: fixed layout, numeric columns right-aligned */
   #allTimeSection table{ table-layout:fixed }
   #allTimeSection th:nth-child(1){ width:56px; text-align:left }
-  #allTimeSection th:nth-child(2){ width:40% }
-  #allTimeSection th:nth-child(3){ width:130px; text-align:right; white-space:nowrap }
+  #allTimeSection th:nth-child(2){ width:32%; text-align:left }
+  #allTimeSection th:nth-child(3){ width:24%; text-align:left; white-space:nowrap }
   #allTimeSection th:nth-child(4),
   #allTimeSection th:nth-child(5),
   #allTimeSection th:nth-child(6),
-  #allTimeSection th:nth-child(7){ width:110px; text-align:right }
+  #allTimeSection th:nth-child(7),
+  #allTimeSection th:nth-child(8){ width:110px; text-align:right }
   #allTimeSection td:nth-child(1){ text-align:left }
-  #allTimeSection td:nth-child(3),
+  #allTimeSection td:nth-child(3){ text-align:left }
   #allTimeSection td:nth-child(4),
   #allTimeSection td:nth-child(5),
   #allTimeSection td:nth-child(6),
-  #allTimeSection td:nth-child(7){ text-align:right }
+  #allTimeSection td:nth-child(7),
+  #allTimeSection td:nth-child(8){ text-align:right }
 
   /* Modals: wider and two-column fields */
   .modal{ width:min(92vw, 640px) }

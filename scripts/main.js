@@ -3527,10 +3527,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     if(sortable){
       th.setAttribute('aria-sort', allTimeSort.key === col.key ? (allTimeSort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
     }
-    if(col.key === 'badges'){
-      th.style.textAlign = 'right';
-      th.classList.add('badges-col');
-    }
+    if(col.key === 'badges'){ th.classList.add('badges-col'); }
     if(sortable){
       th.style.cursor = 'pointer';
       th.title = 'Sort by ' + col.label;
@@ -3619,7 +3616,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
     const tdB = document.createElement('td');
     tdB.className = 'badges-cell';
     tdB.style.minWidth = '200px';
-    tdB.style.textAlign = 'right';
+    tdB.style.textAlign = 'left';
     tdB.style.whiteSpace = 'nowrap';
     tdB.style.paddingRight = '12px';
     if(badgeList && badgeList.length){
@@ -3627,7 +3624,7 @@ function buildAllTimeTable(stats, totalSessions, series, preRanks, postRanks, la
       badgesWrap.className = 'player-badges';
       badgesWrap.style.flexWrap = 'nowrap';
       badgesWrap.style.whiteSpace = 'nowrap';
-      badgesWrap.style.justifyContent = 'flex-end';
+      badgesWrap.style.justifyContent = 'flex-start';
       badgesWrap.style.marginLeft = '0';
       badgesWrap.style.display = 'inline-flex';
       badgesWrap.style.alignItems = 'center';
