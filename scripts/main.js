@@ -988,9 +988,9 @@ let modalCtx = null; // { matchId, aId, bId, round }
     return Array.from(map.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
   }
 
-  function renderWhatIf(outcome){
+    function renderWhatIf(outcome){
     if(!whatIf || !whatIfBody) return;
-    if(playedMatchesCountExcludingCurrent() === 0){ whatIf.style.display = 'none'; return; }
+    whatIf.style.display = '';
     const map = buildStandingsMap();
     if(!map || map.size === 0){ whatIf.style.display='none'; return; }
     const aTeam = map.get(a.id); const bTeam = map.get(b.id);
@@ -1021,6 +1021,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
       aTeam.pts += 1; bTeam.pts += 1;
     } else {
       whatIfBody.style.display = 'none';
+      whatIfBody.innerHTML = '';
       return;
     }
 
@@ -1080,8 +1081,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
     bPlus.onclick = ()=> step(bInput, +1);
     // What-if tabs
     if(whatIf && whatIfBody && tabA && tabB && tabDraw){
-      const hasHistory = playedMatchesCountExcludingCurrent() > 0;
-      whatIf.style.display = hasHistory ? '' : 'none';
+      whatIf.style.display = '';
       tabA.textContent = `If ${a.name} wins`;
       tabB.textContent = `If ${b.name} wins`;
       tabDraw.textContent = 'If draw';
@@ -1091,7 +1091,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
           const on = (btn === tabA && which==='a') || (btn===tabB && which==='b') || (btn===tabDraw && which==='draw');
           btn.setAttribute('aria-selected', on ? 'true' : 'false');
         });
-        if(which){ renderWhatIf(which); } else { whatIfBody.style.display='none'; }
+        if(which){ renderWhatIf(which); } else { whatIfBody.style.display='none'; whatIfBody.innerHTML=''; }
       }
       tabA.onclick = ()=> setActive('a');
       tabB.onclick = ()=> setActive('b');
