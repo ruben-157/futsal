@@ -353,7 +353,7 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   #teamsSection table{ table-layout:fixed }
   #teamsSection th:nth-child(1){ width:160px }
   #teamsSection th:nth-child(3),
-  #teamsSection td:nth-child(3){ width:64px; text-align:right }
+  #teamsSection td:nth-child(3){ width:64px; text-align:left }
   #teamsSection td:nth-child(2){ word-break:break-word }
 
   /* Matches: single full-width column per match on tablet */
