@@ -155,7 +155,7 @@ tbody tr:last-child{ border-bottom:none; }
   border-radius:50%;
   background:#ef4444;
   box-shadow:0 0 0 4px rgba(239,68,68,0.18);
-  margin-left:auto;
+  margin-left:6px;
   animation: pulseDot 1.2s ease-in-out infinite;
 }
 @keyframes pulseDot{
