@@ -54,6 +54,9 @@
     </section>
 
     <section class="teams" id="teamsSection" role="tabpanel" aria-labelledby="tabTeams" hidden>
+      <div style="display:flex; justify-content:flex-end; margin:-6px 0 4px 0">
+        <button id="btnGhostCols" type="button" aria-label="Toggle hidden team columns" style="opacity:0.08; border:none; background:transparent; padding:4px 6px; font-size:11px; cursor:pointer">···</button>
+      </div>
       <div style="overflow:auto">
         <table aria-label="Teams table" id="teamsTable">
           <thead>
@@ -61,8 +64,6 @@
               <th>Team</th>
               <th>Members</th>
               <th>Size</th>
-              <th>Avg Skill</th>
-              <th>Avg Stamina</th>
             </tr>
           </thead>
           <tbody id="teamsBody"></tbody>

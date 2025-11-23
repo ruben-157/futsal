@@ -210,10 +210,15 @@ function createListItem(name, isSelected){
 
 function setupDnD(){ /* DnD disabled in single-list selection UI */ }
 
+let showAvgColumns = false;
+
 function renderTeams(){
   const table = document.getElementById('teamsTable');
   if(!table) return;
-  const headerLabels = ['Team', 'Members', 'Size', 'Avg Skill', 'Avg Stamina'];
+  const headerLabels = ['Team', 'Members', 'Size'];
+  if(showAvgColumns){
+    headerLabels.push('Avg Skill', 'Avg Stamina');
+  }
   const thead = table.tHead || table.createTHead();
   const headerRow = document.createElement('tr');
   headerLabels.forEach(label => {
@@ -263,26 +268,27 @@ function renderTeams(){
     const tdSize = document.createElement('td');
     tdSize.textContent = String(team.members.length);
 
-    const tdAvgSkill = document.createElement('td');
-    const tdAvgStamina = document.createElement('td');
-    const count = team.members.length;
-    if(count > 0){
-      const totalSkill = team.members.reduce((s,name)=> s + getSkill(name), 0);
-      const totalStamina = team.members.reduce((s,name)=> s + getStamina(name), 0);
-      const avgSkill = totalSkill / count;
-      const avgStam = totalStamina / count;
-      tdAvgSkill.textContent = avgSkill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      tdAvgStamina.textContent = avgStam.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } else {
-      tdAvgSkill.textContent = '—';
-      tdAvgStamina.textContent = '—';
-    }
-
     tr.appendChild(tdTeam);
     tr.appendChild(tdMembers);
     tr.appendChild(tdSize);
-    tr.appendChild(tdAvgSkill);
-    tr.appendChild(tdAvgStamina);
+    if(showAvgColumns){
+      const tdAvgSkill = document.createElement('td');
+      const tdAvgStamina = document.createElement('td');
+      const count = team.members.length;
+      if(count > 0){
+        const totalSkill = team.members.reduce((s,name)=> s + getSkill(name), 0);
+        const totalStamina = team.members.reduce((s,name)=> s + getStamina(name), 0);
+        const avgSkill = totalSkill / count;
+        const avgStam = totalStamina / count;
+        tdAvgSkill.textContent = avgSkill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        tdAvgStamina.textContent = avgStam.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else {
+        tdAvgSkill.textContent = '—';
+        tdAvgStamina.textContent = '—';
+      }
+      tr.appendChild(tdAvgSkill);
+      tr.appendChild(tdAvgStamina);
+    }
     tbody.appendChild(tr);
   }
   renderSchedule();
@@ -1885,6 +1891,15 @@ document.getElementById('btnGenerateBottom').addEventListener('click', generateT
 const btnResetPlayersTop = document.getElementById('btnResetPlayersTop');
 if(btnResetPlayersTop){ btnResetPlayersTop.addEventListener('click', openResetModal); }
 document.getElementById('btnAddPlayer').addEventListener('click', openAddPlayerModal);
+const btnGhostCols = document.getElementById('btnGhostCols');
+if(btnGhostCols){
+  btnGhostCols.setAttribute('aria-pressed', 'false');
+  btnGhostCols.addEventListener('click', ()=>{
+    showAvgColumns = !showAvgColumns;
+    btnGhostCols.setAttribute('aria-pressed', String(showAvgColumns));
+    renderTeams();
+  });
+}
 
 // Drop zones setup runs once; items are re-rendered each time
 setupDnD();
