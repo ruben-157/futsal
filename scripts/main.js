@@ -1098,7 +1098,6 @@ let modalCtx = null; // { matchId, aId, bId, round }
       tabDraw.onclick = ()=> setActive('draw');
       setActive(null); // start collapsed
     }
-    updateLiveReport();
 
   // ----- Per-player scorers -----
   const scorersWrap = document.getElementById('modalScorers');
