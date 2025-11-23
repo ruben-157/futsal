@@ -142,7 +142,7 @@ export function sanitizeTimestamp(value){
 export function sanitizeBoolean(value, fallback=false){
   if(value === null || value === undefined) return { value: fallback, reset: false, reason: null };
   if(typeof value === 'boolean') return { value, reset: false, reason: null };
-  if(value === 'true' || value === 'false') return { value: value === 'true', reset: true, reason: 'Boolean stored as string' };
+  if(value === 'true' || value === 'false') return { value: value === 'true', reset: false, reason: null };
   return { value: fallback, reset: true, reason: 'Invalid boolean' };
 }
 
