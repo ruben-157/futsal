@@ -114,10 +114,13 @@ main > section{ margin-top: 8px }
 .actions#playersActions{
   position:sticky;
   bottom:0;
-  background:var(--bg);
-  padding:12px 0;
-  margin:16px 0 0 0;
-  z-index:1;
+  left:0;
+  right:0;
+  padding:12px 14px;
+  margin:0;
+  background:linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.95) 40%, rgba(255,255,255,1));
+  z-index:2;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
 }
 .picker .actions{ margin-top:auto; padding-top:12px }
 
