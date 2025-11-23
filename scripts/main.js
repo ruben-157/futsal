@@ -1024,20 +1024,20 @@ let modalCtx = null; // { matchId, aId, bId, round }
 
       // Priority: take lead > winner takes lead > jump to 2nd/podium > close gap > hold lead
       if(aOutcome.wouldLead && currentLeaderId !== a.id && (!bOutcome.wouldLead || currentLeaderId === b.id)){
-        msg = `Live Report: If ${a.name} wins, it will take the lead with ${aOutcome.pts} points.`;
+        msg = `🏆 Live Report: If ${a.name} wins, it will take the lead with ${aOutcome.pts} points.`;
         accent = a.color;
       } else if(bOutcome.wouldLead && currentLeaderId !== b.id){
-        msg = `Live Report: If ${b.name} wins, it will take the lead with ${bOutcome.pts} points.`;
+        msg = `🏆 Live Report: If ${b.name} wins, it will take the lead with ${bOutcome.pts} points.`;
         accent = b.color;
       } else if(aOutcome.wouldLead && bOutcome.wouldLead){
         const ptsText = (aOutcome.pts === bOutcome.pts) ? `${aOutcome.pts} points` : `${Math.min(aOutcome.pts,bOutcome.pts)}–${Math.max(aOutcome.pts,bOutcome.pts)} points`;
-        msg = `Live Report: Winner takes the lead with ${ptsText}.`;
+        msg = `🏆 Live Report: Winner takes the lead with ${ptsText}.`;
         accent = '#0f172a';
       } else if(aOutcome.rank === 2 && (currentRankA < 0 || currentRankA > 2)){
-        msg = `Live Report: ${a.name} can reach 2nd with a win (${aOutcome.pts} pts).`;
+        msg = `🥈 Live Report: ${a.name} can reach 2nd with a win (${aOutcome.pts} pts).`;
         accent = a.color;
       } else if(bOutcome.rank === 2 && (currentRankB < 0 || currentRankB > 2)){
-        msg = `Live Report: ${b.name} can reach 2nd with a win (${bOutcome.pts} pts).`;
+        msg = `🥈 Live Report: ${b.name} can reach 2nd with a win (${bOutcome.pts} pts).`;
         accent = b.color;
       } else {
         // Gap-closing message
@@ -1045,25 +1045,25 @@ let modalCtx = null; // { matchId, aId, bId, round }
         const gapB = Math.max(0, leaderPts - currentPtsB);
         const leaderName = baseRows.length ? baseRows[0].team.name : 'the leader';
         if(gapA > 0 && aOutcome.pts >= leaderPts){
-          msg = `Live Report: ${a.name} win would draw level with ${leaderName} on ${aOutcome.pts} pts.`;
+          msg = `📈 Live Report: ${a.name} win would draw level with ${leaderName} on ${aOutcome.pts} pts.`;
           accent = a.color;
         } else if(gapB > 0 && bOutcome.pts >= leaderPts){
-          msg = `Live Report: ${b.name} win would draw level with ${leaderName} on ${bOutcome.pts} pts.`;
+          msg = `📈 Live Report: ${b.name} win would draw level with ${leaderName} on ${bOutcome.pts} pts.`;
           accent = b.color;
         } else if(gapA > 0){
-          msg = `Live Report: Win trims ${a.name}'s gap to the leader to ${Math.max(0, gapA - 3)} pts.`;
+          msg = `📉 Live Report: Win trims ${a.name}'s gap to the leader to ${Math.max(0, gapA - 3)} pts.`;
           accent = a.color;
         } else if(gapB > 0){
-          msg = `Live Report: Win trims ${b.name}'s gap to the leader to ${Math.max(0, gapB - 3)} pts.`;
+          msg = `📉 Live Report: Win trims ${b.name}'s gap to the leader to ${Math.max(0, gapB - 3)} pts.`;
           accent = b.color;
         } else if(currentLeaderId === a.id){
-          msg = `Live Report: ${a.name} win would keep the lead on ${aOutcome.pts} pts.`;
+          msg = `🔒 Live Report: ${a.name} win would keep the lead on ${aOutcome.pts} pts.`;
           accent = a.color;
         } else if(currentLeaderId === b.id){
-          msg = `Live Report: ${b.name} win would keep the lead on ${bOutcome.pts} pts.`;
+          msg = `🔒 Live Report: ${b.name} win would keep the lead on ${bOutcome.pts} pts.`;
           accent = b.color;
         } else if(baseRows.length){
-          msg = `Live Report: Leader is ${baseRows[0].team.name} on ${leaderPts} pts; result reshuffles the pack.`;
+          msg = `ℹ️ Live Report: Leader is ${baseRows[0].team.name} on ${leaderPts} pts; result reshuffles the pack.`;
           accent = '#0f172a';
         }
       }
