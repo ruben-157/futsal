@@ -97,12 +97,12 @@
     <div class="modal-body">
       <div id="modalMatchLabel" class="notice" style="margin-bottom:8px"></div>
       <div id="modalLiveScore" class="notice live-score" style="display:none">
-        <button id="liveScoreToggle" type="button" class="live-score-toggle" aria-expanded="true">
-          <span aria-hidden="true">▼</span>
-          <span>Live Score</span>
+        <button id="liveScoreToggle" type="button" class="live-score-toggle" aria-expanded="false">
+          <span aria-hidden="true">►</span>
+          <span>Virtual Score</span>
           <span class="live-dot" aria-hidden="true"></span>
         </button>
-        <div id="liveScoreBody" class="live-score-body"></div>
+        <div id="liveScoreBody" class="live-score-body" data-state="collapsed" style="display:none"></div>
       </div>
       <div class="modal-fields">
         <label class="score-row">

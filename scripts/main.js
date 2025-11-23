@@ -1052,19 +1052,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
       const tdPts = document.createElement('td');
       const isA = r.team.id === a.id;
       const isB = r.team.id === b.id;
-      const basePts = isA ? basePtsA : isB ? basePtsB : r.pts; // for others, pts already include base only
-      const delta = isA ? deltaA : isB ? deltaB : 0;
-      if(delta > 0){
-        const spanBase = document.createElement('span'); spanBase.textContent = String(basePts);
-        const spanPlus = document.createElement('span');
-        spanPlus.textContent = ` + ${delta}`;
-        spanPlus.className = delta === 3 ? 'live-score-delta-win' : 'live-score-delta-draw';
-        tdPts.appendChild(spanBase);
-        tdPts.appendChild(document.createTextNode(' '));
-        tdPts.appendChild(spanPlus);
-      } else {
-        tdPts.textContent = String(r.pts);
-      }
+      tdPts.textContent = String(r.pts);
       const tdGS = document.createElement('td'); tdGS.textContent = String(r.gf);
       const tdGA = document.createElement('td'); tdGA.textContent = String(r.ga || 0);
       const tdGD = document.createElement('td'); tdGD.textContent = String(gd);
@@ -1115,8 +1103,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
         if(expanded){ renderLiveScore(); }
       };
       liveScoreToggle.onclick = ()=> setBody(liveScoreBody.dataset.state !== 'expanded');
-      // default expanded
-      setBody(true);
+      // default collapsed
+      setBody(false);
     }
     // Live Score
     renderLiveScore();

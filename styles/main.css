@@ -199,14 +199,6 @@ tbody tr:last-child{ border-bottom:none; }
   font-weight: 800;
   margin-left: 4px;
 }
-.live-score-delta-win{
-  color: var(--accent-2);
-  font-weight: 800;
-}
-.live-score-delta-draw{
-  color: #ea580c;
-  font-weight: 800;
-}
 .live-report-line strong{ font-weight:800; }
 .team-pill{ display:inline-flex; align-items:center; gap:8px; padding:4px 8px; border-radius:999px; border:1px solid #e5e7eb; background:#fff; align-self:flex-start }
 .team-pill .pill-swatch{ width:14px; height:14px; border-radius:50%; border:1px solid rgba(0,0,0,.15); display:inline-block }
