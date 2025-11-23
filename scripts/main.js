@@ -924,6 +924,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const saveBtn = document.getElementById('modalSave');
     const whatIf = document.getElementById('modalWhatIf');
     const whatIfBody = document.getElementById('whatIfBody');
+    const tabCurrent = document.getElementById('whatIfCurrent');
     const tabA = document.getElementById('whatIfA');
     const tabB = document.getElementById('whatIfB');
     const tabDraw = document.getElementById('whatIfDraw');
@@ -988,13 +989,14 @@ let modalCtx = null; // { matchId, aId, bId, round }
     return Array.from(map.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
   }
 
-    function renderWhatIf(outcome){
+  function renderWhatIf(outcome){
     if(!whatIf || !whatIfBody) return;
     whatIf.style.display = '';
-    const map = buildStandingsMap();
-    if(!map || map.size === 0){ whatIf.style.display='none'; return; }
+    const base = buildStandingsMap();
+    if(!base || base.size === 0){ whatIfBody.style.display='none'; whatIfBody.innerHTML=''; return; }
+    const map = new Map(Array.from(base.entries()).map(([id, rec])=> [id, { ...rec }]));
     const aTeam = map.get(a.id); const bTeam = map.get(b.id);
-    if(!aTeam || !bTeam){ whatIf.style.display='none'; return; }
+    if(!aTeam || !bTeam){ whatIfBody.style.display='none'; return; }
     let ga = parseInt(aInput.value || '0', 10);
     let gb = parseInt(bInput.value || '0', 10);
     if(!Number.isFinite(ga)) ga = 0;
@@ -1019,11 +1021,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
       aTeam.gf += g; aTeam.ga += g;
       bTeam.gf += g; bTeam.ga += g;
       aTeam.pts += 1; bTeam.pts += 1;
-    } else {
-      whatIfBody.style.display = 'none';
-      whatIfBody.innerHTML = '';
-      return;
-    }
+    } // outcome 'current' means no change
 
     const rows = sortRows(map);
     whatIfBody.innerHTML = '';
@@ -1080,23 +1078,25 @@ let modalCtx = null; // { matchId, aId, bId, round }
     bMinus.onclick = ()=> step(bInput, -1);
     bPlus.onclick = ()=> step(bInput, +1);
     // What-if tabs
-    if(whatIf && whatIfBody && tabA && tabB && tabDraw){
+    if(whatIf && whatIfBody && tabCurrent && tabA && tabB && tabDraw){
       whatIf.style.display = '';
       tabA.textContent = `If ${a.name} wins`;
       tabB.textContent = `If ${b.name} wins`;
       tabDraw.textContent = 'If draw';
+      tabCurrent.textContent = 'Current standings';
       function setActive(which){
         activeWhatIf = which;
-        [tabA, tabB, tabDraw].forEach(btn=>{
-          const on = (btn === tabA && which==='a') || (btn===tabB && which==='b') || (btn===tabDraw && which==='draw');
+        [tabCurrent, tabA, tabB, tabDraw].forEach(btn=>{
+          const on = (btn === tabCurrent && which==='current') || (btn === tabA && which==='a') || (btn===tabB && which==='b') || (btn===tabDraw && which==='draw');
           btn.setAttribute('aria-selected', on ? 'true' : 'false');
         });
-        if(which){ renderWhatIf(which); } else { whatIfBody.style.display='none'; whatIfBody.innerHTML=''; }
+        if(which){ renderWhatIf(which === 'current' ? null : which); } else { whatIfBody.style.display='none'; whatIfBody.innerHTML=''; }
       }
+      tabCurrent.onclick = ()=> setActive('current');
       tabA.onclick = ()=> setActive('a');
       tabB.onclick = ()=> setActive('b');
       tabDraw.onclick = ()=> setActive('draw');
-      setActive(null); // start collapsed
+      setActive('current');
     }
 
   // ----- Per-player scorers -----
