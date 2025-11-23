@@ -168,8 +168,8 @@ tbody tr:last-child{ border-bottom:none; }
   font-weight:800;
   letter-spacing:.3px;
   color:#0f172a;
-  background:rgba(37,99,235,0.12);
-  border:1px solid rgba(37,99,235,0.26);
+  background:rgba(17,24,39,0.08);
+  border:1px solid rgba(17,24,39,0.18);
 }
 .live-report-line strong{ font-weight:800; }
 .team-pill{ display:inline-flex; align-items:center; gap:8px; padding:4px 8px; border-radius:999px; border:1px solid #e5e7eb; background:#fff; align-self:flex-start }

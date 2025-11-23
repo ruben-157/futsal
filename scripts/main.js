@@ -1055,9 +1055,10 @@ let modalCtx = null; // { matchId, aId, bId, round }
         [msgA, msgB].forEach((item)=>{
           if(!item || !item.text) return;
           const color = item.color || '#2563eb';
-          const line = `<span class="live-badge" style="background:${color}1a; border-color:${color}33">${item.name}</span> ${item.text}`;
-          parts.push(line);
-        });
+        // Badge color matches team pill color from matches overview
+        const line = `<span class="live-badge" style="background:${color}; color:#fff; border-color:${color}">${item.name}</span> ${item.text}`;
+        parts.push(line);
+      });
         liveReportText.innerHTML = parts.join('<br>');
       }
     }
