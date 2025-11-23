@@ -367,19 +367,10 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   #matchesSection .vs{ align-self:center; color:var(--muted); font-weight:800; letter-spacing:.2px }
 
   /* Leaderboard: fixed, right-aligned numeric columns */
-  #leaderboardSection table{ table-layout:fixed }
-  #leaderboardSection th:nth-child(1){ width:50% }
-  #leaderboardSection th:nth-child(2),
-  #leaderboardSection th:nth-child(3),
-  #leaderboardSection th:nth-child(4),
-  #leaderboardSection th:nth-child(5),
-  #leaderboardSection th:nth-child(6){ width:88px; text-align:right }
-#leaderboardSection td:nth-child(2),
-#leaderboardSection td:nth-child(3),
-#leaderboardSection td:nth-child(4),
-#leaderboardSection td:nth-child(5),
-#leaderboardSection td:nth-child(6){ text-align:right }
-  #leaderboardSection .table-wrap{ overflow:visible; }
+  #leaderboardSection table{ table-layout:auto }
+  #leaderboardSection th:nth-child(n+2),
+  #leaderboardSection td:nth-child(n+2){ text-align:right }
+  #leaderboardSection .table-wrap{ overflow:auto; }
 
   /* All-Time: fixed layout, numeric columns right-aligned */
   #allTimeSection table{ table-layout:fixed }

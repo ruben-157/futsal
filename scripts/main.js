@@ -628,7 +628,7 @@ function renderLeaderboard(){
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   const table = document.createElement('table');
-  table.className = 'alltime-table wide-table';
+  table.className = 'alltime-table';
   table.setAttribute('aria-label','Tournament leaderboard');
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th style="width:50%">Team</th><th>Played</th><th>Points</th><th>GS</th><th>GA</th><th>GD</th></tr>';
