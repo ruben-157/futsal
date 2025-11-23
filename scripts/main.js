@@ -988,8 +988,10 @@ let modalCtx = null; // { matchId, aId, bId, round }
   function renderLiveScore(){
     if(!liveScore || !liveScoreBody) return;
     liveScore.style.display = '';
-    const map = buildStandingsMap();
-    if(!map || map.size === 0){ liveScoreBody.style.display='none'; liveScoreBody.innerHTML=''; return; }
+    const baseMap = buildStandingsMap();
+    if(!baseMap || baseMap.size === 0){ liveScoreBody.style.display='none'; liveScoreBody.innerHTML=''; return; }
+    // Clone base map so we can mutate for the live projection
+    const map = new Map(Array.from(baseMap.entries()).map(([id, rec])=> [id, { ...rec }]));
     const aTeam = map.get(a.id); const bTeam = map.get(b.id);
     if(!aTeam || !bTeam){ liveScoreBody.style.display='none'; return; }
     let ga = parseInt(aInput.value || '0', 10);
@@ -997,34 +999,56 @@ let modalCtx = null; // { matchId, aId, bId, round }
     if(!Number.isFinite(ga)) ga = 0;
     if(!Number.isFinite(gb)) gb = 0;
     ga = Math.max(0, ga); gb = Math.max(0, gb);
+    // Capture base points before live delta
+    const basePtsA = aTeam.pts;
+    const basePtsB = bTeam.pts;
+    let deltaA = 0, deltaB = 0;
+    if(ga > gb){ deltaA = 3; }
+    else if(gb > ga){ deltaB = 3; }
+    else { deltaA = 1; deltaB = 1; }
     // Apply current in-modal score as if finalized
     aTeam.played++; bTeam.played++;
     aTeam.gf += ga; aTeam.ga += gb;
     bTeam.gf += gb; bTeam.ga += ga;
-    if(ga > gb){ aTeam.pts += 3; }
-    else if(gb > ga){ bTeam.pts += 3; }
-    else { aTeam.pts += 1; bTeam.pts += 1; }
+    aTeam.pts += deltaA;
+    bTeam.pts += deltaB;
 
     const rows = sortRows(map);
     liveScoreBody.innerHTML = '';
     if(!rows.length){ liveScoreBody.style.display='none'; return; }
     const table = document.createElement('table'); table.className = 'live-score-table';
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th style="width:50%">Team</th><th>Played</th><th>Points</th><th>GS</th><th>GA</th><th>GD</th></tr>';
+    thead.innerHTML = '<tr><th>#</th><th style="width:42%">Team</th><th>Played</th><th>Points</th><th>GS</th><th>GA</th><th>GD</th></tr>';
     const tbody = document.createElement('tbody');
-    rows.forEach(r=>{
+    rows.forEach((r, idx)=>{
       const tr = document.createElement('tr');
       const gd = (r.gf - (r.ga || 0));
+      const tdRank = document.createElement('td'); tdRank.textContent = String(idx+1);
       const tdTeam = document.createElement('td'); tdTeam.textContent = r.team.name;
       const tdPlayed = document.createElement('td'); tdPlayed.textContent = String(r.played);
-      const tdPts = document.createElement('td'); tdPts.textContent = String(r.pts);
+      const tdPts = document.createElement('td');
+      const isA = r.team.id === a.id;
+      const isB = r.team.id === b.id;
+      const basePts = isA ? basePtsA : isB ? basePtsB : r.pts; // for others, pts already include base only
+      const delta = isA ? deltaA : isB ? deltaB : 0;
+      if(delta > 0){
+        const spanBase = document.createElement('span'); spanBase.textContent = String(basePts);
+        const spanPlus = document.createElement('span');
+        spanPlus.textContent = ` + ${delta}`;
+        spanPlus.className = delta === 3 ? 'live-score-delta-win' : 'live-score-delta-draw';
+        tdPts.appendChild(spanBase);
+        tdPts.appendChild(document.createTextNode(' '));
+        tdPts.appendChild(spanPlus);
+      } else {
+        tdPts.textContent = String(r.pts);
+      }
       const tdGS = document.createElement('td'); tdGS.textContent = String(r.gf);
       const tdGA = document.createElement('td'); tdGA.textContent = String(r.ga || 0);
       const tdGD = document.createElement('td'); tdGD.textContent = String(gd);
       if(r.team.id === a.id || r.team.id === b.id || rows[0].team.id === r.team.id){
-        [tdTeam, tdPlayed, tdPts, tdGS, tdGA, tdGD].forEach(td=> td.classList.add('live-score-highlight'));
+        [tdRank, tdTeam, tdPlayed, tdPts, tdGS, tdGA, tdGD].forEach(td=> td.classList.add('live-score-highlight'));
       }
-      tr.appendChild(tdTeam); tr.appendChild(tdPlayed); tr.appendChild(tdPts); tr.appendChild(tdGS); tr.appendChild(tdGA); tr.appendChild(tdGD);
+      tr.appendChild(tdRank); tr.appendChild(tdTeam); tr.appendChild(tdPlayed); tr.appendChild(tdPts); tr.appendChild(tdGS); tr.appendChild(tdGA); tr.appendChild(tdGD);
       tbody.appendChild(tr);
     });
     table.appendChild(thead); table.appendChild(tbody);
