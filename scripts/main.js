@@ -908,25 +908,26 @@ function updateGenError(msg){
 
 // ----- Modal: Set Result -----
 let modalCtx = null; // { matchId, aId, bId, round }
-function openResultModal({ matchId, a, b, round }){
-  modalCtx = { matchId, aId: a.id, bId: b.id, round };
-  const overlay = document.getElementById('overlay');
-  const modal = document.getElementById('resultModal');
-  const aName = document.getElementById('modalTeamAName');
-  const bName = document.getElementById('modalTeamBName');
-  const aInput = document.getElementById('modalTeamAScore');
-  const bInput = document.getElementById('modalTeamBScore');
-  const aMinus = document.getElementById('modalATeamMinus');
-  const aPlus = document.getElementById('modalATeamPlus');
-  const bMinus = document.getElementById('modalBTeamMinus');
-  const bPlus = document.getElementById('modalBTeamPlus');
-  const label = document.getElementById('modalMatchLabel');
-  const saveBtn = document.getElementById('modalSave');
+  function openResultModal({ matchId, a, b, round }){
+    modalCtx = { matchId, aId: a.id, bId: b.id, round };
+    const overlay = document.getElementById('overlay');
+    const modal = document.getElementById('resultModal');
+    const aName = document.getElementById('modalTeamAName');
+    const bName = document.getElementById('modalTeamBName');
+    const aInput = document.getElementById('modalTeamAScore');
+    const bInput = document.getElementById('modalTeamBScore');
+    const aMinus = document.getElementById('modalATeamMinus');
+    const aPlus = document.getElementById('modalATeamPlus');
+    const bMinus = document.getElementById('modalBTeamMinus');
+    const bPlus = document.getElementById('modalBTeamPlus');
+    const label = document.getElementById('modalMatchLabel');
+    const saveBtn = document.getElementById('modalSave');
+    const liveReport = document.getElementById('modalLiveReport');
 
-  // Render team pills in modal
-  aName.textContent = '';
-  bName.textContent = '';
-  const pillA = document.createElement('span');
+    // Render team pills in modal
+    aName.textContent = '';
+    bName.textContent = '';
+    const pillA = document.createElement('span');
   pillA.className = 'team-pill';
   pillA.style.borderColor = a.color;
   pillA.appendChild(document.createTextNode(a.name));
@@ -949,17 +950,87 @@ function openResultModal({ matchId, a, b, round }){
   const existing = state.results[matchId];
   // Prefill totals from draft if present, else from final, else 0
   const initialA = (existing && (existing.gaDraft != null)) ? existing.gaDraft : (existing && (existing.ga != null) ? existing.ga : 0);
-  const initialB = (existing && (existing.gbDraft != null)) ? existing.gbDraft : (existing && (existing.gb != null) ? existing.gb : 0);
-  aInput.value = String(initialA);
-  bInput.value = String(initialB);
+    const initialB = (existing && (existing.gbDraft != null)) ? existing.gbDraft : (existing && (existing.gb != null) ? existing.gb : 0);
+    aInput.value = String(initialA);
+    bInput.value = String(initialB);
 
-  function canSave(){ return aInput.value !== '' && bInput.value !== ''; }
-  saveBtn.disabled = !canSave();
-  const onInput = ()=>{ saveBtn.disabled = !canSave(); };
-  aInput.oninput = onInput; bInput.oninput = onInput;
+    // Build mini-standings for Live Report (excludes this match to avoid double counting)
+    function buildStandingsMap(){
+      const map = new Map(state.teams.map(t => [t.id, { team: t, pts: 0, gf: 0, ga: 0, played: 0 }]));
+      for(const [id, rec] of Object.entries(state.results || {})){
+        if(!rec || rec.ga == null || rec.gb == null) continue;
+        if(id === matchId) continue;
+        const ta = map.get(rec.a); const tb = map.get(rec.b);
+        if(!ta || !tb) continue;
+        ta.played++; tb.played++;
+        ta.gf += rec.ga; tb.gf += rec.gb;
+        ta.ga += rec.gb; tb.ga += rec.ga;
+        if(rec.ga > rec.gb){ ta.pts += 3; }
+        else if(rec.gb > rec.ga){ tb.pts += 3; }
+        else { ta.pts += 1; tb.pts += 1; }
+      }
+      return map;
+    }
+    function sortRows(map){
+      return Array.from(map.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
+    }
+    function simulateWin(winnerId, loserId, rawWinGoals, rawLoseGoals){
+      const map = buildStandingsMap();
+      const win = map.get(winnerId);
+      const lose = map.get(loserId);
+      if(!win || !lose) return { wouldLead:false, pts:0 };
+      const parsedWin = parseInt(rawWinGoals, 10);
+      const parsedLose = parseInt(rawLoseGoals, 10);
+      let gWin = Number.isFinite(parsedWin) ? parsedWin : 1;
+      let gLose = Number.isFinite(parsedLose) ? parsedLose : 0;
+      gWin = Math.max(0, gWin); gLose = Math.max(0, gLose);
+      if(gWin <= gLose){ gWin = gLose + 1; }
+      win.played++; lose.played++;
+      win.gf += gWin; win.ga += gLose;
+      lose.gf += gLose; lose.ga += gWin;
+      win.pts += 3;
+      const rows = sortRows(map);
+      const leaderId = rows.length ? rows[0].team.id : null;
+      return { wouldLead: leaderId === winnerId, pts: win.pts };
+    }
+    function updateLiveReport(){
+      if(!liveReport) return;
+      liveReport.style.display = 'none';
+      liveReport.textContent = '';
+      const baseRows = sortRows(buildStandingsMap());
+      const currentLeaderId = baseRows.length ? baseRows[0].team.id : null;
+      const gaDraft = parseInt(aInput.value || '0', 10);
+      const gbDraft = parseInt(bInput.value || '0', 10);
+      const aOutcome = simulateWin(a.id, b.id, gaDraft, gbDraft);
+      const bOutcome = simulateWin(b.id, a.id, gbDraft, gaDraft);
+      let msg = '';
+      let accent = null;
+      if(aOutcome.wouldLead && currentLeaderId !== a.id && (!bOutcome.wouldLead || currentLeaderId === b.id)){
+        msg = `Live Report: If ${a.name} wins, it will take the lead with ${aOutcome.pts} points.`;
+        accent = a.color;
+      } else if(bOutcome.wouldLead && currentLeaderId !== b.id){
+        msg = `Live Report: If ${b.name} wins, it will take the lead with ${bOutcome.pts} points.`;
+        accent = b.color;
+      } else if(aOutcome.wouldLead && bOutcome.wouldLead){
+        const ptsText = (aOutcome.pts === bOutcome.pts) ? `${aOutcome.pts} points` : `${Math.min(aOutcome.pts,bOutcome.pts)}–${Math.max(aOutcome.pts,bOutcome.pts)} points`;
+        msg = `Live Report: Winner takes the lead with ${ptsText}.`;
+        accent = '#0f172a';
+      }
+      if(msg){
+        liveReport.textContent = msg;
+        liveReport.style.display = '';
+        liveReport.style.borderColor = accent ? `${accent}33` : 'rgba(17,24,39,0.12)';
+        liveReport.style.boxShadow = accent ? `0 0 0 1px ${accent}1a` : '';
+      }
+    }
 
-  overlay.hidden = false; modal.hidden = false;
-  setTimeout(()=> aInput.focus(), 0);
+    function canSave(){ return aInput.value !== '' && bInput.value !== ''; }
+    saveBtn.disabled = !canSave();
+    const onInput = ()=>{ saveBtn.disabled = !canSave(); updateLiveReport(); };
+    aInput.oninput = onInput; bInput.oninput = onInput;
+
+    overlay.hidden = false; modal.hidden = false;
+    setTimeout(()=> aInput.focus(), 0);
 
   function escHandler(e){ if(e.key === 'Escape'){ closeResultModal(); } }
   document.addEventListener('keydown', escHandler, { once: true });
@@ -973,10 +1044,11 @@ function openResultModal({ matchId, a, b, round }){
     input.value = String(v);
     onInput();
   }
-  aMinus.onclick = ()=> step(aInput, -1);
-  aPlus.onclick = ()=> step(aInput, +1);
-  bMinus.onclick = ()=> step(bInput, -1);
-  bPlus.onclick = ()=> step(bInput, +1);
+    aMinus.onclick = ()=> step(aInput, -1);
+    aPlus.onclick = ()=> step(aInput, +1);
+    bMinus.onclick = ()=> step(bInput, -1);
+    bPlus.onclick = ()=> step(bInput, +1);
+    updateLiveReport();
 
   // ----- Per-player scorers -----
   const scorersWrap = document.getElementById('modalScorers');
