@@ -96,8 +96,13 @@
     </div>
     <div class="modal-body">
       <div id="modalMatchLabel" class="notice" style="margin-bottom:8px"></div>
-      <div id="modalLiveReport" class="notice live-report" style="display:none">
-        <div id="modalLiveReportText" class="live-report-line"></div>
+      <div id="modalWhatIf" class="notice whatif" style="display:none">
+        <div class="whatif-tabs" role="tablist" aria-label="What-if outcomes">
+          <button id="whatIfA" class="whatif-tab" type="button" role="tab" aria-selected="false"></button>
+          <button id="whatIfDraw" class="whatif-tab" type="button" role="tab" aria-selected="false">If draw</button>
+          <button id="whatIfB" class="whatif-tab" type="button" role="tab" aria-selected="false"></button>
+        </div>
+        <div id="whatIfBody" class="whatif-body"></div>
       </div>
       <div class="modal-fields">
         <label class="score-row">

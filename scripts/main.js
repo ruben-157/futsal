@@ -922,8 +922,11 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const bPlus = document.getElementById('modalBTeamPlus');
     const label = document.getElementById('modalMatchLabel');
     const saveBtn = document.getElementById('modalSave');
-    const liveReport = document.getElementById('modalLiveReport');
-    const liveReportText = document.getElementById('modalLiveReportText');
+    const whatIf = document.getElementById('modalWhatIf');
+    const whatIfBody = document.getElementById('whatIfBody');
+    const tabA = document.getElementById('whatIfA');
+    const tabB = document.getElementById('whatIfB');
+    const tabDraw = document.getElementById('whatIfDraw');
 
     // Render team pills in modal
     aName.textContent = '';
@@ -957,108 +960,103 @@ let modalCtx = null; // { matchId, aId, bId, round }
     bInput.value = String(initialB);
 
     // Build mini-standings for Live Report (excludes this match to avoid double counting)
-    function playedMatchesCountExcludingCurrent(){
-      let count = 0;
-      for(const [id, rec] of Object.entries(state.results || {})){
-        if(id === matchId) continue;
-        if(rec && rec.ga != null && rec.gb != null) count++;
-      }
-      return count;
+  function playedMatchesCountExcludingCurrent(){
+    let count = 0;
+    for(const [id, rec] of Object.entries(state.results || {})){
+      if(id === matchId) continue;
+      if(rec && rec.ga != null && rec.gb != null) count++;
     }
-    function buildStandingsMap(){
-      const map = new Map(state.teams.map(t => [t.id, { team: t, pts: 0, gf: 0, ga: 0, played: 0 }]));
-      for(const [id, rec] of Object.entries(state.results || {})){
-        if(!rec || rec.ga == null || rec.gb == null) continue;
-        if(id === matchId) continue;
-        const ta = map.get(rec.a); const tb = map.get(rec.b);
-        if(!ta || !tb) continue;
-        ta.played++; tb.played++;
-        ta.gf += rec.ga; tb.gf += rec.gb;
-        ta.ga += rec.gb; tb.ga += rec.ga;
-        if(rec.ga > rec.gb){ ta.pts += 3; }
-        else if(rec.gb > rec.ga){ tb.pts += 3; }
-        else { ta.pts += 1; tb.pts += 1; }
-      }
-      return map;
+    return count;
+  }
+  function buildStandingsMap(){
+    const map = new Map(state.teams.map(t => [t.id, { team: t, pts: 0, gf: 0, ga: 0, played: 0 }]));
+    for(const [id, rec] of Object.entries(state.results || {})){
+      if(!rec || rec.ga == null || rec.gb == null) continue;
+      if(id === matchId) continue;
+      const ta = map.get(rec.a); const tb = map.get(rec.b);
+      if(!ta || !tb) continue;
+      ta.played++; tb.played++;
+      ta.gf += rec.ga; tb.gf += rec.gb;
+      ta.ga += rec.gb; tb.ga += rec.ga;
+      if(rec.ga > rec.gb){ ta.pts += 3; }
+      else if(rec.gb > rec.ga){ tb.pts += 3; }
+      else { ta.pts += 1; tb.pts += 1; }
     }
-    function sortRows(map){
-      return Array.from(map.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
-    }
-    function simulateWin(winnerId, loserId, rawWinGoals, rawLoseGoals){
-      const map = buildStandingsMap();
-      const win = map.get(winnerId);
-      const lose = map.get(loserId);
-      if(!win || !lose) return { wouldLead:false, pts:0, rank:null, rows:[] };
-      const parsedWin = parseInt(rawWinGoals, 10);
-      const parsedLose = parseInt(rawLoseGoals, 10);
-      let gWin = Number.isFinite(parsedWin) ? parsedWin : 1;
-      let gLose = Number.isFinite(parsedLose) ? parsedLose : 0;
-      gWin = Math.max(0, gWin); gLose = Math.max(0, gLose);
-      if(gWin <= gLose){ gWin = gLose + 1; }
-      win.played++; lose.played++;
-      win.gf += gWin; win.ga += gLose;
-      lose.gf += gLose; lose.ga += gWin;
-      win.pts += 3;
-      const rows = sortRows(map);
-      const leaderId = rows.length ? rows[0].team.id : null;
-      const rank = rows.findIndex(r => r.team.id === winnerId);
-      return { wouldLead: leaderId === winnerId, pts: win.pts, rank: rank >=0 ? rank+1 : null, rows };
-    }
-    function updateLiveReport(){
-      if(!liveReport) return;
-      liveReport.style.display = 'none';
-      if(liveReportText) liveReportText.textContent = '';
-      if(playedMatchesCountExcludingCurrent() === 0) return; // hide on first match
-      const baseRows = sortRows(buildStandingsMap());
-      const gaDraft = parseInt(aInput.value || '0', 10);
-      const gbDraft = parseInt(bInput.value || '0', 10);
-      const aOutcome = simulateWin(a.id, b.id, gaDraft, gbDraft);
-      const bOutcome = simulateWin(b.id, a.id, gbDraft, gaDraft);
-      let msgA = '';
-      let msgB = '';
+    return map;
+  }
+  function sortRows(map){
+    return Array.from(map.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
+  }
 
-      function ordinal(n){
-        const s = ['th','st','nd','rd'];
-        const v = n % 100;
-        return n + (s[(v-20)%10] || s[v] || s[0]);
-      }
-      function formatLine(team, outcome){
-        if(!outcome || !outcome.rows || !outcome.rows.length) return `If ${team.name} wins: standings will update.`;
-        const leader = outcome.rows[0];
-        const leaderName = leader?.team?.name || 'the leader';
-        const rank = outcome.rank || (outcome.rows.findIndex(r => r.team.id === team.id) + 1) || null;
-        const pts = outcome.pts;
-        let detail = '';
-        if(rank === 1){
-          const runner = outcome.rows[1];
-          if(runner){
-            const gap = pts - runner.pts;
-            detail = gap > 0 ? ` (+${gap} on ${runner.team.name})` : ` (level with ${runner.team.name}, ahead on GD)`;
-          }
-        } else if(rank === 2){
-          const gap = Math.max(0, leader.pts - pts);
-          detail = gap === 0 ? ` • level with ${leaderName} (GD tiebreak)` : ` • ${gap} off ${leaderName}`;
-        } else {
-          const gap = Math.max(0, leader.pts - pts);
-          detail = gap === 0 ? ` • level with ${leaderName} (GD tiebreak)` : ` • ${gap} off ${leaderName}`;
-        }
-        const rankLabel = rank ? ordinal(rank) : 'higher';
-        return `If ${team.name} wins: ${rankLabel} on ${pts} pts${detail}`;
-      }
+  function renderWhatIf(outcome){
+    if(!whatIf || !whatIfBody) return;
+    if(playedMatchesCountExcludingCurrent() === 0){ whatIf.style.display = 'none'; return; }
+    const map = buildStandingsMap();
+    if(!map || map.size === 0){ whatIf.style.display='none'; return; }
+    const aTeam = map.get(a.id); const bTeam = map.get(b.id);
+    if(!aTeam || !bTeam){ whatIf.style.display='none'; return; }
+    let ga = parseInt(aInput.value || '0', 10);
+    let gb = parseInt(bInput.value || '0', 10);
+    if(!Number.isFinite(ga)) ga = 0;
+    if(!Number.isFinite(gb)) gb = 0;
+    ga = Math.max(0, ga); gb = Math.max(0, gb);
 
-      msgA = formatLine(a, aOutcome);
-      msgB = formatLine(b, bOutcome);
-
-      if((msgA || msgB) && liveReportText){
-        liveReport.style.display = '';
-        const parts = [msgA, msgB].filter(Boolean);
-        liveReportText.innerHTML = parts.join('<br>');
-      }
+    if(outcome === 'a'){
+      if(ga <= gb) ga = gb + 1;
+      aTeam.played++; bTeam.played++;
+      aTeam.gf += ga; aTeam.ga += gb;
+      bTeam.gf += gb; bTeam.ga += ga;
+      aTeam.pts += 3;
+    } else if(outcome === 'b'){
+      if(gb <= ga) gb = ga + 1;
+      aTeam.played++; bTeam.played++;
+      aTeam.gf += ga; aTeam.ga += gb;
+      bTeam.gf += gb; bTeam.ga += ga;
+      bTeam.pts += 3;
+    } else if(outcome === 'draw'){
+      const g = Math.max(ga, gb);
+      aTeam.played++; bTeam.played++;
+      aTeam.gf += g; aTeam.ga += g;
+      bTeam.gf += g; bTeam.ga += g;
+      aTeam.pts += 1; bTeam.pts += 1;
+    } else {
+      whatIfBody.style.display = 'none';
+      return;
     }
+
+    const rows = sortRows(map);
+    whatIfBody.innerHTML = '';
+    if(!rows.length){ whatIfBody.style.display='none'; return; }
+    const table = document.createElement('table'); table.className = 'whatif-table';
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th>Team</th><th>Pts</th><th>GD</th></tr>';
+    const tbody = document.createElement('tbody');
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      const gd = (r.gf - (r.ga || 0));
+      const tdTeam = document.createElement('td'); tdTeam.textContent = r.team.name;
+      const tdPts = document.createElement('td'); tdPts.textContent = String(r.pts);
+      const tdGd = document.createElement('td'); tdGd.textContent = String(gd);
+      if(r.team.id === a.id || r.team.id === b.id || rows[0].team.id === r.team.id){
+        tdTeam.classList.add('whatif-highlight');
+        tdPts.classList.add('whatif-highlight');
+        tdGd.classList.add('whatif-highlight');
+      }
+      tr.appendChild(tdTeam); tr.appendChild(tdPts); tr.appendChild(tdGd);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(thead); table.appendChild(tbody);
+    whatIfBody.appendChild(table);
+    whatIfBody.style.display = '';
+  }
 
     function canSave(){ return aInput.value !== '' && bInput.value !== ''; }
     saveBtn.disabled = !canSave();
-    const onInput = ()=>{ saveBtn.disabled = !canSave(); };
+    let activeWhatIf = null;
+    const onInput = ()=>{
+      saveBtn.disabled = !canSave();
+      if(activeWhatIf){ renderWhatIf(activeWhatIf); }
+    };
     aInput.oninput = onInput; bInput.oninput = onInput;
 
     overlay.hidden = false; modal.hidden = false;
@@ -1080,6 +1078,26 @@ let modalCtx = null; // { matchId, aId, bId, round }
     aPlus.onclick = ()=> step(aInput, +1);
     bMinus.onclick = ()=> step(bInput, -1);
     bPlus.onclick = ()=> step(bInput, +1);
+    // What-if tabs
+    if(whatIf && whatIfBody && tabA && tabB && tabDraw){
+      const hasHistory = playedMatchesCountExcludingCurrent() > 0;
+      whatIf.style.display = hasHistory ? '' : 'none';
+      tabA.textContent = `If ${a.name} wins`;
+      tabB.textContent = `If ${b.name} wins`;
+      tabDraw.textContent = 'If draw';
+      function setActive(which){
+        activeWhatIf = which;
+        [tabA, tabB, tabDraw].forEach(btn=>{
+          const on = (btn === tabA && which==='a') || (btn===tabB && which==='b') || (btn===tabDraw && which==='draw');
+          btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        if(which){ renderWhatIf(which); } else { whatIfBody.style.display='none'; }
+      }
+      tabA.onclick = ()=> setActive('a');
+      tabB.onclick = ()=> setActive('b');
+      tabDraw.onclick = ()=> setActive('draw');
+      setActive(null); // start collapsed
+    }
     updateLiveReport();
 
   // ----- Per-player scorers -----
