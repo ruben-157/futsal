@@ -922,12 +922,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const bPlus = document.getElementById('modalBTeamPlus');
     const label = document.getElementById('modalMatchLabel');
     const saveBtn = document.getElementById('modalSave');
-    const whatIf = document.getElementById('modalWhatIf');
-    const whatIfBody = document.getElementById('whatIfBody');
-    const tabCurrent = document.getElementById('whatIfCurrent');
-    const tabA = document.getElementById('whatIfA');
-    const tabB = document.getElementById('whatIfB');
-    const tabDraw = document.getElementById('whatIfDraw');
+    const liveScore = document.getElementById('modalLiveScore');
+    const liveScoreBody = document.getElementById('liveScoreBody');
 
     // Render team pills in modal
     aName.textContent = '';
@@ -989,64 +985,51 @@ let modalCtx = null; // { matchId, aId, bId, round }
     return Array.from(map.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
   }
 
-  function renderWhatIf(outcome){
-    if(!whatIf || !whatIfBody) return;
-    whatIf.style.display = '';
-    const base = buildStandingsMap();
-    if(!base || base.size === 0){ whatIfBody.style.display='none'; whatIfBody.innerHTML=''; return; }
-    const map = new Map(Array.from(base.entries()).map(([id, rec])=> [id, { ...rec }]));
+  function renderLiveScore(){
+    if(!liveScore || !liveScoreBody) return;
+    liveScore.style.display = '';
+    const map = buildStandingsMap();
+    if(!map || map.size === 0){ liveScoreBody.style.display='none'; liveScoreBody.innerHTML=''; return; }
     const aTeam = map.get(a.id); const bTeam = map.get(b.id);
-    if(!aTeam || !bTeam){ whatIfBody.style.display='none'; return; }
+    if(!aTeam || !bTeam){ liveScoreBody.style.display='none'; return; }
     let ga = parseInt(aInput.value || '0', 10);
     let gb = parseInt(bInput.value || '0', 10);
     if(!Number.isFinite(ga)) ga = 0;
     if(!Number.isFinite(gb)) gb = 0;
     ga = Math.max(0, ga); gb = Math.max(0, gb);
-
-    if(outcome === 'a'){
-      if(ga <= gb) ga = gb + 1;
-      aTeam.played++; bTeam.played++;
-      aTeam.gf += ga; aTeam.ga += gb;
-      bTeam.gf += gb; bTeam.ga += ga;
-      aTeam.pts += 3;
-    } else if(outcome === 'b'){
-      if(gb <= ga) gb = ga + 1;
-      aTeam.played++; bTeam.played++;
-      aTeam.gf += ga; aTeam.ga += gb;
-      bTeam.gf += gb; bTeam.ga += ga;
-      bTeam.pts += 3;
-    } else if(outcome === 'draw'){
-      const g = Math.max(ga, gb);
-      aTeam.played++; bTeam.played++;
-      aTeam.gf += g; aTeam.ga += g;
-      bTeam.gf += g; bTeam.ga += g;
-      aTeam.pts += 1; bTeam.pts += 1;
-    } // 'current' or null: no adjustments
+    // Apply current in-modal score as if finalized
+    aTeam.played++; bTeam.played++;
+    aTeam.gf += ga; aTeam.ga += gb;
+    bTeam.gf += gb; bTeam.ga += ga;
+    if(ga > gb){ aTeam.pts += 3; }
+    else if(gb > ga){ bTeam.pts += 3; }
+    else { aTeam.pts += 1; bTeam.pts += 1; }
 
     const rows = sortRows(map);
-    whatIfBody.innerHTML = '';
-    if(!rows.length){ whatIfBody.style.display='none'; return; }
-    const table = document.createElement('table'); table.className = 'whatif-table';
+    liveScoreBody.innerHTML = '';
+    if(!rows.length){ liveScoreBody.style.display='none'; return; }
+    const table = document.createElement('table'); table.className = 'live-score-table';
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th>Team</th><th>Pts</th><th>GD</th></tr>';
+    thead.innerHTML = '<tr><th style="width:50%">Team</th><th>Played</th><th>Points</th><th>GS</th><th>GA</th><th>GD</th></tr>';
     const tbody = document.createElement('tbody');
     rows.forEach(r=>{
       const tr = document.createElement('tr');
       const gd = (r.gf - (r.ga || 0));
       const tdTeam = document.createElement('td'); tdTeam.textContent = r.team.name;
+      const tdPlayed = document.createElement('td'); tdPlayed.textContent = String(r.played);
       const tdPts = document.createElement('td'); tdPts.textContent = String(r.pts);
-      const tdGd = document.createElement('td'); tdGd.textContent = String(gd);
+      const tdGS = document.createElement('td'); tdGS.textContent = String(r.gf);
+      const tdGA = document.createElement('td'); tdGA.textContent = String(r.ga || 0);
+      const tdGD = document.createElement('td'); tdGD.textContent = String(gd);
       if(r.team.id === a.id || r.team.id === b.id || rows[0].team.id === r.team.id){
-        tdTeam.classList.add('whatif-highlight');
-        tdPts.classList.add('whatif-highlight');
-        tdGd.classList.add('whatif-highlight');
+        [tdTeam, tdPlayed, tdPts, tdGS, tdGA, tdGD].forEach(td=> td.classList.add('live-score-highlight'));
       }
-      tr.appendChild(tdTeam); tr.appendChild(tdPts); tr.appendChild(tdGd);
+      tr.appendChild(tdTeam); tr.appendChild(tdPlayed); tr.appendChild(tdPts); tr.appendChild(tdGS); tr.appendChild(tdGA); tr.appendChild(tdGD);
       tbody.appendChild(tr);
     });
     table.appendChild(thead); table.appendChild(tbody);
-    whatIfBody.appendChild(table);
-    whatIfBody.style.display = '';
+    liveScoreBody.appendChild(table);
+    liveScoreBody.style.display = '';
   }
 
     function canSave(){ return aInput.value !== '' && bInput.value !== ''; }
@@ -1077,28 +1060,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
     aPlus.onclick = ()=> step(aInput, +1);
     bMinus.onclick = ()=> step(bInput, -1);
     bPlus.onclick = ()=> step(bInput, +1);
-    // What-if tabs
-    if(whatIf && whatIfBody && tabCurrent && tabA && tabB && tabDraw){
-      whatIf.style.display = '';
-       tabA.textContent = `If ${a.name} wins`;
-       tabB.textContent = `If ${b.name} wins`;
-       tabDraw.textContent = 'If draw';
-       tabCurrent.textContent = 'Current standings';
-       function setActive(which){
-         activeWhatIf = which;
-         [tabCurrent, tabA, tabB, tabDraw].forEach(btn=>{
-           const on = (btn === tabCurrent && which==='current') || (btn === tabA && which==='a') || (btn===tabB && which==='b') || (btn===tabDraw && which==='draw');
-           btn.setAttribute('aria-selected', on ? 'true' : 'false');
-          btn.classList.toggle('active', on);
-         });
-        if(which){ renderWhatIf(which === 'current' ? 'current' : which); } else { whatIfBody.style.display='none'; whatIfBody.innerHTML=''; }
-       }
-      tabCurrent.onclick = ()=> setActive('current');
-      tabA.onclick = ()=> setActive('a');
-      tabB.onclick = ()=> setActive('b');
-      tabDraw.onclick = ()=> setActive('draw');
-      setActive('current');
-    }
+    // Live Score
+    renderLiveScore();
 
   // ----- Per-player scorers -----
   const scorersWrap = document.getElementById('modalScorers');

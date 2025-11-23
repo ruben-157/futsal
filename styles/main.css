@@ -121,54 +121,59 @@ tbody tr:last-child{ border-bottom:none; }
 .swatch{width:16px; height:16px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.15)}
 .team-name[contenteditable="true"]{padding:2px 6px; border-radius:6px}
 .team-name[contenteditable="true"]:focus{outline:2px solid var(--focus)}
-.whatif{
+.live-score{
   margin:4px 0 12px 0;
-  padding:0;
-  border-radius:12px;
-  background:#f9fafb;
+  padding:16px 14px 10px 14px;
+  border-radius:14px;
+  background:linear-gradient(120deg, #eef2ff, #f0fdfa);
   color:#111827;
-  border:1px solid #d1d5db;
+  font-weight:600;
+  border:1px solid rgba(17,24,39,0.08);
+  position:relative;
+  box-shadow:0 10px 30px rgba(15,23,42,0.08);
 }
-.whatif-tabs{
-  display:flex;
-  flex-wrap:wrap;
-  border-bottom:1px solid #d1d5db;
-  background:#f1f1f1;
-}
-.whatif-tab{
-  flex:1;
-  padding:12px 10px;
-  border:none;
-  background:inherit;
-  color:#0f172a;
-  font-size:14px;
-  font-weight:700;
-  cursor:pointer;
-  transition:background 0.2s ease;
-}
-.whatif-tab:hover{
-  background:#e5e7eb;
-}
-.whatif-tab.active{
-  background:#ddd;
-}
-.whatif-body{
-  padding:10px;
+.live-score::before{
+  content:'Live Score';
+  position:absolute;
+  top:-12px;
+  left:16px;
+  padding:4px 10px;
+  border-radius:999px;
   background:#fff;
-  display:none;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  color:#111827;
+  border:1px solid rgba(17,24,39,0.08);
+  box-shadow:0 2px 6px rgba(15,23,42,0.08);
 }
-.whatif-table{
+.live-score-body{
+  background:rgba(255,255,255,0.8);
+  border:1px solid rgba(17,24,39,0.06);
+  border-radius:12px;
+  padding:10px;
+  box-shadow:inset 0 1px 2px rgba(15,23,42,0.06);
+}
+.live-score-table{
   width:100%;
   border-collapse:collapse;
 }
-.whatif-table th,
-.whatif-table td{
+.live-score-table th,
+.live-score-table td{
   font-size:12px;
-  padding:6px 4px;
+  padding:6px 6px;
   text-align:left;
 }
-.whatif-table th{ color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
-.whatif-highlight{ font-weight:800; color:#0f172a; }
+.live-score-table th{
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.3px;
+}
+.live-score-highlight{
+  font-weight:800;
+  color:#0f172a;
+}
 .live-report-line strong{ font-weight:800; }
 .team-pill{ display:inline-flex; align-items:center; gap:8px; padding:4px 8px; border-radius:999px; border:1px solid #e5e7eb; background:#fff; align-self:flex-start }
 .team-pill .pill-swatch{ width:14px; height:14px; border-radius:50%; border:1px solid rgba(0,0,0,.15); display:inline-block }
