@@ -1023,7 +1023,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
         return n + (s[(v-20)%10] || s[v] || s[0]);
       }
       function formatLine(team, outcome){
-        if(!outcome || !outcome.rows || !outcome.rows.length) return { text: `If ${team.name} wins: standings will update.`, color: team.color, name: team.name };
+        const badge = `<span class="live-badge" style="background:${team.color}; color:#fff; border-color:${team.color}">${team.name}</span>`;
+        if(!outcome || !outcome.rows || !outcome.rows.length) return `If ${badge} wins: standings will update.`;
         const leader = outcome.rows[0];
         const leaderName = leader?.team?.name || 'the leader';
         const rank = outcome.rank || (outcome.rows.findIndex(r => r.team.id === team.id) + 1) || null;
@@ -1043,7 +1044,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
           detail = gap === 0 ? ` • level with ${leaderName} (GD tiebreak)` : ` • ${gap} off ${leaderName}`;
         }
         const rankLabel = rank ? ordinal(rank) : 'higher';
-        return { text: `If ${team.name} wins: ${rankLabel} on ${pts} pts${detail}`, color: team.color, name: team.name };
+        return `If ${badge} wins: ${rankLabel} on ${pts} pts${detail}`;
       }
 
       msgA = formatLine(a, aOutcome);
@@ -1051,14 +1052,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
 
       if((msgA || msgB) && liveReportText){
         liveReport.style.display = '';
-        const parts = [];
-        [msgA, msgB].forEach((item)=>{
-          if(!item || !item.text) return;
-          const color = item.color || '#2563eb';
-        // Badge color matches team pill color from matches overview
-        const line = `<span class="live-badge" style="background:${color}; color:#fff; border-color:${color}">${item.name}</span> ${item.text}`;
-        parts.push(line);
-      });
+        const parts = [msgA, msgB].filter(Boolean);
         liveReportText.innerHTML = parts.join('<br>');
       }
     }
