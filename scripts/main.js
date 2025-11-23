@@ -924,6 +924,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const saveBtn = document.getElementById('modalSave');
     const liveScore = document.getElementById('modalLiveScore');
     const liveScoreBody = document.getElementById('liveScoreBody');
+    const liveScoreToggle = document.getElementById('liveScoreToggle');
 
     // Render team pills in modal
     aName.textContent = '';
@@ -988,6 +989,11 @@ let modalCtx = null; // { matchId, aId, bId, round }
   function renderLiveScore(){
     if(!liveScore || !liveScoreBody) return;
     liveScore.style.display = '';
+    // If accordion is collapsed, keep data ready but hide body
+    if(liveScoreBody.dataset.state === 'collapsed'){
+      liveScoreBody.innerHTML = '';
+      return;
+    }
     const baseMap = buildStandingsMap();
     if(!baseMap || baseMap.size === 0){ liveScoreBody.style.display='none'; liveScoreBody.innerHTML=''; return; }
     // Base ranking for position deltas
@@ -1100,6 +1106,18 @@ let modalCtx = null; // { matchId, aId, bId, round }
     aPlus.onclick = ()=> step(aInput, +1);
     bMinus.onclick = ()=> step(bInput, -1);
     bPlus.onclick = ()=> step(bInput, +1);
+    if(liveScoreToggle && liveScoreBody){
+      const setBody = (expanded)=>{
+        liveScoreToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        liveScoreBody.style.display = expanded ? '' : 'none';
+        liveScoreBody.dataset.state = expanded ? 'expanded' : 'collapsed';
+        liveScoreToggle.firstElementChild.textContent = expanded ? '▼' : '►';
+        if(expanded){ renderLiveScore(); }
+      };
+      liveScoreToggle.onclick = ()=> setBody(liveScoreBody.dataset.state !== 'expanded');
+      // default expanded
+      setBody(true);
+    }
     // Live Score
     renderLiveScore();
 
