@@ -990,6 +990,9 @@ let modalCtx = null; // { matchId, aId, bId, round }
     liveScore.style.display = '';
     const baseMap = buildStandingsMap();
     if(!baseMap || baseMap.size === 0){ liveScoreBody.style.display='none'; liveScoreBody.innerHTML=''; return; }
+    // Base ranking for position deltas
+    const baseRows = sortRows(baseMap);
+    const baseRanks = new Map(baseRows.map((r, idx)=> [r.team.id, idx+1]));
     // Clone base map so we can mutate for the live projection
     const map = new Map(Array.from(baseMap.entries()).map(([id, rec])=> [id, { ...rec }]));
     const aTeam = map.get(a.id); const bTeam = map.get(b.id);
@@ -1024,7 +1027,21 @@ let modalCtx = null; // { matchId, aId, bId, round }
       const tr = document.createElement('tr');
       const gd = (r.gf - (r.ga || 0));
       const tdRank = document.createElement('td'); tdRank.textContent = String(idx+1);
-      const tdTeam = document.createElement('td'); tdTeam.textContent = r.team.name;
+      const tdTeam = document.createElement('td');
+      tdTeam.textContent = r.team.name;
+      const prevRank = baseRanks.get(r.team.id);
+      const deltaRank = prevRank ? (prevRank - (idx+1)) : 0;
+      if(deltaRank > 0){
+        const up = document.createElement('span');
+        up.className = 'live-score-pos-up';
+        up.textContent = ` +${deltaRank}`;
+        tdTeam.appendChild(up);
+      } else if(deltaRank < 0){
+        const down = document.createElement('span');
+        down.className = 'live-score-pos-down';
+        down.textContent = ` ${deltaRank}`;
+        tdTeam.appendChild(down);
+      }
       const tdPlayed = document.createElement('td'); tdPlayed.textContent = String(r.played);
       const tdPts = document.createElement('td');
       const isA = r.team.id === a.id;
