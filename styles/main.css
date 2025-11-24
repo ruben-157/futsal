@@ -177,13 +177,17 @@ tbody tr:last-child{ border-bottom:none; }
   cursor:pointer;
 }
 .live-score-toggle span:first-child{
-  font-size:12px;
-  letter-spacing:0;
-  display:inline-block;
-  min-width:14px;
-  text-align:center;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:16px;
+  height:16px;
+  font-size:14px;
   line-height:1;
+  letter-spacing:0;
+  text-align:center;
   text-transform:none;
+  flex:0 0 16px;
 }
 .live-dot{
   width:10px;
