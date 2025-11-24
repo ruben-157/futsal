@@ -1225,9 +1225,14 @@ let modalCtx = null; // { matchId, aId, bId, round }
     }
     const namesLabel = leaders.length === 1 ? leaders[0] : leaders.join(' & ');
     const label = leaders.length === 1
-      ? `\u26BD New Top Scorer: ${namesLabel} (${topVal})`
-      : `\u26BD Joint Top Scorers: ${namesLabel} (${topVal})`;
-    topBadgeEl.textContent = label;
+      ? `New Top Scorer: ${namesLabel} (${topVal})`
+      : `Joint Top Scorers: ${namesLabel} (${topVal})`;
+    topBadgeEl.textContent = '';
+    const emoji = document.createElement('span');
+    emoji.className = 'ball-spin';
+    emoji.textContent = '\u26BD';
+    topBadgeEl.appendChild(emoji);
+    topBadgeEl.appendChild(document.createTextNode(' ' + label));
     topBadgeEl.hidden = false;
     topBadgeEl.classList.remove('pop');
     void topBadgeEl.offsetWidth;

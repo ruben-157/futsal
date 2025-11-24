@@ -530,6 +530,15 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   60%{ transform: scale(1.05); opacity:1; }
   100%{ transform: scale(1); opacity:1; }
 }
+.ball-spin{
+  display:inline-block;
+  animation: ball-spin 2.2s ease-in-out infinite;
+}
+@keyframes ball-spin{
+  0%{ transform: rotate(0deg); }
+  50%{ transform: rotate(180deg); }
+  100%{ transform: rotate(360deg); }
+}
 
 /* Toast & Confetti */
 .toast{
