@@ -1144,19 +1144,33 @@ let modalCtx = null; // { matchId, aId, bId, round }
   const isGuestPlayer = (name)=> String(name||'').trim().toLowerCase() === 'guest player';
 
   const baselineTotals = new Map();
-  const addFromObj = (obj)=>{
-    if(!obj) return;
+  const addFromRec = (rec)=>{
+    if(!rec) return;
+    const objA = rec.gpaDraft || rec.gpa;
+    const objB = rec.gpbDraft || rec.gpb;
+    const addObj = (obj)=>{
+      if(!obj) return;
+      for(const [name, n] of Object.entries(obj)){
+        const goals = Math.max(0, parseInt(n, 10));
+        if(goals > 0 && !isGuestPlayer(name)){
+          baselineTotals.set(name, (baselineTotals.get(name) || 0) + goals);
+        }
+      }
+    };
+    addObj(objA); addObj(objB);
+  };
+  const addFromObj = (obj, totals)=>{
+    if(!obj || !totals) return;
     for(const [name, n] of Object.entries(obj)){
       const goals = Math.max(0, parseInt(n, 10));
       if(goals > 0 && !isGuestPlayer(name)){
-        baselineTotals.set(name, (baselineTotals.get(name) || 0) + goals);
+        totals.set(name, (totals.get(name) || 0) + goals);
       }
     }
   };
   for(const [id, rec] of Object.entries(state.results || {})){
     if(id === matchId || !rec) continue;
-    addFromObj(rec.gpa);
-    addFromObj(rec.gpb);
+    addFromRec(rec);
   }
   const baselineSorted = Array.from(baselineTotals.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
   const baselineTopVal = baselineSorted.length ? baselineSorted[0][1] : 0;
@@ -1172,8 +1186,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
     // Include all finalized matches except the current one
     for(const [id, rec] of Object.entries(state.results || {})){
       if(id === matchId || !rec) continue;
-      addFromObj(rec.gpa);
-      addFromObj(rec.gpb);
+      addFromObj(rec.gpaDraft || rec.gpa, totals);
+      addFromObj(rec.gpbDraft || rec.gpb, totals);
     }
     // Include current in-modal inputs
     const addFromInputs = (map)=>{
