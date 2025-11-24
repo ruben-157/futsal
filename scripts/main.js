@@ -1142,6 +1142,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
   const bInputs = new Map();
   const topBadgeEl = document.getElementById('modalTopScorerBadge');
   const isGuestPlayer = (name)=> String(name||'').trim().toLowerCase() === 'guest player';
+  let badgeLeader = null;
 
   const baselineTotals = new Map();
   const addFromRec = (rec)=>{
@@ -1189,7 +1190,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
       }
       badgeLeader = null;
     };
-    if(!trackToggle.checked || !lastEditedName){
+    if(!trackToggle.checked){
       hideBadge(false);
       return;
     }
@@ -1218,23 +1219,15 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const sorted = Array.from(totals.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
     const topVal = sorted[0][1];
     const leaders = sorted.filter(([_,v])=> v === topVal).map(([n])=> n);
-    // Only surface badge when there is a single clear leader
-    if(leaders.length !== 1){
-      hideBadge();
-      return;
-    }
-    const leaderName = leaders[0];
-    if(leaderName !== lastEditedName){
+    const isSoleLeader = leaders.length === 1;
+    const leaderName = isSoleLeader ? leaders[0] : null;
+    if(!isSoleLeader){
       hideBadge();
       return;
     }
     const isNewRelativeToBaseline = (topVal > baselineTopVal) || !baselineLeaders.has(leaderName);
-    if(!isNewRelativeToBaseline){
-      hideBadge();
-      return;
-    }
-    // If badge already showing same leader, keep it visible and just update text/value
-    if(!topBadgeEl.hidden && badgeLeader === leaderName){
+    if(badgeLeader && badgeLeader === leaderName){
+      // Badge already showing this leader; keep it visible
       topBadgeEl.classList.remove('fade-out');
       const textNode = topBadgeEl.lastChild && topBadgeEl.lastChild.nodeType === Node.TEXT_NODE
         ? topBadgeEl.lastChild
@@ -1242,6 +1235,11 @@ let modalCtx = null; // { matchId, aId, bId, round }
       const newText = ` New Top Scorer: ${leaderName} (${topVal})`;
       if(textNode){ textNode.nodeValue = newText; }
       else { topBadgeEl.appendChild(document.createTextNode(newText)); }
+      return;
+    }
+    // Only trigger a new badge when the edited player created a new top scorer relative to baseline
+    if(lastEditedName !== leaderName || !isNewRelativeToBaseline){
+      hideBadge();
       return;
     }
     const label = `New Top Scorer: ${leaderName} (${topVal})`;
