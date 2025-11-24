@@ -527,6 +527,7 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   overflow:hidden;
 }
 .top-scorer-badge.pop{ animation: badge-pop 240ms ease-out; }
+.top-scorer-badge.fade-out{ animation: badge-fade 180ms ease-in forwards; }
 .top-scorer-badge::after{
   content:"";
   position:absolute;
@@ -543,6 +544,10 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   0%{ transform: scale(.92); opacity:0; }
   60%{ transform: scale(1.05); opacity:1; }
   100%{ transform: scale(1); opacity:1; }
+}
+@keyframes badge-fade{
+  0%{ opacity:1; transform: translateY(0); }
+  100%{ opacity:0; transform: translateY(-4px); }
 }
 @keyframes badge-sweep{
   0%{ transform: translateX(-60%); opacity:.85; }

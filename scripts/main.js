@@ -1179,6 +1179,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
   function updateTopScorerBadge(lastEditedName){
     if(!topBadgeEl){ return; }
     if(!trackToggle.checked || !lastEditedName){
+      topBadgeEl.classList.remove('pop','fade-out');
       topBadgeEl.hidden = true;
       return;
     }
@@ -1209,18 +1210,24 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const leaders = sorted.filter(([_,v])=> v === topVal).map(([n])=> n);
     // Only surface badge when there is a single clear leader
     if(leaders.length !== 1){
-      topBadgeEl.hidden = true;
+      topBadgeEl.classList.remove('pop');
+      topBadgeEl.classList.add('fade-out');
+      setTimeout(()=>{ if(topBadgeEl) topBadgeEl.hidden = true; }, 180);
       return;
     }
     const editedIsLeader = lastEditedName ? leaders.includes(lastEditedName) : true;
     const leaderSet = new Set(leaders);
     const changedLeader = leaders.length > 0 && (topVal > baselineTopVal || leaderSet.size !== baselineLeaders.size || leaders.some(n=> !baselineLeaders.has(n)));
     if(!editedIsLeader){
-      topBadgeEl.hidden = true;
+      topBadgeEl.classList.remove('pop');
+      topBadgeEl.classList.add('fade-out');
+      setTimeout(()=>{ if(topBadgeEl) topBadgeEl.hidden = true; }, 180);
       return;
     }
     if(!changedLeader){
-      topBadgeEl.hidden = true;
+      topBadgeEl.classList.remove('pop');
+      topBadgeEl.classList.add('fade-out');
+      setTimeout(()=>{ if(topBadgeEl) topBadgeEl.hidden = true; }, 180);
       return;
     }
     const namesLabel = leaders.length === 1 ? leaders[0] : leaders.join(' & ');
