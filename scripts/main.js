@@ -1193,6 +1193,11 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const sorted = Array.from(totals.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
     const topVal = sorted[0][1];
     const leaders = sorted.filter(([_,v])=> v === topVal).map(([n])=> n);
+    // Only surface badge when there is a single clear leader
+    if(leaders.length !== 1){
+      topBadgeEl.hidden = true;
+      return;
+    }
     const editedIsLeader = lastEditedName ? leaders.includes(lastEditedName) : true;
     const leaderSet = new Set(leaders);
     const changedLeader = leaders.length > 0 && (topVal > baselineTopVal || leaderSet.size !== baselineLeaders.size || leaders.some(n=> !baselineLeaders.has(n)));
