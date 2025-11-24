@@ -522,6 +522,7 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   font-size:12px;
   letter-spacing:.2px;
   box-shadow:0 6px 20px rgba(217,119,6,0.15);
+  margin-left:auto;
 }
 .top-scorer-badge.pop{ animation: badge-pop 240ms ease-out; }
 @keyframes badge-pop{

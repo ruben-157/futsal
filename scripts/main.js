@@ -1189,7 +1189,9 @@ let modalCtx = null; // { matchId, aId, bId, round }
       return;
     }
     const namesLabel = leaders.length === 1 ? leaders[0] : leaders.join(' & ');
-    const label = leaders.length === 1 ? `Top scorer: ${namesLabel} (${topVal})` : `Joint top scorer: ${namesLabel} (${topVal})`;
+    const label = leaders.length === 1
+      ? `\uD83D\uDC51 New Top Scorer: ${namesLabel} (${topVal})`
+      : `\uD83E\uDD1D Joint Top Scorers: ${namesLabel} (${topVal})`;
     topBadgeEl.textContent = label;
     topBadgeEl.hidden = false;
     topBadgeEl.classList.remove('pop');
