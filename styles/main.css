@@ -321,6 +321,18 @@ tbody tr:last-child{ border-bottom:none; }
   .alltime-table .badges-cell{ text-align:left; }
   .alltime-table .player-badges{ justify-content:flex-start; }
 }
+@media(max-width: 760px){
+  /* Keep the session Leaderboard fully visible on mobile */
+  #leaderboardSection .table-wrap{ overflow:visible; }
+  #leaderboardSection table{ table-layout:fixed; }
+  #leaderboardSection th:first-child,
+  #leaderboardSection td:first-child{ width:40%; }
+  #leaderboardSection .table-wrap table{ min-width:0; width:100%; }
+  #leaderboardSection th,
+  #leaderboardSection td{ padding:8px 10px; }
+  #leaderboardSection .team-pill{ flex-wrap:wrap; gap:6px; }
+  #leaderboardSection .team-sub{ white-space:normal; }
+}
 
 .schedule{margin-top:0}
 .pair{padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:#ffffff; margin-top:8px}
