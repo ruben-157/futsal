@@ -178,6 +178,12 @@ tbody tr:last-child{ border-bottom:none; }
 }
 .live-score-toggle span:first-child{
   font-size:12px;
+  letter-spacing:0;
+  display:inline-block;
+  min-width:14px;
+  text-align:center;
+  line-height:1;
+  text-transform:none;
 }
 .live-dot{
   width:10px;
