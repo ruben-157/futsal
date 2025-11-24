@@ -1001,6 +1001,15 @@ let modalCtx = null; // { matchId, aId, bId, round }
     // Base ranking for position deltas
     const baseRows = sortRows(baseMap);
     const baseRanks = new Map(baseRows.map((r, idx)=> [r.team.id, idx+1]));
+    // Helper to render per-stat delta from current match
+    const appendDelta = (cell, delta)=>{
+      if(!delta) return;
+      const badge = document.createElement('span');
+      badge.className = 'live-score-delta';
+      if(delta < 0) badge.classList.add('neg');
+      badge.textContent = `${delta > 0 ? '+' : ''}${delta}`;
+      cell.appendChild(badge);
+    };
     // Clone base map so we can mutate for the live projection
     const map = new Map(Array.from(baseMap.entries()).map(([id, rec])=> [id, { ...rec }]));
     const aTeam = map.get(a.id); const bTeam = map.get(b.id);
@@ -1034,6 +1043,13 @@ let modalCtx = null; // { matchId, aId, bId, round }
     rows.forEach((r, idx)=>{
       const tr = document.createElement('tr');
       const gd = (r.gf - (r.ga || 0));
+      const baseRec = baseMap.get(r.team.id) || { pts:0, gf:0, ga:0, played:0 };
+      const deltaPlayed = r.played - (baseRec.played || 0);
+      const deltaPts = r.pts - (baseRec.pts || 0);
+      const deltaGs = r.gf - (baseRec.gf || 0);
+      const deltaGa = (r.ga || 0) - (baseRec.ga || 0);
+      const baseGd = (baseRec.gf || 0) - (baseRec.ga || 0);
+      const deltaGd = gd - baseGd;
       const tdRank = document.createElement('td'); tdRank.textContent = String(idx+1);
       const tdTeam = document.createElement('td');
       tdTeam.textContent = r.team.name;
@@ -1051,11 +1067,16 @@ let modalCtx = null; // { matchId, aId, bId, round }
         tdTeam.appendChild(down);
       }
       const tdPlayed = document.createElement('td'); tdPlayed.textContent = String(r.played);
+      appendDelta(tdPlayed, deltaPlayed);
       const tdPts = document.createElement('td');
       tdPts.textContent = String(r.pts);
+      appendDelta(tdPts, deltaPts);
       const tdGS = document.createElement('td'); tdGS.textContent = String(r.gf);
+      appendDelta(tdGS, deltaGs);
       const tdGA = document.createElement('td'); tdGA.textContent = String(r.ga || 0);
+      appendDelta(tdGA, deltaGa);
       const tdGD = document.createElement('td'); tdGD.textContent = String(gd);
+      appendDelta(tdGD, deltaGd);
       tr.appendChild(tdRank); tr.appendChild(tdTeam); tr.appendChild(tdPlayed); tr.appendChild(tdPts); tr.appendChild(tdGS); tr.appendChild(tdGA); tr.appendChild(tdGD);
       tbody.appendChild(tr);
     });
