@@ -1178,9 +1178,19 @@ let modalCtx = null; // { matchId, aId, bId, round }
 
   function updateTopScorerBadge(lastEditedName){
     if(!topBadgeEl){ return; }
+    const hideBadge = (animate=true)=>{
+      topBadgeEl.classList.remove('pop');
+      if(animate){
+        topBadgeEl.classList.add('fade-out');
+        setTimeout(()=>{ if(topBadgeEl) topBadgeEl.hidden = true; }, 180);
+      } else {
+        topBadgeEl.classList.remove('fade-out');
+        topBadgeEl.hidden = true;
+      }
+      badgeLeader = null;
+    };
     if(!trackToggle.checked || !lastEditedName){
-      topBadgeEl.classList.remove('pop','fade-out');
-      topBadgeEl.hidden = true;
+      hideBadge(false);
       return;
     }
     const totals = new Map();
@@ -1202,7 +1212,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
     addFromInputs(aInputs);
     addFromInputs(bInputs);
     if(!totals.size){
-      topBadgeEl.hidden = true;
+      hideBadge(false);
       return;
     }
     const sorted = Array.from(totals.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
@@ -1210,30 +1220,31 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const leaders = sorted.filter(([_,v])=> v === topVal).map(([n])=> n);
     // Only surface badge when there is a single clear leader
     if(leaders.length !== 1){
-      topBadgeEl.classList.remove('pop');
-      topBadgeEl.classList.add('fade-out');
-      setTimeout(()=>{ if(topBadgeEl) topBadgeEl.hidden = true; }, 180);
+      hideBadge();
       return;
     }
-    const editedIsLeader = lastEditedName ? leaders.includes(lastEditedName) : true;
-    const leaderSet = new Set(leaders);
-    const changedLeader = leaders.length > 0 && (topVal > baselineTopVal || leaderSet.size !== baselineLeaders.size || leaders.some(n=> !baselineLeaders.has(n)));
-    if(!editedIsLeader){
-      topBadgeEl.classList.remove('pop');
-      topBadgeEl.classList.add('fade-out');
-      setTimeout(()=>{ if(topBadgeEl) topBadgeEl.hidden = true; }, 180);
+    const leaderName = leaders[0];
+    if(leaderName !== lastEditedName){
+      hideBadge();
       return;
     }
-    if(!changedLeader){
-      topBadgeEl.classList.remove('pop');
-      topBadgeEl.classList.add('fade-out');
-      setTimeout(()=>{ if(topBadgeEl) topBadgeEl.hidden = true; }, 180);
+    const isNewRelativeToBaseline = (topVal > baselineTopVal) || !baselineLeaders.has(leaderName);
+    if(!isNewRelativeToBaseline){
+      hideBadge();
       return;
     }
-    const namesLabel = leaders.length === 1 ? leaders[0] : leaders.join(' & ');
-    const label = leaders.length === 1
-      ? `New Top Scorer: ${namesLabel} (${topVal})`
-      : `Joint Top Scorers: ${namesLabel} (${topVal})`;
+    // If badge already showing same leader, keep it visible and just update text/value
+    if(!topBadgeEl.hidden && badgeLeader === leaderName){
+      topBadgeEl.classList.remove('fade-out');
+      const textNode = topBadgeEl.lastChild && topBadgeEl.lastChild.nodeType === Node.TEXT_NODE
+        ? topBadgeEl.lastChild
+        : null;
+      const newText = ` New Top Scorer: ${leaderName} (${topVal})`;
+      if(textNode){ textNode.nodeValue = newText; }
+      else { topBadgeEl.appendChild(document.createTextNode(newText)); }
+      return;
+    }
+    const label = `New Top Scorer: ${leaderName} (${topVal})`;
     topBadgeEl.textContent = '';
     const emoji = document.createElement('span');
     emoji.className = 'ball-spin';
@@ -1242,8 +1253,10 @@ let modalCtx = null; // { matchId, aId, bId, round }
     topBadgeEl.appendChild(document.createTextNode(' ' + label));
     topBadgeEl.hidden = false;
     topBadgeEl.classList.remove('pop');
+    topBadgeEl.classList.remove('fade-out');
     void topBadgeEl.offsetWidth;
     topBadgeEl.classList.add('pop');
+    badgeLeader = leaderName;
   }
 
   function makeRow(name, initial, map, parent){
