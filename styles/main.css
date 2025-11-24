@@ -540,6 +540,14 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
 .top-scorer-badge.pop::after{
   animation: badge-sweep 820ms ease-out forwards;
 }
+.top-scorer-badge.woosh:not(.pop)::after{
+  animation: badge-sweep-loop 4s ease-out infinite;
+}
+.top-scorer-badge.pop.woosh::after{
+  animation:
+    badge-sweep 820ms ease-out forwards,
+    badge-sweep-loop 4s ease-out 4s infinite;
+}
 @keyframes badge-pop{
   0%{ transform: scale(.92); opacity:0; }
   60%{ transform: scale(1.05); opacity:1; }
@@ -552,6 +560,13 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
 @keyframes badge-sweep{
   0%{ transform: translateX(-60%); opacity:.85; }
   100%{ transform: translateX(120%); opacity:0; }
+}
+@keyframes badge-sweep-loop{
+  0%{ transform: translateX(-80%); opacity:0; }
+  70%{ transform: translateX(-80%); opacity:0; }
+  80%{ transform: translateX(-60%); opacity:.85; }
+  92%{ transform: translateX(120%); opacity:.4; }
+  100%{ transform: translateX(140%); opacity:0; }
 }
 .ball-spin{
   display:inline-block;

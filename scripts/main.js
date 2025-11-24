@@ -1180,7 +1180,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
   function updateTopScorerBadge(lastEditedName){
     if(!topBadgeEl){ return; }
     const hideBadge = (animate=true)=>{
-      topBadgeEl.classList.remove('pop');
+      topBadgeEl.classList.remove('pop','woosh');
       if(animate){
         topBadgeEl.classList.add('fade-out');
         setTimeout(()=>{ if(topBadgeEl) topBadgeEl.hidden = true; }, 180);
@@ -1229,6 +1229,7 @@ let modalCtx = null; // { matchId, aId, bId, round }
     if(badgeLeader && badgeLeader === leaderName){
       // Badge already showing this leader; keep it visible
       topBadgeEl.classList.remove('fade-out');
+      topBadgeEl.classList.add('woosh');
       const textNode = topBadgeEl.lastChild && topBadgeEl.lastChild.nodeType === Node.TEXT_NODE
         ? topBadgeEl.lastChild
         : null;
@@ -1250,8 +1251,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
     topBadgeEl.appendChild(emoji);
     topBadgeEl.appendChild(document.createTextNode(' ' + label));
     topBadgeEl.hidden = false;
-    topBadgeEl.classList.remove('pop');
-    topBadgeEl.classList.remove('fade-out');
+    topBadgeEl.classList.remove('pop','fade-out');
+    topBadgeEl.classList.add('woosh');
     void topBadgeEl.offsetWidth;
     topBadgeEl.classList.add('pop');
     badgeLeader = leaderName;
