@@ -471,7 +471,17 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
   box-shadow: 0 20px 40px rgba(0,0,0,.12);
   display:flex; flex-direction:column; max-height:85vh; overflow:hidden;
 }
-.modal .modal-header{ padding:14px 16px; border-bottom:1px solid var(--border); position:sticky; top:0; background:#fff; z-index:1 }
+.modal .modal-header{
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  background:#fff;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
 .modal .modal-body{ padding:14px 16px; flex:1 1 auto; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action: pan-y }
 .modal .modal-actions{ display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid var(--border); position:sticky; bottom:0; background:#fff; z-index:1 }
 .modal .modal-fields{ display:grid; grid-template-columns:1fr; gap:12px }
@@ -499,6 +509,26 @@ footer{margin:24px 0; color:var(--muted); font-size:12px}
 .scorer-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin:4px 0 }
 .scorer-input{ width:44px; min-height:28px; text-align:center; font-size:14px; border:1px solid #d1d5db; border-radius:6px }
 .btn.mini-step{ min-width:28px; min-height:28px; border-radius:8px; font-size:16px; padding:0; line-height:1; display:inline-flex; align-items:center; justify-content:center }
+.top-scorer-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#fef3c7;
+  color:#92400e;
+  border:1px solid rgba(217,119,6,0.35);
+  font-weight:800;
+  font-size:12px;
+  letter-spacing:.2px;
+  box-shadow:0 6px 20px rgba(217,119,6,0.15);
+}
+.top-scorer-badge.pop{ animation: badge-pop 240ms ease-out; }
+@keyframes badge-pop{
+  0%{ transform: scale(.92); opacity:0; }
+  60%{ transform: scale(1.05); opacity:1; }
+  100%{ transform: scale(1); opacity:1; }
+}
 
 /* Toast & Confetti */
 .toast{

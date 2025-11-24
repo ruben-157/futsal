@@ -1140,6 +1140,63 @@ let modalCtx = null; // { matchId, aId, bId, round }
   const gpb = (existing && (existing.gpbDraft || existing.gpb)) ? (existing.gpbDraft || existing.gpb) : {};
   const aInputs = new Map();
   const bInputs = new Map();
+  const topBadgeEl = document.getElementById('modalTopScorerBadge');
+  const isGuestPlayer = (name)=> String(name||'').trim().toLowerCase() === 'guest player';
+
+  function updateTopScorerBadge(lastEditedName){
+    if(!topBadgeEl){ return; }
+    if(!trackToggle.checked){
+      topBadgeEl.hidden = true;
+      return;
+    }
+    const totals = new Map();
+    const addFromObj = (obj)=>{
+      if(!obj) return;
+      for(const [name, n] of Object.entries(obj)){
+        const goals = Math.max(0, parseInt(n, 10));
+        if(goals > 0 && !isGuestPlayer(name)){
+          totals.set(name, (totals.get(name) || 0) + goals);
+        }
+      }
+    };
+    // Include all finalized matches except the current one
+    for(const [id, rec] of Object.entries(state.results || {})){
+      if(id === matchId || !rec) continue;
+      addFromObj(rec.gpa);
+      addFromObj(rec.gpb);
+    }
+    // Include current in-modal inputs
+    const addFromInputs = (map)=>{
+      map.forEach((el, name)=>{
+        const v = Math.max(0, parseInt(el.value || '0', 10));
+        if(v > 0 && !isGuestPlayer(name)){
+          totals.set(name, (totals.get(name) || 0) + v);
+        }
+      });
+    };
+    addFromInputs(aInputs);
+    addFromInputs(bInputs);
+    if(!totals.size){
+      topBadgeEl.hidden = true;
+      return;
+    }
+    const sorted = Array.from(totals.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
+    const topVal = sorted[0][1];
+    const leaders = sorted.filter(([_,v])=> v === topVal).map(([n])=> n);
+    const editedIsLeader = lastEditedName ? leaders.includes(lastEditedName) : true;
+    if(!editedIsLeader){
+      topBadgeEl.hidden = true;
+      return;
+    }
+    const namesLabel = leaders.length === 1 ? leaders[0] : leaders.join(' & ');
+    const label = leaders.length === 1 ? `Top scorer: ${namesLabel} (${topVal})` : `Joint top scorer: ${namesLabel} (${topVal})`;
+    topBadgeEl.textContent = label;
+    topBadgeEl.hidden = false;
+    topBadgeEl.classList.remove('pop');
+    void topBadgeEl.offsetWidth;
+    topBadgeEl.classList.add('pop');
+  }
+
   function makeRow(name, initial, map, parent){
     const row = document.createElement('div'); row.className = 'scorer-row';
     const label = document.createElement('div'); label.textContent = name; label.style.flex='1';
@@ -1149,12 +1206,12 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const change = (delta)=>{
       const v = Math.max(0, parseInt(inp.value||'0',10)+(delta||0));
       inp.value = String(v);
-      syncIfTracking();
+      syncIfTracking(name);
     };
     minus.onclick = ()=> change(-1);
     plus.onclick = ()=> change(+1);
     // independent inputs unless tracking is enabled
-    inp.oninput = ()=> syncIfTracking();
+    inp.oninput = ()=> syncIfTracking(name);
     row.appendChild(label); row.appendChild(minus); row.appendChild(inp); row.appendChild(plus);
     parent.appendChild(row);
     map.set(name, inp);
@@ -1182,12 +1239,24 @@ let modalCtx = null; // { matchId, aId, bId, round }
     aInput.value = String(na);
     bInput.value = String(nb);
   }
-  function syncIfTracking(){ if(trackToggle.checked){ updateTotalsFromPlayers(); onInput(); } }
+  function syncIfTracking(lastEditedName){
+    if(trackToggle.checked){
+      updateTotalsFromPlayers();
+      onInput();
+      updateTopScorerBadge(lastEditedName);
+    }
+  }
   const applyToggle = ()=>{
     scorersWrap.style.display = trackToggle.checked ? '' : 'none';
     aInput.disabled = trackToggle.checked;
     bInput.disabled = trackToggle.checked;
-    if(trackToggle.checked){ updateTotalsFromPlayers(); onInput(); }
+    if(trackToggle.checked){
+      updateTotalsFromPlayers();
+      onInput();
+      updateTopScorerBadge();
+    } else if(topBadgeEl){
+      topBadgeEl.hidden = true;
+    }
   };
   applyToggle();
   trackToggle.onchange = ()=>{ applyToggle(); setTrackScorersPref(trackToggle.checked); };
