@@ -1143,22 +1143,32 @@ let modalCtx = null; // { matchId, aId, bId, round }
   const topBadgeEl = document.getElementById('modalTopScorerBadge');
   const isGuestPlayer = (name)=> String(name||'').trim().toLowerCase() === 'guest player';
 
+  const baselineTotals = new Map();
+  const addFromObj = (obj)=>{
+    if(!obj) return;
+    for(const [name, n] of Object.entries(obj)){
+      const goals = Math.max(0, parseInt(n, 10));
+      if(goals > 0 && !isGuestPlayer(name)){
+        baselineTotals.set(name, (baselineTotals.get(name) || 0) + goals);
+      }
+    }
+  };
+  for(const [id, rec] of Object.entries(state.results || {})){
+    if(id === matchId || !rec) continue;
+    addFromObj(rec.gpa);
+    addFromObj(rec.gpb);
+  }
+  const baselineSorted = Array.from(baselineTotals.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
+  const baselineTopVal = baselineSorted.length ? baselineSorted[0][1] : 0;
+  const baselineLeaders = new Set(baselineSorted.filter(([_,v])=> v === baselineTopVal).map(([n])=> n));
+
   function updateTopScorerBadge(lastEditedName){
     if(!topBadgeEl){ return; }
-    if(!trackToggle.checked){
+    if(!trackToggle.checked || !lastEditedName){
       topBadgeEl.hidden = true;
       return;
     }
     const totals = new Map();
-    const addFromObj = (obj)=>{
-      if(!obj) return;
-      for(const [name, n] of Object.entries(obj)){
-        const goals = Math.max(0, parseInt(n, 10));
-        if(goals > 0 && !isGuestPlayer(name)){
-          totals.set(name, (totals.get(name) || 0) + goals);
-        }
-      }
-    };
     // Include all finalized matches except the current one
     for(const [id, rec] of Object.entries(state.results || {})){
       if(id === matchId || !rec) continue;
@@ -1184,14 +1194,20 @@ let modalCtx = null; // { matchId, aId, bId, round }
     const topVal = sorted[0][1];
     const leaders = sorted.filter(([_,v])=> v === topVal).map(([n])=> n);
     const editedIsLeader = lastEditedName ? leaders.includes(lastEditedName) : true;
+    const leaderSet = new Set(leaders);
+    const changedLeader = leaders.length > 0 && (topVal > baselineTopVal || leaderSet.size !== baselineLeaders.size || leaders.some(n=> !baselineLeaders.has(n)));
     if(!editedIsLeader){
+      topBadgeEl.hidden = true;
+      return;
+    }
+    if(!changedLeader){
       topBadgeEl.hidden = true;
       return;
     }
     const namesLabel = leaders.length === 1 ? leaders[0] : leaders.join(' & ');
     const label = leaders.length === 1
-      ? `\uD83D\uDC51 New Top Scorer: ${namesLabel} (${topVal})`
-      : `\uD83E\uDD1D Joint Top Scorers: ${namesLabel} (${topVal})`;
+      ? `\u26BD New Top Scorer: ${namesLabel} (${topVal})`
+      : `\u26BD Joint Top Scorers: ${namesLabel} (${topVal})`;
     topBadgeEl.textContent = label;
     topBadgeEl.hidden = false;
     topBadgeEl.classList.remove('pop');
@@ -1255,7 +1271,8 @@ let modalCtx = null; // { matchId, aId, bId, round }
     if(trackToggle.checked){
       updateTotalsFromPlayers();
       onInput();
-      updateTopScorerBadge();
+      // Do not trigger badge on initial open; wait for a scorer edit
+      topBadgeEl.hidden = true;
     } else if(topBadgeEl){
       topBadgeEl.hidden = true;
     }
