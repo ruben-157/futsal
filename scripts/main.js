@@ -763,7 +763,7 @@ function renderMvpChaseCard(){
   header.style.display = 'flex';
   header.style.justifyContent = 'space-between';
   header.style.alignItems = 'center';
-  header.style.padding = '10px 0';
+  header.style.padding = '14px 0';
   const title = document.createElement('h2');
   title.textContent = 'MVP-chase';
   const lead = document.createElement('div');
