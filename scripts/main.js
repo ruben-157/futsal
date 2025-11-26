@@ -834,7 +834,7 @@ async function populateMvpChaseCard(refs){
     table.setAttribute('aria-label','MVP chase (points needed)');
     table.style.tableLayout = 'fixed';
     const colgroup = document.createElement('colgroup');
-    ['45%','30%','25%'].forEach(w=>{
+    ['30%','40%','30%'].forEach(w=>{
       const col = document.createElement('col');
       col.style.width = w;
       colgroup.appendChild(col);
