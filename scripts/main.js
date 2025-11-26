@@ -856,7 +856,11 @@ async function populateMvpChaseCard(refs){
       const tdName = document.createElement('td');
       tdName.textContent = row.player;
       const tdCurr = document.createElement('td');
-      tdCurr.textContent = row.currentPPM.toFixed(2) + ' pts/s';
+      const badge = document.createElement('span');
+      const ppmVal = row.currentPPM;
+      badge.textContent = ppmVal.toFixed(2);
+      badge.className = classifyPPMBadge(ppmVal) + ' badge';
+      tdCurr.appendChild(badge);
       const tdNeed = document.createElement('td');
       tdNeed.textContent = row.needLabel;
       tr.appendChild(tdName);
