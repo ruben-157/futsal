@@ -151,6 +151,12 @@ tbody tr:last-child{ border-bottom:none; }
 .swatch{width:16px; height:16px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.15)}
 .team-name[contenteditable="true"]{padding:2px 6px; border-radius:6px}
 .team-name[contenteditable="true"]:focus{outline:2px solid var(--focus)}
+.label-full{ display:inline; }
+.label-short{ display:none; }
+@media(max-width: 640px){
+  .label-full{ display:none; }
+  .label-short{ display:inline; }
+}
 .live-score{
   margin:4px 0 15px 0;
   padding:0;

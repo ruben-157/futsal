@@ -840,7 +840,7 @@ async function populateMvpChaseCard(refs){
       colgroup.appendChild(col);
     });
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th>Player</th><th>Current PTS/S</th><th>PTS Needed for MVP</th></tr>';
+    thead.innerHTML = '<tr><th>Player</th><th><span class="label-full">Current PTS/S</span><span class="label-short">PTS/S</span></th><th><span class="label-full">PTS Needed for MVP</span><span class="label-short">PTS Needed</span></th></tr>';
     const tbody = document.createElement('tbody');
     const toShow = result.rows.slice(0,5);
     for(const row of toShow){
