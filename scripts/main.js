@@ -826,33 +826,29 @@ async function populateMvpChaseCard(refs){
     table.setAttribute('aria-label','MVP chase (points needed)');
     const colgroup = document.createElement('colgroup');
     [
-      { w: '42%' },
-      { w: '16%' },
-      { w: '24%' },
-      { w: '18%' }
+      { w: '50%' },
+      { w: '22%' },
+      { w: '28%' }
     ].forEach(cfg => {
       const col = document.createElement('col');
       col.style.width = cfg.w;
       colgroup.appendChild(col);
     });
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th>Player</th><th>Needed</th><th>After this round</th><th>Attendance</th></tr>';
+    thead.innerHTML = '<tr><th>Player</th><th>Current PTS/S</th><th>PTS Needed for MVP</th></tr>';
     const tbody = document.createElement('tbody');
     const toShow = result.rows.slice(0,5);
     for(const row of toShow){
       const tr = document.createElement('tr');
       const tdName = document.createElement('td');
       tdName.textContent = row.player;
+      const tdCurr = document.createElement('td');
+      tdCurr.textContent = row.currentPPM.toFixed(2) + ' pts/s';
       const tdNeed = document.createElement('td');
       tdNeed.textContent = row.needLabel;
-      const tdPpm = document.createElement('td');
-      tdPpm.textContent = row.projectedPPM.toFixed(2) + ' pts/s';
-      const tdAtt = document.createElement('td');
-      tdAtt.textContent = Math.round(row.attendance * 100) + '%';
       tr.appendChild(tdName);
+      tr.appendChild(tdCurr);
       tr.appendChild(tdNeed);
-      tr.appendChild(tdPpm);
-      tr.appendChild(tdAtt);
       tbody.appendChild(tr);
     }
     table.appendChild(colgroup);
@@ -905,10 +901,12 @@ function computeMvpChase(rows, attendeesSet){
     const cap = 30;
     const needLabel = need > cap ? `${cap}+` : String(Math.max(0, need));
     const projectedPPM = (rec.points + Math.max(0, need)) / matches;
+    const currentPPM = rec.matches ? (rec.points / rec.matches) : 0;
     rowsOut.push({
       player,
       need,
       needLabel,
+      currentPPM,
       projectedPPM,
       attendance
     });
