@@ -759,11 +759,12 @@ function renderMvpChaseCard(){
   if(wrap.hidden) return;
   const panel = document.createElement('div');
   panel.className = 'panel';
+  panel.style.padding = '0';
   const header = document.createElement('div');
   header.style.display = 'flex';
   header.style.justifyContent = 'flex-start';
   header.style.alignItems = 'center';
-  header.style.padding = '10px 0';
+  header.style.padding = '12px';
   header.style.gap = '12px';
   const title = document.createElement('h2');
   title.textContent = 'Players close to the Most Valuable Player badge';
@@ -782,8 +783,10 @@ function renderMvpChaseCard(){
   const status = document.createElement('div');
   status.className = 'notice';
   status.textContent = 'Loading MVP chase…';
+  status.style.margin = '0 12px 12px 12px';
   const body = document.createElement('div');
   body.id = 'mvpChaseBody';
+  body.style.padding = '0';
   panel.appendChild(header);
   panel.appendChild(status);
   panel.appendChild(body);
@@ -848,10 +851,8 @@ async function populateMvpChaseCard(refs){
     }
     table.appendChild(thead);
     table.appendChild(tbody);
-    const flush = document.createElement('div');
-    flush.style.margin = '0';
-    flush.appendChild(table);
-    body.appendChild(flush);
+    table.style.width = '100%';
+    body.appendChild(table);
   }catch(err){
     status.textContent = 'MVP chase could not load.';
     lead.innerHTML = '';
