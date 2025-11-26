@@ -830,7 +830,7 @@ async function populateMvpChaseCard(refs){
     lead.innerHTML = '';
     if(result.currentLeader){
       const pill = document.createElement('span');
-      pill.className = 'player-badge player-badge-premium';
+      pill.className = 'badge badge-neutral';
       pill.textContent = `👑 Current MVP: ${result.currentLeader.player} (${result.currentLeader.ppm.toFixed(2)} pts/session)`;
       lead.appendChild(pill);
     } else {
