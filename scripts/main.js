@@ -870,37 +870,24 @@ async function populateMvpChaseCard(refs){
 function computeMvpChase(rows, attendeesSet){
   const stats = aggregateAllTime(rows || []);
   const totalSessions = countUniqueSessions(rows || []);
-  const nextSessions = totalSessions + 1;
-  const baseMap = new Map(stats.map(s => [s.player, { matches: s.matches, points: s.points }]));
-  for(const name of attendeesSet){
-    if(!baseMap.has(name)){
-      baseMap.set(name, { matches: 0, points: 0 });
-    }
-  }
   const currentLeader = pickCurrentMvp(stats, totalSessions);
-  const projectedOthers = [];
-  for(const [player, rec] of baseMap.entries()){
-    const matches = rec.matches + (attendeesSet.has(player) ? 1 : 0);
-    const points = rec.points;
-    const attendance = nextSessions > 0 ? (matches / nextSessions) : 0;
-    if(matches > 0 && attendance >= 0.6){
-      projectedOthers.push({
-        player,
-        matches,
-        points,
-        ppm: matches ? (points / matches) : 0,
-        attendance
-      });
-    }
-  }
+  const baseMap = new Map(stats.map(s => [s.player, { matches: s.matches, points: s.points }]));
+  const eligibleCurrent = stats
+    .filter(s => s.matches > 0 && totalSessions > 0 && (s.matches / totalSessions) >= 0.6)
+    .map(s => ({
+      player: s.player,
+      matches: s.matches,
+      points: s.points,
+      ppm: s.ppm || 0
+    }));
   const rowsOut = [];
   for(const player of attendeesSet){
     const rec = baseMap.get(player) || { matches: 0, points: 0 };
     const matches = rec.matches + 1;
-    const attendance = nextSessions > 0 ? (matches / nextSessions) : 0;
+    const attendance = (totalSessions + 1) > 0 ? (matches / (totalSessions + 1)) : 0;
     if(matches <= 0 || attendance < 0.6) continue;
     if(currentLeader && currentLeader.player === player) continue; // already leading
-    const others = projectedOthers.filter(o => o.player !== player);
+    const others = eligibleCurrent.filter(o => o.player !== player);
     const need = computePointsToLead(player, rec.points, matches, others);
     const cap = 30;
     const needLabel = need > cap ? `${cap}+` : String(Math.max(0, need));
