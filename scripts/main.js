@@ -801,6 +801,12 @@ function renderMvpChaseCard(){
   populateMvpChaseCard({ lead, status, body, hint });
 }
 
+function classifyPPMBadge(ppm){
+  if(ppm > 6){ return 'badge badge-good'; }
+  if(ppm >= 4){ return 'badge badge-avg'; }
+  return 'badge badge-low';
+}
+
 async function populateMvpChaseCard(refs){
   const { lead, status, body, hint } = refs;
   body.innerHTML = '';
