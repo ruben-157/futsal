@@ -844,7 +844,10 @@ async function populateMvpChaseCard(refs){
     }
     table.appendChild(thead);
     table.appendChild(tbody);
-    body.appendChild(table);
+    const inset = document.createElement('div');
+    inset.style.padding = '0 8px';
+    inset.appendChild(table);
+    body.appendChild(inset);
   }catch(err){
     status.textContent = 'MVP chase could not load.';
     lead.innerHTML = '';
