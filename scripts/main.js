@@ -832,6 +832,13 @@ async function populateMvpChaseCard(refs){
     status.style.display = 'none';
     const table = document.createElement('table');
     table.setAttribute('aria-label','MVP chase (points needed)');
+    table.style.tableLayout = 'fixed';
+    const colgroup = document.createElement('colgroup');
+    ['45%','30%','25%'].forEach(w=>{
+      const col = document.createElement('col');
+      col.style.width = w;
+      colgroup.appendChild(col);
+    });
     const thead = document.createElement('thead');
     thead.innerHTML = '<tr><th>Player</th><th>Current PTS/S</th><th>PTS Needed for MVP</th></tr>';
     const tbody = document.createElement('tbody');
@@ -849,6 +856,7 @@ async function populateMvpChaseCard(refs){
       tr.appendChild(tdNeed);
       tbody.appendChild(tr);
     }
+    table.appendChild(colgroup);
     table.appendChild(thead);
     table.appendChild(tbody);
     table.style.width = '100%';
