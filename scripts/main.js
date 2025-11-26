@@ -899,6 +899,7 @@ function computeMvpChase(rows, attendeesSet){
     const matches = rec.matches + 1;
     const attendance = nextSessions > 0 ? (matches / nextSessions) : 0;
     if(matches <= 0 || attendance < 0.6) continue;
+    if(currentLeader && currentLeader.player === player) continue; // already leading
     const others = projectedOthers.filter(o => o.player !== player);
     const need = computePointsToLead(player, rec.points, matches, others);
     const cap = 30;
