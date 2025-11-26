@@ -844,10 +844,10 @@ async function populateMvpChaseCard(refs){
     }
     table.appendChild(thead);
     table.appendChild(tbody);
-    const inset = document.createElement('div');
-    inset.style.padding = '0 8px';
-    inset.appendChild(table);
-    body.appendChild(inset);
+    const flush = document.createElement('div');
+    flush.style.margin = '0 -12px';
+    flush.appendChild(table);
+    body.appendChild(flush);
   }catch(err){
     status.textContent = 'MVP chase could not load.';
     lead.innerHTML = '';
