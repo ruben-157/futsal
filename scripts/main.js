@@ -288,9 +288,10 @@ function renderTeams(){
       }
       tr.appendChild(tdAvgSkill);
       tr.appendChild(tdAvgStamina);
-    }
+  }
     tbody.appendChild(tr);
   }
+  renderMvpChaseCard();
   renderSchedule();
 }
 
@@ -748,6 +749,180 @@ function renderLeaderboard(){
     };
     emailBtn.onclick = ()=>{ emailSummary(); };
   }
+}
+
+function renderMvpChaseCard(){
+  const wrap = document.getElementById('mvpChaseContainer');
+  if(!wrap) return;
+  wrap.hidden = !state.teams || state.teams.length === 0;
+  wrap.innerHTML = '';
+  if(wrap.hidden) return;
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.alignItems = 'center';
+  const title = document.createElement('h2');
+  title.textContent = 'MVP-chase';
+  const lead = document.createElement('div');
+  lead.id = 'mvpChaseLead';
+  lead.style.fontWeight = '700';
+  lead.style.fontSize = '13px';
+  header.appendChild(title);
+  header.appendChild(lead);
+  const status = document.createElement('div');
+  status.className = 'notice';
+  status.textContent = 'MVP wordt geladen…';
+  const body = document.createElement('div');
+  body.id = 'mvpChaseBody';
+  panel.appendChild(header);
+  panel.appendChild(status);
+  panel.appendChild(body);
+  wrap.appendChild(panel);
+  populateMvpChaseCard({ lead, status, body });
+}
+
+async function populateMvpChaseCard(refs){
+  const { lead, status, body } = refs;
+  body.innerHTML = '';
+  status.style.display = '';
+  const attendees = new Set(state.attendees || []);
+  if(attendees.size === 0){
+    status.textContent = 'Geen spelers voor vandaag.';
+    lead.textContent = '';
+    return;
+  }
+  try{
+    const { rows } = await loadAllTimeCSV(false);
+    const data = rows || [];
+    if(!data.length){
+      status.textContent = 'Geen all-time data beschikbaar.';
+      lead.textContent = '';
+      return;
+    }
+    const result = computeMvpChase(data, attendees);
+    if(result.currentLeader){
+      lead.textContent = `Huidige MVP: ${result.currentLeader.player} (${result.currentLeader.ppm.toFixed(2)} p/s)`;
+    } else {
+      lead.textContent = 'Nog geen MVP';
+    }
+    if(!result.rows.length){
+      status.textContent = 'Niemand met ≥60% aanwezigheid kan de leiding pakken vandaag.';
+      return;
+    }
+    status.style.display = 'none';
+    const table = document.createElement('table');
+    table.className = 'alltime-table';
+    table.setAttribute('aria-label','MVP-chase (punten nodig)');
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th style="width:40%">Speler</th><th>Nodig</th><th>Na deze ronde</th><th>Aanw.</th></tr>';
+    const tbody = document.createElement('tbody');
+    const toShow = result.rows.slice(0,5);
+    for(const row of toShow){
+      const tr = document.createElement('tr');
+      const tdName = document.createElement('td');
+      tdName.textContent = row.player;
+      const tdNeed = document.createElement('td');
+      tdNeed.textContent = row.needLabel;
+      const tdPpm = document.createElement('td');
+      tdPpm.textContent = row.projectedPPM.toFixed(2) + ' p/s';
+      const tdAtt = document.createElement('td');
+      tdAtt.textContent = Math.round(row.attendance * 100) + '%';
+      tr.appendChild(tdName);
+      tr.appendChild(tdNeed);
+      tr.appendChild(tdPpm);
+      tr.appendChild(tdAtt);
+      tbody.appendChild(tr);
+    }
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    body.appendChild(table);
+  }catch(err){
+    status.textContent = 'MVP-chase kon niet laden.';
+    lead.textContent = '';
+  }
+}
+
+function computeMvpChase(rows, attendeesSet){
+  const stats = aggregateAllTime(rows || []);
+  const totalSessions = countUniqueSessions(rows || []);
+  const nextSessions = totalSessions + 1;
+  const baseMap = new Map(stats.map(s => [s.player, { matches: s.matches, points: s.points }]));
+  for(const name of attendeesSet){
+    if(!baseMap.has(name)){
+      baseMap.set(name, { matches: 0, points: 0 });
+    }
+  }
+  const currentLeader = pickCurrentMvp(stats, totalSessions);
+  const projectedOthers = [];
+  for(const [player, rec] of baseMap.entries()){
+    const matches = rec.matches + (attendeesSet.has(player) ? 1 : 0);
+    const points = rec.points;
+    const attendance = nextSessions > 0 ? (matches / nextSessions) : 0;
+    if(matches > 0 && attendance >= 0.6){
+      projectedOthers.push({
+        player,
+        matches,
+        points,
+        ppm: matches ? (points / matches) : 0,
+        attendance
+      });
+    }
+  }
+  const rowsOut = [];
+  for(const player of attendeesSet){
+    const rec = baseMap.get(player) || { matches: 0, points: 0 };
+    const matches = rec.matches + 1;
+    const attendance = nextSessions > 0 ? (matches / nextSessions) : 0;
+    if(matches <= 0 || attendance < 0.6) continue;
+    const others = projectedOthers.filter(o => o.player !== player);
+    const need = computePointsToLead(player, rec.points, matches, others);
+    const cap = 30;
+    const needLabel = need > cap ? `${cap}+` : String(Math.max(0, need));
+    const projectedPPM = (rec.points + Math.max(0, need)) / matches;
+    rowsOut.push({
+      player,
+      need,
+      needLabel,
+      projectedPPM,
+      attendance
+    });
+  }
+  rowsOut.sort((a,b)=> a.need - b.need || a.player.localeCompare(b.player));
+  return { currentLeader, rows: rowsOut };
+}
+
+function pickCurrentMvp(stats, totalSessions){
+  if(totalSessions <= 0) return null;
+  let leader = null;
+  for(const s of stats){
+    if(!s || s.matches <= 0) continue;
+    const attendance = s.matches / totalSessions;
+    if(attendance < 0.6) continue;
+    if(!leader || (s.ppm || 0) > (leader.ppm || 0) || ((s.ppm || 0) === (leader.ppm || 0) && s.points > leader.points) || ((s.ppm || 0) === (leader.ppm || 0) && s.points === leader.points && s.player.localeCompare(leader.player) < 0)){
+      leader = { player: s.player, ppm: s.ppm || 0, points: s.points, matches: s.matches, attendance };
+    }
+  }
+  return leader;
+}
+
+function computePointsToLead(player, basePoints, matchesAfter, others){
+  const cap = 30;
+  for(let x=0; x<=cap; x++){
+    const points = basePoints + x;
+    const ppm = points / matchesAfter;
+    const beatsAll = others.every(o => {
+      if(ppm > o.ppm + 1e-9) return true;
+      if(Math.abs(ppm - o.ppm) < 1e-9){
+        if(points > o.points) return true;
+        if(points === o.points && player.localeCompare(o.player) < 0) return true;
+      }
+      return false;
+    });
+    if(beatsAll) return x;
+  }
+  return cap + 1;
 }
 
 // Aggregate per-player goal totals and appearance counts for the active tournament

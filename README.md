@@ -139,6 +139,53 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
 
 If you’re an LLM agent continuing work: keep the HTML/CSS/JS separation intact and respect the stability rules above to avoid surprising users.
 
+## Guide: Voorbeschouwing via Vercel Edge + OpenAI
+A step-by-step recipe to add a generated voorbeschouwing after teams are created, keeping the API key server-side.
+
+1) **Prereqs**
+   - Have an OpenAI API key (paid), a Vercel project (Hobby is fine for light use), and this repo linked to Vercel.
+2) **Add the key to Vercel**
+   - In the Vercel dashboard: Project → Settings → Environment Variables → add `OPENAI_API_KEY` (Production + Preview). Avoid committing any key to git.
+3) **Create the Edge Function**
+   - Add `api/voorbeschouwing.js` with `export const config = { runtime: 'edge' };`.
+   - Read `const key = process.env.OPENAI_API_KEY;` and early-return 500 if missing.
+   - Accept POST only. Validate JSON body shape, e.g. `{ teams: [...], standings: {...}, language: 'nl' }`. Reject oversized payloads.
+   - Build a short prompt: include the team rosters, recent form/standings snippet, and ask for a concise Dutch preview.
+   - Call OpenAI via `fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-4o-mini', messages: [...] }) })`.
+   - Parse the response and `return new Response(text, { status: 200, headers: { 'Content-Type': 'text/plain' } });`. Handle non-200s with a safe error message (no key leakage).
+   - Optional: add a tiny IP-based rate limit (in-memory map) and a timeout guard (~10–12s).
+4) **Frontend hook (Players tab after teams exist)**
+   - Add a button like “Genereer voorbeschouwing” (recommended placement: Teams tab header bar so it’s available once teams are generated/locked).
+   - On click: disable button, show spinner, POST to `/api/voorbeschouwing` with minimal data:
+     ```
+     fetch('/api/voorbeschouwing', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         language: 'nl',
+         // Recommended context for a solid preview:
+         teams: state.teams, // id, name/color, members[]
+         schedule: state.schedule || computeSchedule(state), // if available; else omit
+         leaderboard: getLeaderboardSnapshot(state), // points/played/GD
+         topScorers: getTopScorers(state), // names + goals if present
+         recentForm: getRecentForm(state, 3), // optional: last 3 matches per player/team
+         highlights: {
+           mvpRace: getMvpRace(state), // current PPM leaders + attendance
+           streaks: getStreaks(state) // optional badge-style streak notes
+         }
+       })
+     })
+     ```
+   - On 200: render the returned text in a small card under the Players tab (or a modal). On error: show a notice and re-enable the button.
+5) **Local dev**
+   - Create `.env.local` with `OPENAI_API_KEY=...` for `vercel dev` if you want to test the function locally.
+   - Run `vercel dev` in the project root; the API route will be available at `/api/voorbeschouwing`.
+6) **Deploy**
+   - Deploy via `vercel` or push to main if auto-deploy is on. Ensure `OPENAI_API_KEY` is set in Vercel before the deploy goes live.
+7) **Safety notes**
+   - The key never ships to the browser; only the Edge Function can read it.
+   - Keep payloads small to avoid hitting Edge limits. If responses risk timeouts, switch the route to the Node serverless runtime (remove the Edge config).
+
 ## Roadmap (Robustness & Code Quality)
 Planned only — no implementation yet. Risk is relative to current structure.
 
