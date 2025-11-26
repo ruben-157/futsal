@@ -822,8 +822,19 @@ async function populateMvpChaseCard(refs){
     status.style.display = 'none';
     const table = document.createElement('table');
     table.setAttribute('aria-label','MVP chase (points needed)');
+    const colgroup = document.createElement('colgroup');
+    [
+      { w: '42%' },
+      { w: '16%' },
+      { w: '24%' },
+      { w: '18%' }
+    ].forEach(cfg => {
+      const col = document.createElement('col');
+      col.style.width = cfg.w;
+      colgroup.appendChild(col);
+    });
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th style="width:40%">Player</th><th>Needed</th><th>After this round</th><th>Attendance</th></tr>';
+    thead.innerHTML = '<tr><th>Player</th><th>Needed</th><th>After this round</th><th>Attendance</th></tr>';
     const tbody = document.createElement('tbody');
     const toShow = result.rows.slice(0,5);
     for(const row of toShow){
@@ -842,6 +853,7 @@ async function populateMvpChaseCard(refs){
       tr.appendChild(tdAtt);
       tbody.appendChild(tr);
     }
+    table.appendChild(colgroup);
     table.appendChild(thead);
     table.appendChild(tbody);
     const flush = document.createElement('div');
