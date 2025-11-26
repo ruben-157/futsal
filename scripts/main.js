@@ -784,20 +784,28 @@ function renderMvpChaseCard(){
   status.className = 'notice';
   status.textContent = 'Loading MVP chase…';
   status.style.margin = '0 12px 12px 12px';
+  const hint = document.createElement('div');
+  hint.id = 'mvpChaseHint';
+  hint.style.margin = '0 12px 8px 12px';
+  hint.style.fontSize = '12px';
+  hint.style.color = 'var(--muted)';
+  hint.style.display = 'none';
   const body = document.createElement('div');
   body.id = 'mvpChaseBody';
   body.style.padding = '0';
   panel.appendChild(header);
   panel.appendChild(status);
+  panel.appendChild(hint);
   panel.appendChild(body);
   wrap.appendChild(panel);
-  populateMvpChaseCard({ lead, status, body });
+  populateMvpChaseCard({ lead, status, body, hint });
 }
 
 async function populateMvpChaseCard(refs){
-  const { lead, status, body } = refs;
+  const { lead, status, body, hint } = refs;
   body.innerHTML = '';
   status.style.display = '';
+  if(hint){ hint.style.display = 'none'; hint.textContent = ''; }
   const attendees = new Set(state.attendees || []);
   if(attendees.size === 0){
     status.textContent = 'Geen spelers voor vandaag.';
@@ -819,6 +827,10 @@ async function populateMvpChaseCard(refs){
       pill.className = 'player-badge player-badge-premium';
       pill.textContent = `👑 Current MVP: ${result.currentLeader.player} (${result.currentLeader.ppm.toFixed(2)} pts/session)`;
       lead.appendChild(pill);
+      if(hint){
+        hint.textContent = 'Assumes the current MVP keeps the same average; if they play and score, required points increase.';
+        hint.style.display = '';
+      }
     } else {
       const pill = document.createElement('span');
       pill.className = 'player-badge';
