@@ -767,8 +767,9 @@ function renderMvpChaseCard(){
   title.textContent = 'MVP-chase';
   const lead = document.createElement('div');
   lead.id = 'mvpChaseLead';
-  lead.style.fontWeight = '700';
-  lead.style.fontSize = '13px';
+  lead.style.display = 'flex';
+  lead.style.alignItems = 'center';
+  lead.style.gap = '6px';
   header.appendChild(title);
   header.appendChild(lead);
   const status = document.createElement('div');
@@ -798,20 +799,29 @@ async function populateMvpChaseCard(refs){
     const data = rows || [];
     if(!data.length){
       status.textContent = 'Geen all-time data beschikbaar.';
-      lead.textContent = '';
+      lead.innerHTML = '';
       return;
     }
     const result = computeMvpChase(data, attendees);
+    lead.innerHTML = '';
     if(result.currentLeader){
-      lead.textContent = `Huidige MVP: ${result.currentLeader.player} (${result.currentLeader.ppm.toFixed(2)} p/s)`;
+      const pill = document.createElement('span');
+      pill.className = 'player-badge player-badge-premium';
+      pill.textContent = `👑 Huidige MVP: ${result.currentLeader.player} (${result.currentLeader.ppm.toFixed(2)} p/s)`;
+      lead.appendChild(pill);
     } else {
-      lead.textContent = 'Nog geen MVP';
+      const pill = document.createElement('span');
+      pill.className = 'player-badge';
+      pill.textContent = 'Nog geen MVP';
+      lead.appendChild(pill);
     }
     if(!result.rows.length){
       status.textContent = 'Niemand met ≥60% aanwezigheid kan de leiding pakken vandaag.';
       return;
     }
     status.style.display = 'none';
+    const wrapTable = document.createElement('div');
+    wrapTable.className = 'table-wrap';
     const table = document.createElement('table');
     table.className = 'alltime-table';
     table.setAttribute('aria-label','MVP-chase (punten nodig)');
@@ -837,10 +847,11 @@ async function populateMvpChaseCard(refs){
     }
     table.appendChild(thead);
     table.appendChild(tbody);
-    body.appendChild(table);
+    wrapTable.appendChild(table);
+    body.appendChild(wrapTable);
   }catch(err){
     status.textContent = 'MVP-chase kon niet laden.';
-    lead.textContent = '';
+    lead.innerHTML = '';
   }
 }
 
