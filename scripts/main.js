@@ -767,7 +767,7 @@ function renderMvpChaseCard(){
   header.style.padding = '12px';
   header.style.gap = '12px';
   const title = document.createElement('h2');
-  title.textContent = 'Players close to the Most Valuable Player badge';
+  title.textContent = 'Road to MVP';
   title.style.margin = '0';
   title.style.display = 'flex';
   title.style.alignItems = 'center';
