@@ -765,7 +765,7 @@ function renderMvpChaseCard(){
   header.style.alignItems = 'center';
   header.style.padding = '10px 0';
   const title = document.createElement('h2');
-  title.textContent = 'MVP-chase';
+  title.textContent = 'Players close to the Most Valuable Player badge';
   title.style.margin = '0';
   const lead = document.createElement('div');
   lead.id = 'mvpChaseLead';
