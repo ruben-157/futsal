@@ -767,7 +767,7 @@ function renderMvpChaseCard(){
   header.style.padding = '12px';
   header.style.gap = '12px';
   const title = document.createElement('h2');
-  title.textContent = 'Road to MVP';
+  title.textContent = 'Closest to Most Valuable Player Badge';
   title.style.margin = '0';
   title.style.display = 'flex';
   title.style.alignItems = 'center';
@@ -827,10 +827,6 @@ async function populateMvpChaseCard(refs){
       pill.className = 'player-badge player-badge-premium';
       pill.textContent = `👑 Current MVP: ${result.currentLeader.player} (${result.currentLeader.ppm.toFixed(2)} pts/session)`;
       lead.appendChild(pill);
-      if(hint){
-        hint.textContent = 'Assumes the current MVP keeps the same average; if they play and score, required points increase.';
-        hint.style.display = '';
-      }
     } else {
       const pill = document.createElement('span');
       pill.className = 'player-badge';
@@ -852,7 +848,7 @@ async function populateMvpChaseCard(refs){
       colgroup.appendChild(col);
     });
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th>Player</th><th><span class="label-full">Current Points per Session</span><span class="label-short">PTS/S</span></th><th><span class="label-full">Points needed for MVP Badge</span><span class="label-short">PTS Needed</span></th></tr>';
+    thead.innerHTML = '<tr><th>Player</th><th><span class="label-full">Current Points per Session</span><span class="label-short">PTS/S</span></th><th><span class="label-full">Points needed for MVP Badge</span><span class="label-short">Closest to MVP</span></th></tr>';
     const tbody = document.createElement('tbody');
     const toShow = result.rows.slice(0,5);
     for(const row of toShow){
