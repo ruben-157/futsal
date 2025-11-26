@@ -854,15 +854,9 @@ async function populateMvpChaseCard(refs){
       colgroup.appendChild(col);
     });
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th>Player</th><th><span class="label-full">Current Points per Session</span><span class="label-short">Current PTS/S</span></th><th><span class="label-full">Points needed to surpass current MVP Pts/s</span><span class="label-short">PTS Needed</span></th></tr>';
+    thead.innerHTML = '<tr><th>Player</th><th><span class="label-full">Current Points per Session</span><span class="label-short">Current PTS/S</span></th><th><span class="label-full">PTS Needed</span><span class="label-short">PTS Needed</span></th></tr>';
     const tbody = document.createElement('tbody');
-    const toShow = result.rows.slice(0,5);
-    if(hint){
-      const totalParticipants = attendees.size;
-      const totalShown = toShow.length;
-      hint.textContent = `Showing ${totalShown} of ${totalParticipants} participants this session.`;
-      hint.style.display = '';
-    }
+    const toShow = result.rows;
     for(const row of toShow){
       const tr = document.createElement('tr');
       const tdName = document.createElement('td');
