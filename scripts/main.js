@@ -848,7 +848,7 @@ async function populateMvpChaseCard(refs){
     table.setAttribute('aria-label','MVP chase (points needed)');
     table.style.tableLayout = 'fixed';
     const colgroup = document.createElement('colgroup');
-    ['30%','40%','30%'].forEach(w=>{
+    ['20%','40%','40%'].forEach(w=>{
       const col = document.createElement('col');
       col.style.width = w;
       colgroup.appendChild(col);
@@ -857,6 +857,12 @@ async function populateMvpChaseCard(refs){
     thead.innerHTML = '<tr><th>Player</th><th><span class="label-full">Current Points per Session</span><span class="label-short">Current PTS/S</span></th><th><span class="label-full">Points needed to surpass current MVP Pts/s</span><span class="label-short">PTS Needed</span></th></tr>';
     const tbody = document.createElement('tbody');
     const toShow = result.rows.slice(0,5);
+    if(hint){
+      const totalParticipants = attendees.size;
+      const totalShown = toShow.length;
+      hint.textContent = `Showing ${totalShown} of ${totalParticipants} participants this session.`;
+      hint.style.display = '';
+    }
     for(const row of toShow){
       const tr = document.createElement('tr');
       const tdName = document.createElement('td');
