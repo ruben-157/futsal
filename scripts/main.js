@@ -774,7 +774,7 @@ function renderMvpChaseCard(){
   header.appendChild(lead);
   const status = document.createElement('div');
   status.className = 'notice';
-  status.textContent = 'MVP wordt geladen…';
+  status.textContent = 'Loading MVP chase…';
   const body = document.createElement('div');
   body.id = 'mvpChaseBody';
   panel.appendChild(header);
@@ -798,7 +798,7 @@ async function populateMvpChaseCard(refs){
     const { rows } = await loadAllTimeCSV(false);
     const data = rows || [];
     if(!data.length){
-      status.textContent = 'Geen all-time data beschikbaar.';
+      status.textContent = 'No all-time data available.';
       lead.innerHTML = '';
       return;
     }
@@ -807,26 +807,23 @@ async function populateMvpChaseCard(refs){
     if(result.currentLeader){
       const pill = document.createElement('span');
       pill.className = 'player-badge player-badge-premium';
-      pill.textContent = `👑 Huidige MVP: ${result.currentLeader.player} (${result.currentLeader.ppm.toFixed(2)} p/s)`;
+      pill.textContent = `👑 Current MVP: ${result.currentLeader.player} (${result.currentLeader.ppm.toFixed(2)} pts/session)`;
       lead.appendChild(pill);
     } else {
       const pill = document.createElement('span');
       pill.className = 'player-badge';
-      pill.textContent = 'Nog geen MVP';
+      pill.textContent = 'No MVP yet';
       lead.appendChild(pill);
     }
     if(!result.rows.length){
-      status.textContent = 'Niemand met ≥60% aanwezigheid kan de leiding pakken vandaag.';
+      status.textContent = 'No one with ≥60% attendance can take the lead today.';
       return;
     }
     status.style.display = 'none';
-    const wrapTable = document.createElement('div');
-    wrapTable.className = 'table-wrap';
     const table = document.createElement('table');
-    table.className = 'alltime-table';
-    table.setAttribute('aria-label','MVP-chase (punten nodig)');
+    table.setAttribute('aria-label','MVP chase (points needed)');
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th style="width:40%">Speler</th><th>Nodig</th><th>Na deze ronde</th><th>Aanw.</th></tr>';
+    thead.innerHTML = '<tr><th style="width:40%">Player</th><th>Needed</th><th>After this round</th><th>Attendance</th></tr>';
     const tbody = document.createElement('tbody');
     const toShow = result.rows.slice(0,5);
     for(const row of toShow){
@@ -836,7 +833,7 @@ async function populateMvpChaseCard(refs){
       const tdNeed = document.createElement('td');
       tdNeed.textContent = row.needLabel;
       const tdPpm = document.createElement('td');
-      tdPpm.textContent = row.projectedPPM.toFixed(2) + ' p/s';
+      tdPpm.textContent = row.projectedPPM.toFixed(2) + ' pts/s';
       const tdAtt = document.createElement('td');
       tdAtt.textContent = Math.round(row.attendance * 100) + '%';
       tr.appendChild(tdName);
@@ -847,10 +844,9 @@ async function populateMvpChaseCard(refs){
     }
     table.appendChild(thead);
     table.appendChild(tbody);
-    wrapTable.appendChild(table);
-    body.appendChild(wrapTable);
+    body.appendChild(table);
   }catch(err){
-    status.textContent = 'MVP-chase kon niet laden.';
+    status.textContent = 'MVP chase could not load.';
     lead.innerHTML = '';
   }
 }
