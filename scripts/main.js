@@ -2825,14 +2825,15 @@ function computeAllTimeBadges(rows, byDate, statsMap, preRanks, postRanks){
       const contrib = pts + gVal;
       if(contrib > sessionMaxContribution){ sessionMaxContribution = contrib; }
     }
-    const hasWin = (entries.length > 0) && (maxPoints > minPoints);
+    // Treat any top-score day as a "win" even if tied, so streak badges stay in sync with the player modal.
     const winners = new Set();
-    if(hasWin){
+    if(entries.length > 0 && maxPoints > 0){
       for(const e of entries){
         const pts = Number(e.points) || 0;
         if(pts === maxPoints) winners.add(e.player);
       }
     }
+    const hasWin = winners.size > 0;
     if(entries.length && maxPoints > -Infinity){
       for(const e of entries){
         const pts = Number(e.points) || 0;
