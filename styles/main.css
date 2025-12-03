@@ -103,6 +103,8 @@ main > section{ margin-top: 8px }
 .item.selected{ background:#ECFDF5; border-color:#A7F3D0 }
 .item button{background:transparent; color:#6b7280; border:none; padding:6px; cursor:pointer; font-size:18px}
 .item button:hover{color:#111827}
+.item .item-delete{ font-size:12px; font-weight:700; border:1px solid var(--border); border-radius:8px; padding:4px 8px; color:var(--danger); background:#fff; cursor:pointer }
+.item .item-delete:hover{ background:#fff1f2; border-color:#fecdd3; color:#b91c1c }
 .item[draggable="true"]{cursor:grab}
 .item:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .droptarget{outline:2px dashed var(--accent); outline-offset:-4px}

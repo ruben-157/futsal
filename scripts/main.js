@@ -1,6 +1,7 @@
 import {
   COLORS,
   MAX_ATTENDEES,
+  DEFAULT_PLAYERS,
   getSkill,
   getStamina,
   STAMINA,
@@ -32,6 +33,7 @@ import { reportWarning } from './utils/validation.js';
 import { buildAllTimeCSVWarningNotice } from './utils/accessibility.js';
 import { logError } from './utils/logging.js';
 
+const DEFAULT_PLAYER_SET = new Set(DEFAULT_PLAYERS.map(p => p.toLowerCase()));
 const HARMONY_TOKENS = ['UnViZW58UmFtdGlu'];
 function decodeHarmonyToken(token){
   try{
@@ -187,6 +189,22 @@ function createListItem(name, isSelected){
   label.textContent = name;
   label.style.flex = '1';
 
+  const isIncidental = !DEFAULT_PLAYER_SET.has(name.toLowerCase());
+  let deleteButton = null;
+  if(isIncidental && !locked){
+    deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'item-delete';
+    deleteButton.title = `Remove ${name}`;
+    deleteButton.setAttribute('aria-label', `Remove ${name} from roster`);
+    deleteButton.textContent = 'Delete';
+    deleteButton.onclick = (e)=>{
+      e.stopPropagation();
+      e.preventDefault();
+      openRemovePlayerModal(name);
+    };
+  }
+
   if(isSelected){ div.classList.add('selected'); }
 
   // Click anywhere on item toggles
@@ -204,6 +222,7 @@ function createListItem(name, isSelected){
   div.addEventListener('dragstart', (e)=>{ e.preventDefault(); });
 
   div.appendChild(label);
+  if(deleteButton) div.appendChild(deleteButton);
   div.appendChild(icon);
   return div;
 }
@@ -1723,6 +1742,47 @@ function closeAddPlayerModal(){
   const overlay = document.getElementById('overlay');
   const modal = document.getElementById('addPlayerModal');
   overlay.hidden = true; modal.hidden = true;
+}
+
+let removePlayerTarget = null;
+function openRemovePlayerModal(name){
+  if(!name) return;
+  removePlayerTarget = name;
+  const overlay = document.getElementById('overlay');
+  const modal = document.getElementById('removePlayerModal');
+  const titleName = document.getElementById('removePlayerName');
+  const info = document.getElementById('removePlayerInfo');
+  if(titleName) titleName.textContent = name;
+  if(info) info.textContent = `Remove ${name} from the roster?`;
+  overlay.hidden = false; modal.hidden = false;
+  overlay.onclick = closeRemovePlayerModal;
+  const cancel = document.getElementById('removePlayerCancel');
+  const confirm = document.getElementById('removePlayerConfirm');
+  if(cancel) cancel.onclick = closeRemovePlayerModal;
+  if(confirm) confirm.onclick = ()=> { confirmRemovePlayer(); };
+  document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ closeRemovePlayerModal(); } }, { once:true });
+}
+function closeRemovePlayerModal(){
+  const overlay = document.getElementById('overlay');
+  const modal = document.getElementById('removePlayerModal');
+  overlay.hidden = true; modal.hidden = true;
+  removePlayerTarget = null;
+}
+function confirmRemovePlayer(){
+  if(!removePlayerTarget) return closeRemovePlayerModal();
+  const name = removePlayerTarget;
+  removePlayerTarget = null;
+  // Remove from roster and attendees; cleanup ratings so future adds start fresh.
+  state.players = state.players.filter(p => p !== name);
+  state.attendees = state.attendees.filter(p => p !== name);
+  delete SKILLS[name];
+  delete STAMINA[name];
+  savePlayers();
+  saveAttendees();
+  clampPlayLimit();
+  renderRoster();
+  updateTabsUI();
+  closeRemovePlayerModal();
 }
 
 // ----- Modal: Reset Confirmation -----

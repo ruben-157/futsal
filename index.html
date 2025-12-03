@@ -189,6 +189,22 @@
     </div>
   </div>
 
+  <!-- Modal for removing incidental player -->
+  <div id="removePlayerModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="removePlayerTitle" hidden>
+    <div class="modal-header">
+      <h3 id="removePlayerTitle" style="margin:0; font-size:18px">Remove Player?</h3>
+    </div>
+    <div class="modal-body">
+      <div id="removePlayerInfo" class="notice" style="font-weight:600; margin-bottom:8px">Remove player from the roster and attendees?</div>
+      <div class="notice">This only removes incidental players. Default roster players stay available.</div>
+      <div style="margin-top:6px; font-weight:700">Player: <span id="removePlayerName"></span></div>
+    </div>
+    <div class="modal-actions">
+      <button id="removePlayerCancel" type="button" class="btn">Cancel</button>
+      <button id="removePlayerConfirm" type="button" class="btn danger">Remove</button>
+    </div>
+  </div>
+
   <!-- Modal for reset confirmation -->
   <div id="resetModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="resetTitle" hidden>
     <div class="modal-header">
