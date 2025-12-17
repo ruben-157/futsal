@@ -20,7 +20,7 @@ export const DEFAULT_STAMINA = 3;
 
 export const SKILLS = {
   Job: 3.7,
-  Ramtin: 2,
+  Ramtin: 2.5,
   Thijs: 4,
   Emiel: 3.7,
   Frits: 3.2,
