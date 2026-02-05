@@ -80,7 +80,7 @@ Date,Player,Points,Goals
 2025-10-29,Jefta,5
 2025-10-29,Ramtin,5
 2025-10-29,Rene,5
-2025-10-29,Ruben,5 
+2025-10-29,Ruben,5
 2025-11-05,Emiel,7
 2025-11-05,Jefta,7
 2025-11-05,Nathan,7
@@ -142,7 +142,7 @@ Date,Player,Points,Goals
 2025-11-26,Ramtin,6,0
 2025-11-26,Ruben,6,1
 2025-11-26,Thijs,6,2
-2025-11-26,Wijnand,6,1 
+2025-11-26,Wijnand,6,1
 2025-12-03,Carlos,13,0
 2025-12-03,Hanno,13,5
 2025-12-03,Nathan,13,0
@@ -158,7 +158,7 @@ Date,Player,Points,Goals
 2025-12-03,Bjorn,5,1
 2025-12-03,Emiel,5,1
 2025-12-03,Gerjan,5,0
-2025-12-03,Jefta,5,1 
+2025-12-03,Jefta,5,1
 2025-12-10,Bjorn,11,2
 2025-12-10,Hanno,11,2
 2025-12-10,Job,11,1
@@ -175,7 +175,7 @@ Date,Player,Points,Goals
 2025-12-10,Bas,3,0
 2025-12-10,Danny,3,0
 2025-12-10,Wijnand,3,0
-2025-12-10,Willem,3,2 
+2025-12-10,Willem,3,2
 2025-12-17,Frits,10,0
 2025-12-17,Lenn,10,3
 2025-12-17,Nathan,10,2
@@ -188,7 +188,7 @@ Date,Player,Points,Goals
 2025-12-17,Jefta,3,0
 2025-12-17,Ramtin,3,2
 2025-12-17,Thijs,3,1
-2025-12-17,Toby,3,0 
+2025-12-17,Toby,3,0
 2026-01-07,Frits,9,0
 2026-01-07,Nathan,9,5
 2026-01-07,Thijs,9,7
@@ -202,7 +202,7 @@ Date,Player,Points,Goals
 2026-01-07,Emiel,3,1
 2026-01-07,Ramtin,3,2
 2026-01-07,Rene,3,3
-2026-01-07,Willem,3,3 
+2026-01-07,Willem,3,3
 2026-01-14,Aurant,9,0
 2026-01-14,Bjorn,9,4
 2026-01-14,Lenn,9,1
@@ -215,7 +215,7 @@ Date,Player,Points,Goals
 2026-01-14,Bas,3,1
 2026-01-14,Gerjan,3,0
 2026-01-14,Nathan,3,2
-2026-01-14,Wijnand,3,1 
+2026-01-14,Wijnand,3,1
 2026-01-21,Aklilu,16,1
 2026-01-21,Bas,16,1
 2026-01-21,Hanno,16,6
@@ -245,7 +245,7 @@ Date,Player,Points,Goals
 2026-01-28,Jefta,4,0
 2026-01-28,Remko,4,0
 2026-01-28,Wijnand,4,0
-2026-01-28,Willem,4,3 
+2026-01-28,Willem,4,3
 2026-02-04,Bob,11,0
 2026-02-04,Gerjan,11,1
 2026-02-04,Nathan,11,4
@@ -260,4 +260,4 @@ Date,Player,Points,Goals
 2026-02-04,Bas,3,0
 2026-02-04,Bjorn,3,1
 2026-02-04,Danny,3,0
-2026-02-04,Wijnand,3,0 
+2026-02-04,Wijnand,3,0
