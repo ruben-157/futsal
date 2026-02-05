@@ -246,7 +246,6 @@ Date,Player,Points,Goals
 2026-01-28,Remko,4,0
 2026-01-28,Wijnand,4,0
 2026-01-28,Willem,4,3 
-Date,Player,Points,Goals
 2026-02-04,Bob,11,0
 2026-02-04,Gerjan,11,1
 2026-02-04,Nathan,11,4
