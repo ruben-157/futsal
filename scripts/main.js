@@ -624,7 +624,10 @@ function renderLeaderboard(){
     else if(gb > ga){ B.pts += 3; }
     else { A.pts += 1; B.pts += 1; }
   }
-  const rows = Array.from(byId.values()).sort((x,y)=> y.pts - x.pts || y.gf - x.gf || x.team.name.localeCompare(y.team.name));
+  const rows = Array.from(byId.values()).sort((x,y)=> {
+    const gdDiff = (y.gf - (y.ga || 0)) - (x.gf - (x.ga || 0));
+    return y.pts - x.pts || gdDiff || (y.gf - x.gf) || x.team.name.localeCompare(y.team.name);
+  });
 
   const tournamentComplete = areAllMatchesScored();
   const prevRanks = getPrevRanks();

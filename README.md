@@ -97,7 +97,7 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
   - If a team has only 3 players (e.g., 11 attendees → 4‑4‑3), a “Guest player” input appears for that team so goals can balance. Guest goals count toward the match score but are excluded from Top Scorers and other leaderboards.
 - Points: Win=3, Draw=1, Loss=0.
 - Leaderboard columns: Team, Played, Points (sorted desc), GD (Goals For − Goals Against).
-  - Sorting tie-break currently uses Goals For (GF) after Points; GD is displayed only.
+  - Sorting tie-break uses Goal Difference (GD) after Points, then Goals For (GF).
   - Winner banner appears when the tournament completes.
   - Co-winners: If the top teams tie on Points and Goal Difference (GF−GA), they are declared joint winners (banner, trophies, and share text reflect this).
 - Tournament end confirmation: when the last match is finalized, a modal appears: “All matches have been played and all results are in. Do you want to end the tournament or play another round?”
