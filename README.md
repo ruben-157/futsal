@@ -66,22 +66,25 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
   - 11 players → modal asks 2 or 3 teams.
     - 2 teams: 6‑5; 3 teams: 4‑4‑3.
   - 15 players → default is 3 teams (5‑5‑5) without a modal; 4 teams when there are 16–20 players (e.g., 16→4‑4‑4‑4; 17–19→5‑5‑5‑4; 20→5‑5‑5‑5).
-  - For overrides (11‑player case), capacities are evenly distributed across the chosen number of teams (as shown in the modal), then the same seeded skill‑balanced assignment is used.
+  - For overrides (11‑player case), capacities are evenly distributed across the chosen number of teams (as shown in the modal), then the same randomized multi-candidate solver is used.
 - Skill model: `SKILLS` constant (1–5, accepts arbitrary decimals). Incidental players default to 3 unless overridden in the modal, which steps in 0.5 increments.
 - Stamina model: `STAMINA` constant (1–5, accepts arbitrary decimals). Incidental players default to 3 unless overridden in the modal, which steps in 0.5 increments.
-- Algorithm (skill‑first with post‑passes):
-  1) Deterministic seeded order for tie‑breaks (see Seeding below).
-  2) Sort players by skill desc, tie‑break by seeded order.
-  3) Greedy assignment to the team with the largest skill deficit to its target (capacity‑aware).
-  4) Skill balancer (post‑pass): deterministic pairwise swaps that strictly reduce total deviation from targets (capacity × average skill) without changing team sizes.
-  5) Stamina on tie: during greedy assignment, when two teams are tied on skill deficit, prefer for high‑stamina players (≥ average stamina): the smaller‑capacity team; if equal capacity, the team with lower current stamina; otherwise keep existing tie‑breakers.
-  6) Stamina smoother (post‑pass): deterministic swaps only between equal‑skill players to smooth stamina without changing any team’s total skill.
+- Algorithm (skill‑first randomized search):
+  1) Every Generate click creates a fresh random seed (`crypto.getRandomValues` when available).
+  2) The solver builds 64 candidate team layouts and scores them before choosing a winner.
+  3) Attendees are sorted by skill desc into skill bands of width `teamCount`; order is randomized within each band.
+  4) Greedy assignment fills the team with the largest skill deficit to its target. If multiple teams are within `0.15` of the best deficit, the solver chooses randomly with weights that still favor the best deficit, better band spread, and the current stamina tie-breaks.
+  5) Skill balancer (post‑pass): randomized pairwise swaps that improve skill deviation; most candidates use the full 8 passes, while a small exploration slice stops earlier so the final pool can contain more than one near-optimal shape.
+  6) Stamina on tie: during greedy assignment, when two teams are tied on skill deficit, prefer for high‑stamina players (≥ average stamina): the smaller‑capacity team; if equal capacity, the team with lower current stamina; otherwise keep existing tie‑breakers.
+  7) Stamina smoother (post‑pass): randomized equal-skill swaps only; it improves stamina without worsening skill balance.
+  8) Candidate selection is lexicographic: `skillError` first, then `staminaError`, then `bandClashError` (same-band stacking penalty). Near-optimal duplicates are deduped and one survivor is chosen uniformly at random.
 - Colors: Red, Blue, Green, Yellow (first `t`). Team names default to just the color (e.g., “Red”). Inline rename persists.
 
 ## Seeding & Stability
-- Stable, time‑windowed seed: same attendee set within a 1‑hour bucket yields the same teams and schedule — even across Reset.
-- Seed = FNV‑1a hash of `sorted(attendees).join('|') + '|' + timeBucket(1h)`.
-- To change the stability window: edit `STABLE_WINDOW_MS` in `scripts/utils/random.js`.
+- Teams are no longer stable within a time window. The same attendee list can produce different balanced lineups on each Generate click.
+- The 1-hour stable seed is still used for schedule ordering and kickoff fairness.
+- Stable seed = FNV‑1a hash of `sorted(attendees).join('|') + '|' + timeBucket(1h)`.
+- To change the schedule stability window: edit `STABLE_WINDOW_MS` in `scripts/utils/random.js`.
 
 ## Schedule Generation
 - Round robin over teams (1–N rounds).
@@ -135,9 +138,9 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
   - Storage: `loadState`, `saveAttendees`, `saveTeams`, `saveResults`, `saveRounds`.
   - Rendering: `renderRoster`, `renderTeams`, `renderSchedule`, `renderLeaderboard`.
   - Actions: `resetAll`, `generateTeams`, `addAdditionalRound`.
-  - Utils: `mulberry32`, `shuffleSeeded`, `computeStableSeedFromAttendees`, `orderRoundPairings`.
+  - Utils: `mulberry32`, `createRandomSeed`, `computeStableSeedFromAttendees`, `solveTeams`, `orderRoundPairings`.
 
-If you’re an LLM agent continuing work: keep the HTML/CSS/JS separation intact and respect the stability rules above to avoid surprising users.
+If you’re an LLM agent continuing work: keep the HTML/CSS/JS separation intact and preserve the current contract: fresh team generation per click, stable schedule ordering within the 1-hour window.
 
 ## Guide: Voorbeschouwing via Vercel Edge + OpenAI
 A step-by-step recipe to add a generated voorbeschouwing after teams are created, keeping the API key server-side.

@@ -1,5 +1,4 @@
 import {
-  COLORS,
   MAX_ATTENDEES,
   DEFAULT_PLAYERS,
   getSkill,
@@ -27,50 +26,13 @@ import {
   KEYS,
   savePrevRanksFromRows
 } from './state/storage.js';
-import { computeStableSeedFromAttendees, shuffleSeeded, mulberry32 } from './utils/random.js';
-import { balanceSkillToTargets, balanceStaminaEqualSkill } from './logic/balance.js';
+import { computeStableSeedFromAttendees, createRandomSeed, mulberry32 } from './utils/random.js';
+import { solveTeams } from './logic/team-generator.js';
 import { reportWarning } from './utils/validation.js';
 import { buildAllTimeCSVWarningNotice } from './utils/accessibility.js';
 import { logError } from './utils/logging.js';
 
 const DEFAULT_PLAYER_SET = new Set(DEFAULT_PLAYERS.map(p => p.toLowerCase()));
-const HARMONY_TOKENS = ['UnViZW58UmFtdGlu'];
-function decodeHarmonyToken(token){
-  try{
-    if(typeof atob === 'function'){
-      return atob(token);
-    }
-    if(typeof globalThis !== 'undefined' && globalThis.Buffer){
-      return globalThis.Buffer.from(token, 'base64').toString('utf8');
-    }
-  }catch(_){}
-  return '';
-}
-const harmonyPairs = HARMONY_TOKENS
-  .map(token => {
-    const decoded = decodeHarmonyToken(token);
-    if(!decoded) return null;
-    const parts = decoded.split('|').map(s => s.trim()).filter(Boolean);
-    return parts.length === 2 ? parts : null;
-  })
-  .filter(Boolean);
-const harmonyPairKeys = new Set(harmonyPairs.map(([a,b]) => [a,b].sort((x,y)=>x.localeCompare(y)).join('|')));
-const HARMONY_PENALTY = 0.4;
-
-function isHarmonyPair(a,b){
-  if(!a || !b) return false;
-  return harmonyPairKeys.has([a,b].sort((x,y)=>x.localeCompare(y)).join('|'));
-}
-function computeHarmonyBias(members=[], candidate){
-  if(!candidate || !Array.isArray(members) || members.length === 0) return 0;
-  let bias = 0;
-  for(const member of members){
-    if(isHarmonyPair(member, candidate)){
-      bias += HARMONY_PENALTY;
-    }
-  }
-  return bias;
-}
 
 function clampPlayLimit(){
   const over = state.attendees.length > MAX_ATTENDEES;
@@ -88,55 +50,6 @@ function clampPlayLimit(){
     }
   }
 }
-function applyRosterHarmonyFinal(teams){
-  if(!Array.isArray(teams) || teams.length < 2 || harmonyPairs.length === 0) return;
-  for(const [a,b] of harmonyPairs){
-    if(!a || !b) continue;
-    let teamA = null, teamB = null;
-    for(const team of teams){
-      if(team.members && team.members.includes(a)) teamA = team;
-      if(team.members && team.members.includes(b)) teamB = team;
-    }
-    if(!teamA || !teamB || teamA !== teamB) continue;
-    const conflictTeam = teamA;
-    const pairMembers = [a, b];
-    let bestSwap = null;
-    for(const moving of pairMembers){
-      const counterpart = moving === a ? b : a;
-      for(const target of teams){
-        if(target === conflictTeam) continue;
-        if(target.members && target.members.includes(counterpart)) continue;
-        if(!Array.isArray(target.members) || target.members.length === 0) continue;
-        for(const swapCandidate of target.members){
-          if(isHarmonyPair(swapCandidate, counterpart)) continue;
-          const skillGap = Math.abs(getSkill(moving) - getSkill(swapCandidate));
-          const staminaGap = Math.abs(getStamina(moving) - getStamina(swapCandidate)) * 0.05;
-          const score = skillGap + staminaGap;
-          if(!bestSwap || score < bestSwap.score){
-            bestSwap = {
-              score,
-              fromTeam: conflictTeam,
-              toTeam: target,
-              moving,
-              swapCandidate
-            };
-          }
-        }
-      }
-    }
-    if(bestSwap){
-      const fromIdx = bestSwap.fromTeam.members.indexOf(bestSwap.moving);
-      const toIdx = bestSwap.toTeam.members.indexOf(bestSwap.swapCandidate);
-      if(fromIdx !== -1 && toIdx !== -1){
-        bestSwap.fromTeam.members[fromIdx] = bestSwap.swapCandidate;
-        bestSwap.toTeam.members[toIdx] = bestSwap.moving;
-      }
-    }
-  }
-}
-
-
-
 // ----- Rendering -----
 function renderRoster(){
   const listNot = document.getElementById('listNot');
@@ -1831,83 +1744,33 @@ function openTeamCountModal(options=[2,3], nOverride){
 }
 
 function generateTeamsOverride(tOverride){
-  const n = state.attendees.length;
   if(!state.timestamp){ state.timestamp = Date.now(); saveTimestamp(); }
-  const t = tOverride;
-  const stableSeed = computeStableSeedFromAttendees(state.attendees);
-  const shuffled = shuffleSeeded(state.attendees, stableSeed);
-  // Average stamina across current attendees for stamina-aware tie-breaks
-  const totalStaminaOv = state.attendees.reduce((s, name)=> s + getStamina(name), 0);
-  const avgStaminaOv = n > 0 ? (totalStaminaOv / n) : DEFAULT_STAMINA;
-  // Evenly distribute capacities for override
-  const base = Array(t).fill(Math.floor(n/t));
-  const r = n % t;
-  for(let i=t-r; i<t; i++) if(i>=0 && i<t) base[i] += 1;
-  const colors = COLORS.slice(0, Math.min(t, COLORS.length));
-  const totalSkillOv = state.attendees.reduce((s, name)=> s + getSkill(name), 0);
-  const avgSkillOv = totalSkillOv / n;
-  const teamInfos = base.map((size, i) => ({
-    cap: size,
-    target: size * avgSkillOv,
-    skillSum: 0,
-    staminaSum: 0,
-    team: { id: i+1, name: colors[i].name, color: colors[i].hex, members: [] }
-  }));
-  const orderIndex = new Map(shuffled.map((name, idx) => [name, idx]));
-  const playersSorted = [...state.attendees].sort((a,b)=>{
-    const sa = getSkill(a), sb = getSkill(b);
-    if(sb !== sa) return sb - sa;
-    return (orderIndex.get(a) ?? 0) - (orderIndex.get(b) ?? 0);
+  applyGeneratedTeams(tOverride, true);
+}
+
+function applyGeneratedTeams(teamCountOverride=null, clearPrevRanks=false){
+  const rng = mulberry32(createRandomSeed());
+  state.teams = solveTeams({
+    attendees: state.attendees,
+    teamCountOverride,
+    rng,
+    getSkill,
+    getStamina
   });
-  for(const player of playersSorted){
-    const s = getSkill(player);
-    const st = getStamina(player);
-    let best = -1;
-    let bestScore = -Infinity;
-    for(let i=0;i<teamInfos.length;i++){
-      const info = teamInfos[i];
-      if(info.team.members.length < info.cap){
-        const def = info.target - info.skillSum;
-        const harmonyBias = computeHarmonyBias(info.team.members, player);
-        const score = def - harmonyBias;
-        if(score > bestScore + 1e-9){ bestScore = score; best = i; }
-        else if(Math.abs(score - bestScore) <= 1e-9 && best !== -1){
-          const bi = teamInfos[best];
-          // Stamina-aware tie-break: only within skill tie
-          if(st >= avgStaminaOv){
-            // Prefer smaller-capacity team when player's stamina is high
-            if(info.cap < bi.cap) { best = i; }
-            else if(info.cap === bi.cap){
-              // If capacities equal, prefer team with lower current staminaSum to even out
-              if(info.staminaSum < bi.staminaSum) best = i;
-            }
-          }
-          // Existing deterministic tie-breakers
-          const bestIdx = best; // might have changed above
-          const bi2 = teamInfos[bestIdx];
-          if(info.team.members.length < bi2.team.members.length) best = i;
-          else if(info.team.members.length === bi2.team.members.length && info.skillSum < bi2.skillSum) best = i;
-          else if(info.team.members.length === bi2.team.members.length && info.skillSum === bi2.skillSum && i < bestIdx) best = i;
-        }
-      }
-    }
-    if(best === -1) best = 0;
-    const tgt = teamInfos[best];
-    tgt.team.members.push(player);
-    tgt.skillSum += s;
-    tgt.staminaSum += st;
-  }
-  state.teams = teamInfos.map(x => x.team);
-  // Post-pass: skill balancer then stamina smoothing (equal-skill swaps)
-  try { balanceSkillToTargets(state.teams, state.attendees, getSkill); } catch(_) { /* best-effort */ }
-  try { balanceStaminaEqualSkill(state.teams, getSkill, getStamina); } catch(_) { /* best-effort */ }
-  try { applyRosterHarmonyFinal(state.teams); } catch(_) { /* best-effort */ }
   state.results = {};
   state.rounds = 2;
-  localStorage.removeItem(KEYS.prevRanks);
-  saveTeams(); saveResults(); saveRounds();
-  renderTeams(); renderRoster(); renderSchedule(); renderLeaderboard();
-  switchTab('teams'); updateTabsUI();
+  if(clearPrevRanks){
+    localStorage.removeItem(KEYS.prevRanks);
+  }
+  saveTeams();
+  saveResults();
+  saveRounds();
+  renderTeams();
+  renderRoster();
+  renderSchedule();
+  renderLeaderboard();
+  switchTab('teams');
+  updateTabsUI();
 }
 
 // Compute a sizes descriptor string using even distribution (e.g., 11 with 2 -> 6-5, with 3 -> 4-4-3)
@@ -2059,10 +1922,6 @@ function removeLastRound(r){
 }
 
 // clearTeams replaced by resetAll (single reset action)
-
-function computeTeamCount(n){
-  return Math.max(1, Math.min(4, Math.floor(n/4)));
-}
 
 function getPairings(){
   const pairs = [];
@@ -2320,100 +2179,8 @@ function generateTeams(){
   if(n === 11){
     return openTeamCountModal([2,3], 11);
   }
-  // For 15 players, default to 3 teams (5-5-5); no choice modal
   if(!state.timestamp){ state.timestamp = Date.now(); saveTimestamp(); }
-
-  const t = computeTeamCount(n);
-  const stableSeed = computeStableSeedFromAttendees(state.attendees);
-  const shuffled = shuffleSeeded(state.attendees, stableSeed);
-  // Average stamina across current attendees for stamina-aware tie-breaks
-  const totalStamina = state.attendees.reduce((s, name)=> s + getStamina(name), 0);
-  const avgStamina = n > 0 ? (totalStamina / n) : DEFAULT_STAMINA;
-  // target sizes: base 4, last r teams +1
-  const base = Array(t).fill(4);
-  const r = n - 4*t;
-  for(let i=t-r; i<t; i++) if(i>=0 && i<t) base[i] += 1;
-
-  const colors = COLORS.slice(0, Math.min(t, COLORS.length));
-  // Build teams with capacity and targets based on average skill per slot
-  const totalSkill = state.attendees.reduce((s, name)=> s + getSkill(name), 0);
-  const avgSkill = totalSkill / n;
-  const teamInfos = base.map((size, i) => ({
-    cap: size,
-    target: size * avgSkill,
-    skillSum: 0,
-    staminaSum: 0,
-    team: {
-      id: i+1,
-      name: colors[i].name,
-      color: colors[i].hex,
-      members: []
-    }
-  }));
-
-  // Assign players sorted by skill desc (tie-broken by seeded shuffle)
-  // Choose the team with the greatest deficit (target - currentSum), respecting capacity
-  const orderIndex = new Map(shuffled.map((name, idx) => [name, idx]));
-  const playersSorted = [...state.attendees].sort((a,b)=>{
-    const sa = getSkill(a), sb = getSkill(b);
-    if(sb !== sa) return sb - sa; // higher skill first
-    return (orderIndex.get(a) ?? 0) - (orderIndex.get(b) ?? 0); // deterministic tie-breaker
-  });
-  for(const player of playersSorted){
-    const s = getSkill(player);
-    const st = getStamina(player);
-    let best = -1;
-    let bestScore = -Infinity;
-    for(let i=0;i<teamInfos.length;i++){
-      const info = teamInfos[i];
-      if(info.team.members.length < info.cap){
-        const def = info.target - info.skillSum;
-        const harmonyBias = computeHarmonyBias(info.team.members, player);
-        const score = def - harmonyBias;
-        if(score > bestScore + 1e-9){ bestScore = score; best = i; }
-        else if(Math.abs(score - bestScore) <= 1e-9 && best !== -1){
-          const bi = teamInfos[best];
-          // Stamina-aware tie-break: only within skill tie
-          if(st >= avgStamina){
-            // Prefer smaller-capacity team when player's stamina is high
-            if(info.cap < bi.cap) { best = i; }
-            else if(info.cap === bi.cap){
-              // If capacities equal, prefer team with lower current staminaSum to even out
-              if(info.staminaSum < bi.staminaSum) best = i;
-            }
-          }
-          // Existing deterministic tie-breakers
-          const bestIdx = best; // may have changed above
-          const bi2 = teamInfos[bestIdx];
-          if(info.team.members.length < bi2.team.members.length) best = i;
-          else if(info.team.members.length === bi2.team.members.length && info.skillSum < bi2.skillSum) best = i;
-          else if(info.team.members.length === bi2.team.members.length && info.skillSum === bi2.skillSum && i < bestIdx) best = i;
-        }
-      }
-    }
-    if(best === -1) best = 0;
-    const tgt = teamInfos[best];
-    tgt.team.members.push(player);
-    tgt.skillSum += s;
-    tgt.staminaSum += st;
-  }
-
-  state.teams = teamInfos.map(x => x.team);
-  // Post-pass: skill balancer then stamina smoothing (equal-skill swaps)
-  try { balanceSkillToTargets(state.teams, state.attendees, getSkill); } catch(_) { /* best-effort */ }
-  try { balanceStaminaEqualSkill(state.teams, getSkill, getStamina); } catch(_) { /* best-effort */ }
-  try { applyRosterHarmonyFinal(state.teams); } catch(_) { /* best-effort */ }
-  state.results = {};
-  state.rounds = 2;
-  saveTeams();
-  saveResults();
-  saveRounds();
-  renderTeams();
-  renderRoster();
-  renderSchedule();
-  renderLeaderboard();
-  switchTab('teams');
-  updateTabsUI();
+  applyGeneratedTeams();
 }
 
 function copyTeams(){

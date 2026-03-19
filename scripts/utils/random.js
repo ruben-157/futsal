@@ -9,6 +9,17 @@ export function mulberry32(a){
 
 export const STABLE_WINDOW_MS = 60 * 60 * 1000;
 
+export function createRandomSeed(){
+  try{
+    if(typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.getRandomValues === 'function'){
+      const buf = new Uint32Array(1);
+      globalThis.crypto.getRandomValues(buf);
+      return buf[0] >>> 0;
+    }
+  }catch(_){}
+  return ((Date.now() & 0xffffffff) ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
+}
+
 export function fnv1a32(str){
   let h = 0x811c9dc5>>>0;
   for(let i=0;i<str.length;i++){

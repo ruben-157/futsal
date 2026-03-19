@@ -17,7 +17,8 @@ This doc is for follow-up agents. It explains what the app does, how it is struc
 - `styles/main.css`: Global theme, layouts, components, responsive rules, and table styling.
 - `scripts/main.js`: Main controller; renders UI, handles interactions, team generation, scheduling, results, leaderboard, and All-Time view.
 - `scripts/data/config.js`: Roster, colors, skill/stamina ratings, and rating helpers.
-- `scripts/logic/balance.js`: Post-pass balancing for skill and stamina.
+- `scripts/logic/team-generator.js`: Runtime team solver; randomized multi-candidate search with skill/stamina scoring.
+- `scripts/logic/balance.js`: Legacy balancing helpers kept for tests and baseline comparisons.
 - `scripts/state/storage.js`: localStorage keys, load/save, sanitization hooks.
 - `scripts/state/migrations.js`: Legacy data migration/cleanup.
 - `scripts/utils/*.js`: RNG, validation, logging, and All-Time warning notice.
@@ -72,26 +73,21 @@ Modals:
 - `.table-wrap` provides sticky headers for tables.
 
 ## Team Generation
-Primary logic in `scripts/main.js`:
+Primary logic lives in `scripts/logic/team-generator.js`, orchestrated by `scripts/main.js`:
 - Attendees must be >= 8 to generate.
 - Team count: `t = max(1, min(4, floor(n/4)))`.
   - For 11 players: user chooses 2 or 3 teams.
   - For 15 players: defaults to 3 teams without a modal.
 - Team capacities: base of 4 each, remainder (`n - 4t`) distributed to last `r` teams.
-- Stable seed: 1-hour time window based on attendee set (see `scripts/utils/random.js`).
+- Team generation seed: fresh per-click random seed from `createRandomSeed()` in `scripts/utils/random.js`.
 - Assignment algorithm:
-  1) Sort players by skill descending, tie-broken by seeded order.
-  2) Greedy assignment to team with largest skill deficit to target, capacity-aware.
-  3) Stamina-aware tie-breaks when skill deficits are equal.
-  4) Post-pass swaps to reduce skill deviation (`balanceSkillToTargets`).
-  5) Post-pass swaps for stamina smoothing (equal-skill swaps only, `balanceStaminaEqualSkill`).
-
-### Harmony Pairs
-In `scripts/main.js`:
-- `HARMONY_TOKENS` holds base64-encoded `NameA|NameB` pairs.
-- Current decoded pair: `Ruben|Ramtin`.
-- During assignment, a small penalty (`HARMONY_PENALTY`) discourages pairing.
-- `applyRosterHarmonyFinal()` tries to swap players post-assignment to separate paired players if possible.
+  1) Build 64 candidate layouts per Generate click.
+  2) Sort players by skill descending, partition into skill bands of width `teamCount`, and randomize order within each band.
+  3) Greedy assignment to the team with the largest skill deficit to target, capacity-aware.
+  4) If multiple teams are within `0.15` of the best deficit, choose randomly with weights that still favor better deficit, better band spread, and the existing stamina tie-breaks.
+  5) Randomized skill-balancing swaps run for up to 8 passes; most candidates use the full pass depth, while a small exploration slice stops earlier to preserve more near-optimal shapes.
+  6) Randomized stamina-smoothing swaps run for up to 8 passes, but only for near-equal skill swaps and never if skill balance worsens.
+  7) Candidates are scored by `skillError`, then `staminaError`, then `bandClashError`; near-optimal duplicates are deduped before a final random choice.
 
 ## Scheduling
 `scripts/main.js` generates a round-robin schedule:
@@ -99,7 +95,7 @@ In `scripts/main.js`:
 - For other team counts, uses deterministic shuffle and streak avoidance (`orderRoundPairings`).
 - Tries to avoid any team playing 3 matches in a row across the full schedule.
 - “Next Match” is the first unplayed match; future matches are visually dimmed.
-- Kickoff fairness: next starting team is balanced across teams with a stable RNG.
+- Kickoff fairness: next starting team is balanced across teams with a stable RNG based on the attendee-set 1-hour seed.
 
 ## Results Entry
 - Results entered via `resultModal`.
@@ -166,7 +162,7 @@ node scripts/tests/runner.js
 
 ## Common Change Points
 - Roster/skills/stamina: `scripts/data/config.js`.
-- Team generation rules: `scripts/main.js` (generateTeams, generateTeamsOverride).
+- Team generation rules: `scripts/logic/team-generator.js` and `scripts/main.js` (`generateTeams`, `generateTeamsOverride`, `applyGeneratedTeams`).
 - Scheduling rules: `scripts/main.js` (renderSchedule, orderRoundPairings).
 - All-Time leaderboard logic: `scripts/main.js` (renderAllTime, parseCSVSimple, badge logic).
 - Theme/visuals: `styles/main.css`.
@@ -181,4 +177,3 @@ node scripts/tests/runner.js
 - Avoid inline event handlers; use `addEventListener`.
 - Keep HTML, CSS, and JS separated.
 - Prefer existing utility helpers for RNG and storage.
-
